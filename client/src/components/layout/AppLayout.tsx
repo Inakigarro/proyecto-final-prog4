@@ -77,7 +77,7 @@ export default function AppLayout() {
           </IconButton>
 
           <Typography variant="h6" fontWeight={700} sx={{ flexGrow: 1 }}>
-            E-Commerce
+            Tecnologia y Servicios
           </Typography>
 
           {/* Saludo + avatar — visible en desktop */}

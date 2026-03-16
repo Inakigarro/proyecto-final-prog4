@@ -7,8 +7,7 @@ export type Accion = 'create' | 'read' | 'update' | 'delete';
 // Datos para crear o actualizar un permiso
 export interface PermisoInput {
   nombre: string;
-  recurso: string;
-  accion: Accion;
+  valor: string;
   descripcion?: string;
 }
 
@@ -22,16 +21,20 @@ export interface RolInput {
 // Datos para crear un usuario
 export interface UsuarioInput {
   nombre: string;
+  apellido: string;
   email: string;
   password: string;
+  fechaNacimiento: string; // dd/MM/YYYY — se convierte a Date en el controller
   roles?: Types.ObjectId[];
 }
 
-// Datos para actualizar un usuario (password es opcional)
+// Datos para actualizar un usuario (todos opcionales)
 export interface UsuarioUpdateInput {
   nombre?: string;
+  apellido?: string;
   email?: string;
   password?: string;
+  fechaNacimiento?: string; // dd/MM/YYYY — se convierte a Date en el controller
   activo?: boolean;
   roles?: Types.ObjectId[];
 }
@@ -42,11 +45,13 @@ export interface LoginInput {
   password: string;
 }
 
-// Datos para el registro (igual que crear usuario, sin roles — se asignan después)
+// Datos para el registro (sin roles — se asigna el rol 'usuario' automáticamente)
 export interface RegisterInput {
   nombre: string;
+  apellido: string;
   email: string;
   password: string;
+  fechaNacimiento: string; // dd/MM/YYYY — se convierte a Date en el controller
 }
 
 // Payload que se guarda dentro del JWT

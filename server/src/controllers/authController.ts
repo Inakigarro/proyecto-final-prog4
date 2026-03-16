@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 import User from '../models/User';
+import Role from '../models/Role';
 import RefreshToken from '../models/RefreshToken';
 import { LoginInput, RegisterInput, AuthResponse, JwtPayload, RequestConUsuario } from '../types';
 
@@ -23,20 +25,50 @@ const generarRefreshToken = async (usuarioId: string): Promise<string> => {
 };
 
 /**
- * Registra un nuevo usuario sin roles.
- * Los roles se asignan por separado desde el CRUD de usuarios.
+ * Registra un nuevo usuario con el rol 'usuario' asignado por defecto.
+ * Usa transacción para garantizar consistencia: si algo falla, nada se persiste.
  */
 export const register = async (
   req: Request<{}, {}, RegisterInput>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const session = await mongoose.startSession();
   try {
-    const usuario = await User.create(req.body);
+    session.startTransaction();
+
+    // Buscar el rol por defecto que se asigna a todo usuario al registrarse
+    const rolUsuario = await Role.findOne({ nombre: 'usuario' }).session(session);
+    if (!rolUsuario) {
+      await session.abortTransaction();
+      res.status(500).json({ mensaje: 'Rol de usuario por defecto no encontrado. Ejecute el seeder.' });
+      return;
+    }
+
+    // Convertir fechaNacimiento de dd/MM/YYYY a Date
+    const [dia, mes, anio] = req.body.fechaNacimiento.split('/').map(Number);
+    const fechaNacimiento = new Date(anio, mes - 1, dia);
+    if (isNaN(fechaNacimiento.getTime())) {
+      await session.abortTransaction();
+      res.status(400).json({ mensaje: 'Formato de fecha inválido. Use dd/MM/YYYY' });
+      return;
+    }
+
+    // create() con array + session es el modo correcto para transacciones en Mongoose
+    const [usuario] = await User.create(
+      [{ ...req.body, fechaNacimiento, roles: [rolUsuario._id] }],
+      { session }
+    );
+
+    await session.commitTransaction();
+
     const { password: _, ...datos } = usuario.toObject();
     res.status(201).json(datos);
   } catch (error) {
+    await session.abortTransaction();
     next(error);
+  } finally {
+    session.endSession();
   }
 };
 
