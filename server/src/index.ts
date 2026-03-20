@@ -3,10 +3,9 @@ import express from 'express';
 import { conectarDB } from './config/database';
 import { errorHandler } from './middlewares/errorHandler';
 import authRoutes from './routes/authRoutes';
-import permissionRoutes from './routes/permissionRoutes';
 import roleRoutes from './routes/roleRoutes';
 import userRoutes from './routes/userRoutes';
-
+import permissionRoutes from './routes/permissionRoutes';
 const app = express();
 const PORT = process.env.PORT ?? 3000;
 

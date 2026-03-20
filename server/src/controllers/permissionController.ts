@@ -1,11 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
-import Permission from '../models/Permission';
-import { PermisoInput } from '../types';
+import { PermissionService } from '../services/rbac/permission.service';
+import { CrearPermisoDto, ActualizarPermisoDto } from '../types';
+
+const servicio = new PermissionService();
+
+/**
+ * Controlador para manejar las peticiones HTTP del recurso Permisos.
+ * Delega la lógica de negocio al PermissionService.
+ */
 
 /** Devuelve todos los permisos */
 export const listar = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const permisos = await Permission.find();
+    const permisos = await servicio.obtenerTodos();
     res.json(permisos);
   } catch (error) {
     next(error);
@@ -15,7 +22,7 @@ export const listar = async (_req: Request, res: Response, next: NextFunction): 
 /** Devuelve un permiso por ID */
 export const obtener = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const permiso = await Permission.findById(req.params.id);
+    const permiso = await servicio.obtenerPorId(req.params.id);
     if (!permiso) {
       res.status(404).json({ mensaje: 'Permiso no encontrado' });
       return;
@@ -27,9 +34,9 @@ export const obtener = async (req: Request, res: Response, next: NextFunction): 
 };
 
 /** Crea un nuevo permiso */
-export const crear = async (req: Request<{}, {}, PermisoInput>, res: Response, next: NextFunction): Promise<void> => {
+export const crear = async (req: Request<{}, {}, CrearPermisoDto>, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const permiso = await Permission.create(req.body);
+    const permiso = await servicio.crear(req.body);
     res.status(201).json(permiso);
   } catch (error) {
     next(error);
@@ -37,12 +44,9 @@ export const crear = async (req: Request<{}, {}, PermisoInput>, res: Response, n
 };
 
 /** Actualiza un permiso por ID */
-export const actualizar = async (req: Request<{ id: string }, {}, Partial<PermisoInput>>, res: Response, next: NextFunction): Promise<void> => {
+export const actualizar = async (req: Request<{ id: string }, {}, ActualizarPermisoDto>, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const permiso = await Permission.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const permiso = await servicio.actualizar(req.params.id, req.body);
     if (!permiso) {
       res.status(404).json({ mensaje: 'Permiso no encontrado' });
       return;
@@ -56,8 +60,8 @@ export const actualizar = async (req: Request<{ id: string }, {}, Partial<Permis
 /** Elimina un permiso por ID */
 export const eliminar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const permiso = await Permission.findByIdAndDelete(req.params.id);
-    if (!permiso) {
+    const eliminado = await servicio.eliminar(req.params.id);
+    if (!eliminado) {
       res.status(404).json({ mensaje: 'Permiso no encontrado' });
       return;
     }
