@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import * as permissionController from '../controllers/permissionController';
-import { verificarToken } from '../middlewares/auth';
 
+/**
+ * Router para el recurso Permisos.
+ * Define las rutas HTTP y las asocia a sus respectivos controladores.
+ */
 const router = Router();
-
-// Todas las rutas de permisos requieren autenticación
-router.use(verificarToken);
 
 router.get('/', permissionController.listar);
 router.get('/:id', permissionController.obtener);
