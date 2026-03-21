@@ -70,3 +70,12 @@ export interface AuthResponse {
 export interface RequestConUsuario extends Request {
   usuario?: JwtPayload;
 }
+
+// DTO de respuesta para permisos (evita exponer campos internos)
+export interface PermisoResponseDto {
+  id: string;
+  nombre: string;
+  recurso: string;
+  accion: Accion;
+  descripcion?: string;
+}
