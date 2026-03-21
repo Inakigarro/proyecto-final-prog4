@@ -74,19 +74,3 @@ export interface PermisoResponseDto {
   accion: Accion;
   descripcion?: string;
 }
-
-// DTO para crear un permiso
-export interface CrearPermisoDto {
-  nombre: string;
-  recurso: string;
-  accion: Accion;
-  descripcion?: string;
-}
-
-// DTO para actualizar un permiso (todos opcionales)
-export interface ActualizarPermisoDto {
-  nombre?: string;
-  recurso?: string;
-  accion?: Accion;
-  descripcion?: string;
-}
