@@ -82,3 +82,29 @@ export interface RolResponseDto {
   descripcion?: string;
   permisos: PermisoResponseDto[];
 }
+
+// DTO de respuesta para usuarios (nunca expone la contraseña)
+export interface UsuarioResponseDto {
+  id: string;
+  nombre: string;
+  email: string;
+  activo: boolean;
+  roles: RolResponseDto[];
+}
+
+// DTO para crear un usuario
+export interface CrearUsuarioDto {
+  nombre: string;
+  email: string;
+  password: string;
+  roles?: Types.ObjectId[];
+}
+
+// DTO para actualizar un usuario
+export interface ActualizarUsuarioDto {
+  nombre?: string;
+  email?: string;
+  password?: string;
+  activo?: boolean;
+  roles?: Types.ObjectId[];
+}

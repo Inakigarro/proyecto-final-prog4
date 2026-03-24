@@ -1,11 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
-import User from '../models/User';
-import { UsuarioInput, UsuarioUpdateInput, RequestConUsuario } from '../types';
+import { UserService } from '../services/rbac/user.service';
+import { CrearUsuarioDto, ActualizarUsuarioDto, RequestConUsuario } from '../types';
 
-/** Devuelve el perfil del usuario autenticado (extraído del JWT) */
+const servicio = new UserService();
+
+/**
+ * Controlador para manejar las peticiones HTTP del recurso Usuarios.
+ * Delega la lógica de negocio al UserService.
+ */
+
+/** Devuelve el perfil del usuario autenticado extraído del JWT */
 export const perfil = async (req: RequestConUsuario, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const usuario = await User.findById(req.usuario!.id).populate({ path: 'roles', populate: { path: 'permisos' } });
+    const usuario = await servicio.obtenerPerfil(req.usuario!.id);
     if (!usuario) {
       res.status(404).json({ mensaje: 'Usuario no encontrado' });
       return;
@@ -16,10 +23,10 @@ export const perfil = async (req: RequestConUsuario, res: Response, next: NextFu
   }
 };
 
-/** Devuelve todos los usuarios con sus roles populados */
+/** Devuelve todos los usuarios con sus roles y permisos populados */
 export const listar = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const usuarios = await User.find().populate({ path: 'roles', populate: { path: 'permisos' } });
+    const usuarios = await servicio.obtenerTodos();
     res.json(usuarios);
   } catch (error) {
     next(error);
@@ -29,7 +36,7 @@ export const listar = async (_req: Request, res: Response, next: NextFunction): 
 /** Devuelve un usuario por ID con roles y permisos populados */
 export const obtener = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const usuario = await User.findById(req.params.id).populate({ path: 'roles', populate: { path: 'permisos' } });
+    const usuario = await servicio.obtenerPorId(req.params.id);
     if (!usuario) {
       res.status(404).json({ mensaje: 'Usuario no encontrado' });
       return;
@@ -41,39 +48,19 @@ export const obtener = async (req: Request, res: Response, next: NextFunction): 
 };
 
 /** Crea un nuevo usuario */
-export const crear = async (req: Request<{}, {}, UsuarioInput>, res: Response, next: NextFunction): Promise<void> => {
+export const crear = async (req: Request<{}, {}, CrearUsuarioDto>, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const usuario = await User.create(req.body);
-    // No devolver la contraseña en la respuesta
-    const { password: _, ...datos } = usuario.toObject();
-    res.status(201).json(datos);
+    const usuario = await servicio.crear(req.body);
+    res.status(201).json(usuario);
   } catch (error) {
     next(error);
   }
 };
 
 /** Actualiza un usuario por ID */
-export const actualizar = async (req: Request<{ id: string }, {}, UsuarioUpdateInput>, res: Response, next: NextFunction): Promise<void> => {
+export const actualizar = async (req: Request<{ id: string }, {}, ActualizarUsuarioDto>, res: Response, next: NextFunction): Promise<void> => {
   try {
-    // Si se envía password, usar save() para que dispare el pre-hook de hasheo
-    if (req.body.password) {
-      const usuario = await User.findById(req.params.id).select('+password');
-      if (!usuario) {
-        res.status(404).json({ mensaje: 'Usuario no encontrado' });
-        return;
-      }
-      Object.assign(usuario, req.body);
-      await usuario.save();
-      const { password: _, ...datos } = usuario.toObject();
-      res.json(datos);
-      return;
-    }
-
-    const usuario = await User.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    }).populate({ path: 'roles', populate: { path: 'permisos' } });
-
+    const usuario = await servicio.actualizar(req.params.id, req.body);
     if (!usuario) {
       res.status(404).json({ mensaje: 'Usuario no encontrado' });
       return;
@@ -87,8 +74,8 @@ export const actualizar = async (req: Request<{ id: string }, {}, UsuarioUpdateI
 /** Elimina un usuario por ID */
 export const eliminar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const usuario = await User.findByIdAndDelete(req.params.id);
-    if (!usuario) {
+    const eliminado = await servicio.eliminar(req.params.id);
+    if (!eliminado) {
       res.status(404).json({ mensaje: 'Usuario no encontrado' });
       return;
     }

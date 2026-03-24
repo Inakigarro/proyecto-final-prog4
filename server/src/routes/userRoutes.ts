@@ -1,13 +1,21 @@
 import { Router } from 'express';
 import * as userController from '../controllers/userController';
 import { verificarToken } from '../middlewares/auth';
+import { verificarSuperAdmin } from '../middlewares/verificarSuperAdmin';
 
+/**
+ * Router para el recurso Usuarios.
+ * Todas las rutas requieren autenticación.
+ * Las rutas de escritura y listado requieren rol superadmin.
+ */
 const router = Router();
 
-router.use(verificarToken);
+// Ruta del perfil propio — solo requiere estar autenticado
+router.get('/me', verificarToken, userController.perfil);
 
-// Ruta del usuario autenticado — debe ir antes de /:id para no colisionar
-router.get('/me', userController.perfil);
+// Resto de rutas requieren autenticación y rol superadmin
+router.use(verificarToken);
+router.use(verificarSuperAdmin);
 
 router.get('/', userController.listar);
 router.get('/:id', userController.obtener);
