@@ -1,32 +1,26 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
+import { Accion } from '../types';
 
 // Forma del documento Permission en la base de datos
 export interface IPermission extends Document {
-  _id: Types.ObjectId;
   nombre: string;
-  valor: string;
+  recurso: string;
+  accion: Accion;
   descripcion?: string;
 }
 
 /**
- * Permiso atómico que representa una funcionalidad de la aplicación.
- * Ejemplo: { nombre: 'crear_usuario', valor: 'users/create' }
+ * Permiso atómico sobre un recurso.
+ * Ejemplo: { nombre: 'crear_usuario', recurso: 'users', accion: 'create' }
  */
 const permisoSchema = new Schema<IPermission>(
   {
-    nombre: {
+    nombre: { type: String, required: true, unique: true, trim: true },
+    recurso: { type: String, required: true, trim: true },
+    accion: {
       type: String,
-      required: [true, 'El nombre del permiso es obligatorio'],
-      unique: true,
-      trim: true,
-      minlength: [3, 'El nombre del permiso debe tener al menos 3 caracteres'],
-    },
-    // Identificador funcional del permiso — formato <recurso>/<accion>
-    valor: {
-      type: String,
-      required: [true, 'El valor del permiso es obligatorio'],
-      unique: true,
-      trim: true,
+      required: true,
+      enum: ['create', 'read', 'update', 'delete'] satisfies Accion[],
     },
     descripcion: { type: String, trim: true },
   },
