@@ -79,3 +79,11 @@ export interface PermisoResponseDto {
   accion: Accion;
   descripcion?: string;
 }
+
+// DTO de respuesta para roles (evita exponer campos internos)
+export interface RolResponseDto {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  permisos: PermisoResponseDto[];
+}
