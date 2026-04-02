@@ -166,4 +166,4 @@ El control de acceso está basado en **RBAC dinámico**:
 
 ## 📄 Licencia
 
-Proyecto académico — Tecnicatura en Programación.
+Proyecto académico — Tecnicatura en Programación - 2026.
