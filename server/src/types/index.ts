@@ -7,7 +7,8 @@ export type Accion = 'create' | 'read' | 'update' | 'delete';
 // Datos para crear o actualizar un permiso
 export interface PermisoInput {
   nombre: string;
-  valor: string;
+  recurso: string;
+  accion: Accion;
   descripcion?: string;
 }
 
@@ -92,7 +93,9 @@ export interface RolResponseDto {
 export interface UsuarioResponseDto {
   id: string;
   nombre: string;
+  apellido: string;
   email: string;
+  fechaNacimiento: Date;
   activo: boolean;
   roles: RolResponseDto[];
 }

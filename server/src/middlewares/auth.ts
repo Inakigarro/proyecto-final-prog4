@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
 import { RequestConUsuario, JwtPayload } from '../types';
 
 /**
@@ -21,7 +21,13 @@ export const verificarToken = (req: RequestConUsuario, res: Response, next: Next
     const payload = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
     req.usuario = payload;
     next();
-  } catch {
-    res.status(401).json({ mensaje: 'Token inválido o expirado' });
+  } catch (error) {
+    if (error instanceof TokenExpiredError) {
+      res.status(401).json({ mensaje: 'Token expirado' });
+    } else if (error instanceof JsonWebTokenError) {
+      res.status(401).json({ mensaje: 'Token inválido' });
+    } else {
+      next(error);
+    }
   }
 };
