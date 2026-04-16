@@ -1,6 +1,5 @@
 import { Response, NextFunction } from 'express';
 import User from '../models/User';
-import Role from '../models/Role';
 import { RequestConUsuario } from '../types';
 
 /**
@@ -17,6 +16,11 @@ export const verificarSuperAdmin = async (
 
     if (!usuario) {
       res.status(401).json({ mensaje: 'Usuario no encontrado' });
+      return;
+    }
+
+    if (!usuario.activo) {
+      res.status(403).json({ mensaje: 'Acceso denegado: cuenta desactivada' });
       return;
     }
 
