@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import Item, { IItem } from "../../models/Item";
+import { ICategory } from "../../models/Category";
 
 /**
  * DTO de respuesta para un item.
@@ -12,6 +13,18 @@ interface ItemResponseDto {
   
 }
 
+interface CrearItemDto {
+    nombre: string;
+    precioUnitario: number;
+    category: Types.ObjectId[];
+}
+
+interface ActualizarItemDto {
+    nombre: string;
+    precioUnitario: number;
+    category: Types.ObjectId[];
+}
+
 /**
  * Convierte un documento Mongoose al DTO de respuesta.
  * @param item - Documento del item desde MongoDB.
@@ -21,7 +34,7 @@ interface ItemResponseDto {
   id: item._id.toString(),
   nombre: item.nombre,
   precioUnitario: item.precioUnitario,
-  category: item.category.map(cat => cat.toString()),
+  category: (item.category as unknown as ICategory[]).map(cat => cat.nombre),
   
 });
 
@@ -34,7 +47,7 @@ export class ItemService {
    * @param itemData - Datos del item a crear.
    * @returns El item creado como DTO de respuesta.
    */
-  async crear(itemData: Partial<IItem>): Promise<ItemResponseDto> {
+  async crear(itemData: CrearItemDto): Promise<ItemResponseDto> {
     const nuevoItem = new Item(itemData);
     const itemGuardado = await nuevoItem.save();
     return mapearAItemResponseDto(itemGuardado);
@@ -45,7 +58,7 @@ export class ItemService {
    * @param itemData - Datos a actualizar.
    * @returns El item actualizado como DTO de respuesta o null si no existe.
    */
-  async actualizar(id: string, itemData: Partial<IItem>): Promise<ItemResponseDto | null> {
+  async actualizar(id: string, itemData: ActualizarItemDto): Promise<ItemResponseDto | null> {
     const itemActualizado = await Item.findByIdAndUpdate(id, itemData, { new: true });
     if (!itemActualizado) return null;
     return mapearAItemResponseDto(itemActualizado);
