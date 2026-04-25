@@ -6,6 +6,8 @@ import authRoutes from './routes/authRoutes';
 import roleRoutes from './routes/roleRoutes';
 import userRoutes from './routes/userRoutes';
 import permissionRoutes from './routes/permissionRoutes';
+import productRoutes from './routes/productRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 const app = express();
 const PORT = process.env.PORT ?? 3000;
 
@@ -21,6 +23,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Manejo global de errores (debe ir al final)
 app.use(errorHandler);

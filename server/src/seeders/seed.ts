@@ -9,26 +9,26 @@ import User from '../models/User';
 // Al agregar nuevas funcionalidades a la app, agregar los permisos aquí.
 // El seeder es idempotente: usa upsert, no duplica datos al ejecutarse varias veces.
 // ─────────────────────────────────────────────────────────────────────────────
-const PERMISOS_INICIALES: { nombre: string; valor: string; descripcion: string }[] = [
+const PERMISOS_INICIALES: { nombre: string; recurso: string; accion: string; descripcion: string }[] = [
   // Usuarios
-  { nombre: 'crear_usuario',    valor: 'users/create', descripcion: 'Crear nuevos usuarios' },
-  { nombre: 'leer_usuario',     valor: 'users/read',   descripcion: 'Ver usuarios' },
-  { nombre: 'editar_usuario',   valor: 'users/update', descripcion: 'Modificar usuarios existentes' },
-  { nombre: 'eliminar_usuario', valor: 'users/delete', descripcion: 'Eliminar usuarios' },
+  { nombre: 'crear_usuario',    recurso: 'users',       accion: 'create', descripcion: 'Crear nuevos usuarios' },
+  { nombre: 'leer_usuario',     recurso: 'users',       accion: 'read',   descripcion: 'Ver usuarios' },
+  { nombre: 'editar_usuario',   recurso: 'users',       accion: 'update', descripcion: 'Modificar usuarios existentes' },
+  { nombre: 'eliminar_usuario', recurso: 'users',       accion: 'delete', descripcion: 'Eliminar usuarios' },
   // Roles
-  { nombre: 'crear_rol',        valor: 'roles/create', descripcion: 'Crear nuevos roles' },
-  { nombre: 'leer_rol',         valor: 'roles/read',   descripcion: 'Ver roles' },
-  { nombre: 'editar_rol',       valor: 'roles/update', descripcion: 'Modificar roles existentes' },
-  { nombre: 'eliminar_rol',     valor: 'roles/delete', descripcion: 'Eliminar roles' },
+  { nombre: 'crear_rol',        recurso: 'roles',       accion: 'create', descripcion: 'Crear nuevos roles' },
+  { nombre: 'leer_rol',         recurso: 'roles',       accion: 'read',   descripcion: 'Ver roles' },
+  { nombre: 'editar_rol',       recurso: 'roles',       accion: 'update', descripcion: 'Modificar roles existentes' },
+  { nombre: 'eliminar_rol',     recurso: 'roles',       accion: 'delete', descripcion: 'Eliminar roles' },
   // Permisos
-  { nombre: 'crear_permiso',    valor: 'permissions/create', descripcion: 'Crear nuevos permisos' },
-  { nombre: 'leer_permiso',     valor: 'permissions/read',   descripcion: 'Ver permisos' },
-  { nombre: 'editar_permiso',   valor: 'permissions/update', descripcion: 'Modificar permisos existentes' },
-  { nombre: 'eliminar_permiso', valor: 'permissions/delete', descripcion: 'Eliminar permisos' },
+  { nombre: 'crear_permiso',    recurso: 'permissions', accion: 'create', descripcion: 'Crear nuevos permisos' },
+  { nombre: 'leer_permiso',     recurso: 'permissions', accion: 'read',   descripcion: 'Ver permisos' },
+  { nombre: 'editar_permiso',   recurso: 'permissions', accion: 'update', descripcion: 'Modificar permisos existentes' },
+  { nombre: 'eliminar_permiso', recurso: 'permissions', accion: 'delete', descripcion: 'Eliminar permisos' },
 ];
 
 const SUPERADMIN_EMAIL    = 'superadmin@app.com';
-const SUPERADMIN_PASSWORD = 'SuperAdmin123!';
+const SUPERADMIN_PASSWORD = process.env.SUPERADMIN_PASSWORD || 'contraseña_superadmin_segura'; // Asegurarse de definir esto en producción
 const SUPERADMIN_ROL      = 'superadmin';
 const ROL_USUARIO         = 'usuario';
 
