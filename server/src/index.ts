@@ -26,6 +26,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 
+
 // Manejo global de errores (debe ir al final)
 app.use(errorHandler);
 
