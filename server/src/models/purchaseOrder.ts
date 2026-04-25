@@ -1,4 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import PurchaseOrderDetail from './purchaseOrderDetail';
 
 // Forma del documento PurchaseOrder en la base de datos
 export interface IPurchaseOrder extends Document {
@@ -46,5 +47,14 @@ const purchaseOrderSchema = new Schema<IPurchaseOrder>(
   },
   { timestamps: true }
 );
+
+// Calcula el monto total antes de guardar sumando los montos de los detalles
+// y aplicando los descuentos a nivel de orden
+purchaseOrderSchema.pre('save', async function (next) {
+  const detalles = await PurchaseOrderDetail.find({ _id: { $in: this.detalles } });
+  const montoBase = detalles.reduce((acc, detalle) => acc + detalle.monto, 0);
+  this.montoTotal = calcularMontoTotal(montoBase, this.descuentos);
+  next();
+});
 
 export default model<IPurchaseOrder>('PurchaseOrder', purchaseOrderSchema);

@@ -1,14 +1,14 @@
-import { CrearProductoDto, ProductoResponse } from "../product.dtos";
+import { CrearItemDto, ItemResponse } from "../item.dtos";
 import { IItem } from "../../models/Item";
 
 export interface IProductService {
-  createProduct(product: CrearProductoDto): Promise<ProductoResponse>;
+  createProduct(product: CrearItemDto): Promise<ItemResponse>;
 
-  updateProduct(id: string, product: Partial<IItem>): Promise<ProductoResponse | null>;
+  updateProduct(id: string, product: Partial<CrearItemDto>): Promise<ItemResponse | null>;
 
   deleteProduct(id: string): Promise<IItem | null>;
 
-  getAllProducts(): Promise<ProductoResponse[]>;
+  getAllProducts(): Promise<ItemResponse[]>;
 
-  getProductById(id: string): Promise<ProductoResponse | null>;
+  getProductById(id: string): Promise<ItemResponse | null>;
 }

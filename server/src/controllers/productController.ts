@@ -1,12 +1,12 @@
 import { ProductService } from "../services/rbac/product.service";
 import { Request, Response, NextFunction } from "express";
-import { CrearProductoDto } from "../types/product.dtos";
+import { CrearItemDto } from "../types/item.dtos";
 
 const servicio = new ProductService();
 
-// ✅ Crear producto
+/** Crea un nuevo item y lo devuelve con su categoría populada */
 export const crear = async (
-  req: Request<{}, {}, CrearProductoDto>,
+  req: Request<{}, {}, CrearItemDto>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -18,7 +18,7 @@ export const crear = async (
   }
 };
 
-// ✅ Listar productos
+/** Devuelve todos los items con su categoría populada */
 export const listar = async (
   _req: Request,
   res: Response,
@@ -32,7 +32,7 @@ export const listar = async (
   }
 };
 
-// ✅ Obtener por ID
+/** Devuelve un item por ID con su categoría populada */
 export const obtenerPorId = async (
   req: Request<{ id: string }>,
   res: Response,
@@ -52,9 +52,9 @@ export const obtenerPorId = async (
   }
 };
 
-// ✅ Actualizar
+/** Actualiza parcialmente un item por ID */
 export const actualizar = async (
-  req: Request<{ id: string }, {}, CrearProductoDto>,
+  req: Request<{ id: string }, {}, Partial<CrearItemDto>>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -72,7 +72,7 @@ export const actualizar = async (
   }
 };
 
-// ✅ Eliminar
+/** Elimina un item por ID */
 export const eliminar = async (
   req: Request<{ id: string }>,
   res: Response,

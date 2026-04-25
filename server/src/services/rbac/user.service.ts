@@ -15,6 +15,8 @@ const POPULATE_ROLES = { path: 'roles', populate: { path: 'permisos' } };
 const mapearAResponseDto = (usuario: IUser): UsuarioResponseDto => ({
   id: usuario._id.toString(),
   nombre: usuario.nombre,
+  apellido: usuario.apellido,
+  fechaNacimiento: usuario.fechaNacimiento,
   email: usuario.email,
   activo: usuario.activo,
   roles: (usuario.roles as unknown as IRole[]).map((rol) => ({

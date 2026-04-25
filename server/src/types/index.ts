@@ -103,16 +103,20 @@ export interface UsuarioResponseDto {
 // DTO para crear un usuario
 export interface CrearUsuarioDto {
   nombre: string;
+  apellido: string;
   email: string;
   password: string;
+  fechaNacimiento: Date;
   roles?: Types.ObjectId[];
 }
 
 // DTO para actualizar un usuario
 export interface ActualizarUsuarioDto {
   nombre?: string;
+  apellido?: string;
   email?: string;
   password?: string;
+  fechaNacimiento?: Date;
   activo?: boolean;
   roles?: Types.ObjectId[];
 }
