@@ -12,7 +12,7 @@ const PORT = process.env.PORT ?? 3000;
 // Parsea el body de los requests como JSON
 app.use(express.json());
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.send('¡Bienvenido a la API de gestión de usuarios, roles y permisos!');
 });
 
