@@ -86,12 +86,6 @@ cd ../client
 npm install
 ```
 
-Crear el archivo `.env` en la carpeta `client/` con las siguientes variables:
-
-```env
-VITE_API_URL=http://localhost:3000
-```
-
 ### 4. Cargar datos iniciales
 
 ```bash
@@ -112,7 +106,7 @@ cd server
 npm run dev
 ```
 
-El servidor corre en `http://localhost:3000`.
+El servidor corre en `http://localhost:4000`.
 
 ### Cliente (modo desarrollo)
 
@@ -121,7 +115,7 @@ cd client
 npm run dev
 ```
 
-El cliente corre en `http://localhost:5173`.
+El cliente corre en `http://localhost:3000`.
 
 ---
 

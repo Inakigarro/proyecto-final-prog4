@@ -1,0 +1,85 @@
+.card-product {
+  width: 300px;
+  height: 450px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-image-wrapper {
+  height: 45%;
+  overflow: hidden;
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.card-details {
+  height: 55%;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-divider {
+  height: 1px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.08);
+  margin-bottom: 14px;
+}
+
+.card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-price {
+  color: #1b5e20;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.2;
+  color: #102a43;
+}
+
+.card-description {
+  margin: 0;
+  color: #617d98;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.card-cta {
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #0b5ed7;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.card-cta:hover {
+  background: #0a58ca;
+}
+
+.card-cta:active {
+  transform: translateY(1px);
+}
