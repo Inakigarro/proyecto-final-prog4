@@ -26,4 +26,4 @@ const categorySchema = new Schema<ICategory>(
   { timestamps: true }
 );
 
-export default model<ICategory>('Categoria', categorySchema);
+export default model<ICategory>('Category', categorySchema);
