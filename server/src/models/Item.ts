@@ -5,6 +5,7 @@ export interface IItem extends Document {
   _id: Types.ObjectId;
   nombre: string;
   precioUnitario: number;
+  stock: number;
   category: Types.ObjectId[];
 }
 
@@ -23,7 +24,16 @@ const itemSchema = new Schema<IItem>(
       required: [true, 'El precio unitario es obligatorio'],
       min: [0, 'El precio unitario no puede ser negativo']
      },
-    
+    /**
+     * Stock disponible del item. El default es 0 para no romper documentos
+     * preexistentes en la base. El frontend debe restringir la creación y
+     * edición de items para que siempre se cargue un valor explícito.
+     */
+    stock: {
+      type: Number,
+      default: 0,
+      min: [0, 'El stock no puede ser negativo'],
+    },
     category: [
     {
     type: Schema.Types.ObjectId,
