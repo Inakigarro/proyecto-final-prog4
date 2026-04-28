@@ -2,12 +2,15 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const res = await fetch("http://localhost:4000/api/products", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
+    const res = await fetch(
+      `http://localhost:${process.env.PORT || 4000}/api/products`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     if (!res.ok) {
       return NextResponse.json(
@@ -16,12 +19,12 @@ export async function GET() {
       );
     }
 
-    const data = await res.text();
+    const data = await res.json();
 
     return NextResponse.json({
       success: true,
       message: "Los productos se han obtenido correctamente",
-      backendResponse: data,
+      products: data,
     });
   } catch (error) {
     const errorMessage =
