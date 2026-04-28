@@ -37,7 +37,7 @@ const itemSchema = new Schema<IItem>(
     category: [
     {
     type: Schema.Types.ObjectId,
-    ref: 'Category',
+    ref: 'Categoria',
     required: true
     }
 ]

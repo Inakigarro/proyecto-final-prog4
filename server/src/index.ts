@@ -29,6 +29,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);
 
+
 // Manejo global de errores (debe ir al final)
 app.use(errorHandler);
 
