@@ -1,6 +1,6 @@
 import Role from "../../models/Role";
 import { IRole } from "../../models/Role";
-import { RolResponseDto, PermisoResponseDto } from "../../types";
+import { RolResponseDto } from "../../types";
 import { IRoleService } from "../../types/rbac/role.service.interface";
 import { IPermission } from "../../models/Permission";
 
@@ -32,8 +32,8 @@ export class RoleService implements IRoleService {
    * @returns Lista de roles como DTOs de respuesta.
    */
   async obtenerTodos(): Promise<RolResponseDto[]> {
-    const roles = await Role.find().populate('permisos');
-    return roles.map(mapearAResponseDto);
+    const roles = await Role.find().lean().populate('permisos');
+    return (roles as unknown as IRole[]).map(mapearAResponseDto);
   }
 
   /**
@@ -42,8 +42,8 @@ export class RoleService implements IRoleService {
    * @returns El rol encontrado o null si no existe.
    */
   async obtenerPorId(id: string): Promise<RolResponseDto | null> {
-    const rol = await Role.findById(id).populate('permisos');
+    const rol = await Role.findById(id).lean().populate('permisos');
     if (!rol) return null;
-    return mapearAResponseDto(rol);
+    return mapearAResponseDto(rol as unknown as IRole);
   }
 }

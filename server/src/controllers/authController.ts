@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import User from '../models/User';
+import User, { validarComplejidadPassword } from '../models/User';
 import Role from '../models/Role';
 import RefreshToken from '../models/RefreshToken';
 import PasswordResetToken from '../models/PasswordResetToken';
@@ -34,17 +34,15 @@ export const register = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  // Validación de campos requeridos
   const { nombre, apellido, email, password, fechaNacimiento } = req.body;
   if (!nombre || !apellido || !email || !password || !fechaNacimiento) {
-    res.status(400).json({ mensaje: 'Todos los campos son obligatorios: nombre, apellido, email, password, fechaNacimiento' });
+    res.status(400).json({ message: 'Todos los campos son obligatorios: nombre, apellido, email, password, fechaNacimiento' });
     return;
   }
 
-  // Validar formato de fecha antes de intentar parsearla
   const FECHA_REGEX = /^\d{2}\/\d{2}\/\d{4}$/;
   if (!FECHA_REGEX.test(fechaNacimiento)) {
-    res.status(400).json({ mensaje: 'Formato de fecha inválido. Use dd/MM/YYYY' });
+    res.status(400).json({ message: 'Formato de fecha inválido. Use dd/MM/YYYY' });
     return;
   }
 
@@ -52,19 +50,16 @@ export const register = async (
   try {
     session.startTransaction();
 
-    // Buscar el rol por defecto que se asigna a todo usuario al registrarse
     const rolUsuario = await Role.findOne({ nombre: 'usuario' }).session(session);
     if (!rolUsuario) {
       await session.abortTransaction();
-      res.status(500).json({ mensaje: 'Rol de usuario por defecto no encontrado. Ejecute el seeder.' });
+      res.status(500).json({ message: 'Rol de usuario por defecto no encontrado. Ejecute el seeder.' });
       return;
     }
 
-    // Convertir fechaNacimiento de dd/MM/YYYY a Date (formato ya validado antes de la transacción)
     const [dia, mes, anio] = fechaNacimiento.split('/').map(Number);
     const fecha = new Date(anio, mes - 1, dia);
 
-    // create() con array + session es el modo correcto para transacciones en Mongoose
     const [usuario] = await User.create(
       [{ ...req.body, fechaNacimiento: fecha, roles: [rolUsuario._id] }],
       { session }
@@ -91,22 +86,20 @@ export const login = async (
   try {
     const { email, password } = req.body;
 
-    // Validación de campos requeridos
     if (!email || !password) {
-      res.status(400).json({ mensaje: 'Email y contraseña son obligatorios' });
+      res.status(400).json({ message: 'Email y contraseña son obligatorios' });
       return;
     }
 
-    // Recuperar explícitamente la contraseña (está con select: false en el modelo)
     const usuario = await User.findOne({ email, activo: true }).select('+password');
     if (!usuario) {
-      res.status(401).json({ mensaje: 'Credenciales inválidas' });
+      res.status(401).json({ message: 'Credenciales inválidas' });
       return;
     }
 
     const passwordValida = await usuario.compararPassword(password);
     if (!passwordValida) {
-      res.status(401).json({ mensaje: 'Credenciales inválidas' });
+      res.status(401).json({ message: 'Credenciales inválidas' });
       return;
     }
 
@@ -130,13 +123,13 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
     const { refreshToken: tokenRecibido } = req.body as { refreshToken: string };
 
     if (!tokenRecibido) {
-      res.status(400).json({ mensaje: 'Refresh token requerido' });
+      res.status(400).json({ message: 'Refresh token requerido' });
       return;
     }
 
     const tokenGuardado = await RefreshToken.findOne({ token: tokenRecibido }).populate('usuario');
     if (!tokenGuardado) {
-      res.status(401).json({ mensaje: 'Refresh token inválido o expirado' });
+      res.status(401).json({ message: 'Refresh token inválido o expirado' });
       return;
     }
 
@@ -162,11 +155,10 @@ export const logout = async (req: RequestConUsuario, res: Response, next: NextFu
     const { refreshToken: tokenRecibido } = req.body as { refreshToken: string };
 
     if (tokenRecibido) {
-      // Filtra también por usuario para que nadie pueda revocar tokens ajenos
       await RefreshToken.deleteOne({ token: tokenRecibido, usuario: req.usuario?.id });
     }
 
-    res.json({ mensaje: 'Sesión cerrada correctamente' });
+    res.json({ message: 'Sesión cerrada correctamente' });
   } catch (error) {
     next(error);
   }
@@ -182,25 +174,24 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     const { email } = req.body as { email: string };
 
     if (!email) {
-      res.status(400).json({ mensaje: 'El email es obligatorio' });
+      res.status(400).json({ message: 'El email es obligatorio' });
       return;
     }
 
     const usuario = await User.findOne({ email, activo: true });
     // Respuesta genérica siempre para no revelar si el email existe
     if (!usuario) {
-      res.json({ mensaje: 'Si el email existe, se generó un token de restablecimiento' });
+      res.json({ message: 'Si el email existe, se generó un token de restablecimiento' });
       return;
     }
 
-    // Eliminar tokens anteriores del mismo usuario
     await PasswordResetToken.deleteMany({ usuario: usuario._id });
 
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
     await PasswordResetToken.create({ token, usuario: usuario._id, expiresAt });
 
-    res.json({ mensaje: 'Token de restablecimiento generado', resetToken: token });
+    res.json({ message: 'Token de restablecimiento generado', resetToken: token });
   } catch (error) {
     next(error);
   }
@@ -215,19 +206,24 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     const { token, nuevaPassword } = req.body as { token: string; nuevaPassword: string };
 
     if (!token || !nuevaPassword) {
-      res.status(400).json({ mensaje: 'Token y nueva contraseña son obligatorios' });
+      res.status(400).json({ message: 'Token y nueva contraseña son obligatorios' });
+      return;
+    }
+
+    if (!validarComplejidadPassword(nuevaPassword)) {
+      res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo especial' });
       return;
     }
 
     const tokenGuardado = await PasswordResetToken.findOne({ token });
     if (!tokenGuardado) {
-      res.status(400).json({ mensaje: 'Token inválido o expirado' });
+      res.status(400).json({ message: 'Token inválido o expirado' });
       return;
     }
 
     const usuario = await User.findById(tokenGuardado.usuario);
     if (!usuario || !usuario.activo) {
-      res.status(400).json({ mensaje: 'Token inválido o expirado' });
+      res.status(400).json({ message: 'Token inválido o expirado' });
       return;
     }
 
@@ -241,7 +237,7 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
       RefreshToken.deleteMany({ usuario: usuario._id }),
     ]);
 
-    res.json({ mensaje: 'Contraseña restablecida correctamente. Iniciá sesión nuevamente.' });
+    res.json({ message: 'Contraseña restablecida correctamente. Iniciá sesión nuevamente.' });
   } catch (error) {
     next(error);
   }

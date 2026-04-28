@@ -23,7 +23,7 @@ export const obtener = async (req: Request, res: Response, next: NextFunction): 
   try {
     const rol = await servicio.obtenerPorId(req.params.id);
     if (!rol) {
-      res.status(404).json({ mensaje: 'Rol no encontrado' });
+      res.status(404).json({ message: 'Rol no encontrado' });
       return;
     }
     res.json(rol);
