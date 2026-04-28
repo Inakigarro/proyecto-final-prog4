@@ -1,4 +1,5 @@
 import Item, { IItem } from "../../models/Item";
+import Category from "../../models/Category";
 import { CrearItemDto, ItemResponse } from "../../types/item.dtos";
 import { IProductService } from "../../types/rbac/product.service.interface";
 import { ICategory } from "../../models/Category";

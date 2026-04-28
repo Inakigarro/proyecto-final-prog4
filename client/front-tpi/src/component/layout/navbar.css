@@ -2,11 +2,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 50px;
+  height: 40px;
   padding: 0 16px;
   background: #102a43;
   color: #ffffff;
   gap: 16px;
+  min-width: 0;
 }
 
 .navbar-logo {
@@ -14,62 +15,87 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .navbar-search {
   flex: 1;
   display: flex;
   justify-content: center;
+  min-width: 0;
 }
 
 .navbar-search input {
   width: 100%;
-  max-width: 620px;
-  height: 32px;
+  max-width: 320px;
+  height: 28px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
   padding: 0 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   outline: none;
   font-size: 12px;
+  min-width: 0;
 }
 
 .navbar-search input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .navbar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.navbar-actions button {
+.navbar-list {
+  display: flex;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-item {
+  margin: 0;
+}
+
+.navbar-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  transition: background 0.16s ease;
+  white-space: nowrap;
+}
+
+.navbar-link:hover,
+.navbar-link.activo {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.icon-button {
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: transparent;
   color: #ffffff;
-  border-radius: 16px;
-  padding: 6px 10px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 0.16s ease, border-color 0.16s ease;
-}
-
-.navbar-actions button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-.login-button {
+  border-radius: 50%;
   width: 32px;
   height: 32px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.icon-button:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .login-icon {
@@ -86,8 +112,12 @@
     display: none;
   }
 
-  .navbar-actions button {
-    padding: 5px 8px;
+  .navbar-list {
+    gap: 6px;
+  }
+
+  .navbar-link {
     font-size: 11px;
+    padding: 5px 8px;
   }
 }

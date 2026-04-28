@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 
-/**
- * Endpoint de prueba para verificar la conexión con el backend.
- * GET /api/test-connection
- */
 export async function GET() {
   try {
-    // IMPORTANTE: Cuando este código corre en un API Route (Node.js), el rewrite de Next.js NO aplica.
-    // Por eso, hay que usar la URL completa del backend:
     const res = await fetch(
-      `http://localhost:${process.env.PORT || 4000}/api`,
+      `http://localhost:${process.env.PORT || 4000}/api/products`,
       {
         method: "GET",
         headers: {
@@ -25,12 +19,12 @@ export async function GET() {
       );
     }
 
-    const data = await res.text();
+    const data = await res.json();
 
     return NextResponse.json({
       success: true,
-      message: "Conexión con el backend exitosa",
-      backendResponse: data,
+      message: "Los productos se han obtenido correctamente",
+      products: data,
     });
   } catch (error) {
     const errorMessage =
