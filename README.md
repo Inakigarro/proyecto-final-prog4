@@ -16,8 +16,7 @@ Plataforma de tienda online que permite a los usuarios explorar productos, gesti
 |---|---|
 | Base de datos | MongoDB Atlas + Mongoose |
 | Backend | Node.js + Express + TypeScript |
-| Frontend | React 18 + Vite + TypeScript |
-| UI | Material UI (MUI v5) |
+| Frontend | Next.js 16 + React 19 + TypeScript |
 | Autenticación | JWT (access token en memoria + refresh token) |
 
 ---
@@ -63,7 +62,7 @@ git clone https://github.com/Inakigarro/proyecto-final-prog4.git
 cd proyecto-final-prog4
 ```
 
-### 2. Configurar el servidor
+### 2. Instalar dependencias del servidor
 
 ```bash
 cd server
@@ -73,16 +72,16 @@ npm install
 Crear el archivo `.env` en la carpeta `server/` con las siguientes variables:
 
 ```env
-PORT=3000
+PORT=4000
 MONGODB_URI=mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net/<dbname>
 JWT_SECRET=tu_clave_secreta
 JWT_REFRESH_SECRET=tu_clave_refresh_secreta
 ```
 
-### 3. Configurar el cliente
+### 3. Instalar dependencias del cliente
 
 ```bash
-cd ../client
+cd ../client/front-tpi
 npm install
 ```
 
@@ -99,7 +98,9 @@ Esto crea el usuario **SuperAdmin** y carga los permisos y roles iniciales en la
 
 ## ▶️ Ejecución
 
-### Servidor (modo desarrollo)
+Abrir **dos terminales** desde la raíz del proyecto.
+
+### Terminal 1 — Servidor (modo desarrollo)
 
 ```bash
 cd server
@@ -108,10 +109,10 @@ npm run dev
 
 El servidor corre en `http://localhost:4000`.
 
-### Cliente (modo desarrollo)
+### Terminal 2 — Cliente (modo desarrollo)
 
 ```bash
-cd client
+cd client/front-tpi
 npm run dev
 ```
 
