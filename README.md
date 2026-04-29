@@ -94,6 +94,12 @@ npm run seed
 
 Esto crea el usuario **SuperAdmin** y carga los permisos y roles iniciales en la base de datos.
 
+```bash
+npm run seed:products
+```
+
+Esto carga el catálogo de productos inicial en la base de datos.
+
 ---
 
 ## ▶️ Ejecución

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const res = await fetch(
-      `http://localhost:${process.env.PORT || 4000}/api/products`,
+      `http://localhost:4400/api/products`,
       {
         method: "GET",
         headers: {
