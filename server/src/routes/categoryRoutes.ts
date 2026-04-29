@@ -5,13 +5,16 @@ import { verificarSuperAdmin } from "../middlewares/verificarSuperAdmin";
 
 const router = Router();
 
+// Todas las rutas requieren autenticación
 router.use(verificarToken);
-router.use(verificarSuperAdmin);
 
+// Lectura: cualquier usuario autenticado
 router.get("/", categoryController.listar);
 router.get("/:id", categoryController.obtenerPorId);
-router.post("/", categoryController.crear);
-router.put("/:id", categoryController.actualizar);
-router.delete("/:id", categoryController.eliminar);
+
+// Escritura: solo superadmin
+router.post("/", verificarSuperAdmin, categoryController.crear);
+router.put("/:id", verificarSuperAdmin, categoryController.actualizar);
+router.delete("/:id", verificarSuperAdmin, categoryController.eliminar);
 
 export default router;

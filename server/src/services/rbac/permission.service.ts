@@ -25,8 +25,8 @@ export class PermissionService implements IPermissionService {
    * @returns Lista de permisos como DTOs de respuesta.
    */
   async obtenerTodos(): Promise<PermisoResponseDto[]> {
-    const permisos = await Permission.find();
-    return permisos.map(mapearAResponseDto);
+    const permisos = await Permission.find().lean();
+    return (permisos as unknown as IPermission[]).map(mapearAResponseDto);
   }
 
   /**
@@ -35,8 +35,8 @@ export class PermissionService implements IPermissionService {
    * @returns El permiso encontrado o null si no existe.
    */
   async obtenerPorId(id: string): Promise<PermisoResponseDto | null> {
-    const permiso = await Permission.findById(id);
+    const permiso = await Permission.findById(id).lean();
     if (!permiso) return null;
-    return mapearAResponseDto(permiso);
+    return mapearAResponseDto(permiso as unknown as IPermission);
   }
 }

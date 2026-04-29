@@ -39,7 +39,7 @@ export const checkout = async (
 ): Promise<void> => {
   try {
     if (!req.usuario) {
-      res.status(401).json({ mensaje: 'Token requerido' });
+      res.status(401).json({ message: 'Token requerido' });
       return;
     }
 

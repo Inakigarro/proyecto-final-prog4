@@ -4,9 +4,7 @@ import { CrearItemDto, ItemResponse } from "../../types/item.dtos";
 import { IProductService } from "../../types/rbac/product.service.interface";
 import { ICategory } from "../../models/Category";
 
-const POPULATE_CATEGORIES = {
-  path: 'category',
-}
+const POPULATE_CATEGORIES = { path: 'category' };
 
 /**
  * Convierte un documento Mongoose al DTO de respuesta.
@@ -28,10 +26,7 @@ function mapearAResponseDto(product: IItem): ItemResponse {
   };
 }
 
-
 export class ProductService implements IProductService {
-
-  constructor() {}
 
   /**
    * Crea un nuevo item en la base de datos.
@@ -39,11 +34,10 @@ export class ProductService implements IProductService {
    * @returns El item creado como DTO de respuesta.
    */
   async createProduct(product: CrearItemDto): Promise<ItemResponse> {
-        const item = await Item.create(product);
-        await item.populate(POPULATE_CATEGORIES);
-        return mapearAResponseDto(item)
-   }
-
+    const item = await Item.create(product);
+    await item.populate(POPULATE_CATEGORIES);
+    return mapearAResponseDto(item);
+  }
 
   /**
    * Actualiza parcialmente un item existente por su ID.
@@ -52,39 +46,48 @@ export class ProductService implements IProductService {
    * @returns El item actualizado o null si no existe.
    */
   async updateProduct(id: string, product: Partial<CrearItemDto>): Promise<ItemResponse | null> {
+    if (product.precioUnitario !== undefined && product.precioUnitario <= 0) {
+      throw new Error("El precio debe ser mayor a 0");
+    }
 
-  if (product.precioUnitario !== undefined && product.precioUnitario <= 0) {
-    throw new Error("El precio debe ser mayor a 0");
+    const updated = await Item.findOneAndUpdate(
+      { _id: id, activo: { $ne: false } },
+      product,
+      { new: true }
+    ).lean().populate(POPULATE_CATEGORIES);
+
+    return updated ? mapearAResponseDto(updated as unknown as IItem) : null;
   }
 
-  const updated = await Item.findByIdAndUpdate(id, product, { new: true })
-    .populate(POPULATE_CATEGORIES);
-
-  return updated ? mapearAResponseDto(updated) : null;
-}
   /**
-   * Elimina un item por su ID.
-   * @param id - ID del item a eliminar.
-   * @returns El documento eliminado o null si no existe.
+   * Desactiva un item por su ID (borrado lógico).
+   * @param id - ID del item a desactivar.
+   * @returns true si fue desactivado, false si no se encontró o ya estaba inactivo.
    */
-  async deleteProduct(id: string): Promise<IItem | null> {
-  return await Item.findByIdAndDelete(id);
-}
+  async deleteProduct(id: string): Promise<boolean> {
+    const resultado = await Item.findOneAndUpdate(
+      { _id: id, activo: { $ne: false } },
+      { activo: false }
+    );
+    return resultado !== null;
+  }
 
   /**
-   * Obtiene todos los items con su categoría populada.
+   * Obtiene todos los items activos con su categoría populada.
    * @returns Lista de items como DTOs de respuesta.
    */
   async getAllProducts(): Promise<ItemResponse[]> {
-  const productos = await Item.find().populate(POPULATE_CATEGORIES);
-  return productos.map(mapearAResponseDto);
-}
+    const productos = await Item.find({ activo: { $ne: false } }).lean().populate(POPULATE_CATEGORIES);
+    return (productos as unknown as IItem[]).map(mapearAResponseDto);
+  }
+
   /**
-   * Obtiene un item por su ID con la categoría populada.
+   * Obtiene un item activo por su ID con la categoría populada.
    * @param id - ID del item a buscar.
-   * @returns El item encontrado o null si no existe.
+   * @returns El item encontrado o null si no existe o está inactivo.
    */
   async getProductById(id: string): Promise<ItemResponse | null> {
-  const product = await Item.findById(id).populate(POPULATE_CATEGORIES);
-  return product ? mapearAResponseDto(product) : null;
-}}
+    const product = await Item.findOne({ _id: id, activo: { $ne: false } }).lean().populate(POPULATE_CATEGORIES);
+    return product ? mapearAResponseDto(product as unknown as IItem) : null;
+  }
+}

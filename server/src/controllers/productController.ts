@@ -18,7 +18,7 @@ export const crear = async (
   }
 };
 
-/** Devuelve todos los items con su categoría populada */
+/** Devuelve todos los items activos con su categoría populada */
 export const listar = async (
   _req: Request,
   res: Response,
@@ -32,7 +32,7 @@ export const listar = async (
   }
 };
 
-/** Devuelve un item por ID con su categoría populada */
+/** Devuelve un item activo por ID con su categoría populada */
 export const obtenerPorId = async (
   req: Request<{ id: string }>,
   res: Response,
@@ -72,21 +72,21 @@ export const actualizar = async (
   }
 };
 
-/** Elimina un item por ID */
+/** Desactiva un item por ID (borrado lógico) */
 export const eliminar = async (
   req: Request<{ id: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const product = await servicio.deleteProduct(req.params.id);
+    const eliminado = await servicio.deleteProduct(req.params.id);
 
-    if (!product) {
+    if (!eliminado) {
       res.status(404).json({ message: "Producto no encontrado" });
       return;
     }
 
-    res.json({ message: "Producto eliminado correctamente" });
+    res.status(204).send();
   } catch (error) {
     next(error);
   }

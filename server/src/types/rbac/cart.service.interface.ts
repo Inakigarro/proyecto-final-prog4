@@ -3,7 +3,7 @@ import {
   ValidacionCarritoResponse,
   CheckoutDto,
   CheckoutResponse,
-} from '../cart.dtos';
+} from './cart.dtos';
 
 /**
  * Contrato del servicio de carrito.

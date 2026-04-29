@@ -31,54 +31,61 @@ export class CategoryService {
   }
 
   /**
-   * Actualiza una categoría existente.
+   * Actualiza una categoría activa existente.
    */
   async actualizar(id: string, categoryData: ActualizarCategoryDto): Promise<CategoryResponseDto | null> {
-    const categoryActualizada = await Category.findByIdAndUpdate(id, categoryData, { new: true });
+    const categoryActualizada = await Category.findOneAndUpdate(
+      { _id: id, activo: { $ne: false } },
+      categoryData,
+      { new: true }
+    ).lean();
     if (!categoryActualizada) return null;
-    return mapearACategoryResponseDto(categoryActualizada);
+    return mapearACategoryResponseDto(categoryActualizada as unknown as ICategory);
   }
 
   /**
-   * Elimina una categoría por su ID.
-   * @returns true si se eliminó, false si no se encontró.
+   * Desactiva una categoría por su ID (borrado lógico).
+   * @returns true si fue desactivada, false si no se encontró o ya estaba inactiva.
    */
   async eliminar(id: string): Promise<boolean> {
-    const resultado = await Category.findByIdAndDelete(id);
+    const resultado = await Category.findOneAndUpdate(
+      { _id: id, activo: { $ne: false } },
+      { activo: false }
+    );
     return !!resultado;
   }
 
   /**
-   * Busca todas las categorías sin popular los items.
+   * Busca todas las categorías activas sin popular los items.
    */
   async buscarTodas(): Promise<CategoryResponseDto[]> {
-    const categorias = await Category.find();
-    return categorias.map(mapearACategoryResponseDto);
+    const categorias = await Category.find({ activo: { $ne: false } }).lean();
+    return (categorias as unknown as ICategory[]).map(mapearACategoryResponseDto);
   }
 
   /**
-   * Busca todas las categorías con los items populados.
+   * Busca todas las categorías activas con los items populados.
    */
   async buscarTodasConItems(): Promise<CategoryResponseDto[]> {
-    const categorias = await Category.find().populate("items");
-    return categorias.map(mapearACategoryResponseDto);
+    const categorias = await Category.find({ activo: { $ne: false } }).lean().populate("items");
+    return (categorias as unknown as ICategory[]).map(mapearACategoryResponseDto);
   }
 
   /**
-   * Busca una categoría por su ID sin popular los items.
+   * Busca una categoría activa por su ID sin popular los items.
    */
   async buscarPorId(id: string): Promise<CategoryResponseDto | null> {
-    const category = await Category.findById(id);
+    const category = await Category.findOne({ _id: id, activo: { $ne: false } }).lean();
     if (!category) return null;
-    return mapearACategoryResponseDto(category);
+    return mapearACategoryResponseDto(category as unknown as ICategory);
   }
 
   /**
-   * Busca una categoría por su ID con los items populados.
+   * Busca una categoría activa por su ID con los items populados.
    */
   async buscarPorIdConItems(id: string): Promise<CategoryResponseDto | null> {
-    const category = await Category.findById(id).populate("items");
+    const category = await Category.findOne({ _id: id, activo: { $ne: false } }).lean().populate("items");
     if (!category) return null;
-    return mapearACategoryResponseDto(category);
+    return mapearACategoryResponseDto(category as unknown as ICategory);
   }
 }

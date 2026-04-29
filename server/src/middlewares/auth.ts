@@ -13,7 +13,7 @@ export const verificarToken = (req: RequestConUsuario, res: Response, next: Next
   const token = authHeader?.split(' ')[1];
 
   if (!token) {
-    res.status(401).json({ mensaje: 'Token requerido' });
+    res.status(401).json({ message: 'Token requerido' });
     return;
   }
 
@@ -23,9 +23,9 @@ export const verificarToken = (req: RequestConUsuario, res: Response, next: Next
     next();
   } catch (error) {
     if (error instanceof TokenExpiredError) {
-      res.status(401).json({ mensaje: 'Token expirado' });
+      res.status(401).json({ message: 'Token expirado' });
     } else if (error instanceof JsonWebTokenError) {
-      res.status(401).json({ mensaje: 'Token inválido' });
+      res.status(401).json({ message: 'Token inválido' });
     } else {
       next(error);
     }

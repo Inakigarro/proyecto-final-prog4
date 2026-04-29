@@ -1,12 +1,12 @@
 import { CrearItemDto, ItemResponse } from "../item.dtos";
-import { IItem } from "../../models/Item";
 
 export interface IProductService {
   createProduct(product: CrearItemDto): Promise<ItemResponse>;
 
   updateProduct(id: string, product: Partial<CrearItemDto>): Promise<ItemResponse | null>;
 
-  deleteProduct(id: string): Promise<IItem | null>;
+  /** Borrado lógico: devuelve true si el item existía y fue desactivado. */
+  deleteProduct(id: string): Promise<boolean>;
 
   getAllProducts(): Promise<ItemResponse[]>;
 
