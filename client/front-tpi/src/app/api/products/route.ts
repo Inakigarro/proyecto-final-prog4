@@ -1,16 +1,21 @@
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const res = await fetch(
-      `http://localhost:${process.env.PORT || 4000}/api/products`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+    const url = new URL(request.url);
+    const query = url.searchParams.get("query");
+    const backendUrl = new URL("http://localhost:4001/api/products");
+
+    if (query) {
+      backendUrl.searchParams.set("query", query);
+    }
+
+    const res = await fetch(backendUrl.toString(), {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+    });
 
     if (!res.ok) {
       return NextResponse.json(
