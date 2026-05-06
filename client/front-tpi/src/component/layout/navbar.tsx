@@ -4,6 +4,8 @@ import React from "react";
 import "./navbar.css";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import CartIcon from "../cart/CartIcon";
+
 interface EnlacesNav {
   etiqueta: string;
   ruta: string;
@@ -47,9 +49,7 @@ const Navbar = () => {
         <button type="button" className="icon-button" aria-label="Login">
           <span className="login-icon">🔒</span>
         </button>
-        <button type="button" className="icon-button" aria-label="Carrito">
-          <span className="login-icon">🛒</span>
-        </button>
+        <CartIcon />
       </div>
     </header>
   );
