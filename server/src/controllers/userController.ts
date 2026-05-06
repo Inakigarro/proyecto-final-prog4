@@ -14,7 +14,7 @@ export const perfil = async (req: RequestConUsuario, res: Response, next: NextFu
   try {
     const usuario = await servicio.obtenerPerfil(req.usuario!.id);
     if (!usuario) {
-      res.status(404).json({ mensaje: 'Usuario no encontrado' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
       return;
     }
     res.json(usuario);
@@ -38,7 +38,7 @@ export const obtener = async (req: Request, res: Response, next: NextFunction): 
   try {
     const usuario = await servicio.obtenerPorId(req.params.id);
     if (!usuario) {
-      res.status(404).json({ mensaje: 'Usuario no encontrado' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
       return;
     }
     res.json(usuario);
@@ -62,7 +62,7 @@ export const actualizar = async (req: Request<{ id: string }, {}, ActualizarUsua
   try {
     const usuario = await servicio.actualizar(req.params.id, req.body);
     if (!usuario) {
-      res.status(404).json({ mensaje: 'Usuario no encontrado' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
       return;
     }
     res.json(usuario);
@@ -71,15 +71,15 @@ export const actualizar = async (req: Request<{ id: string }, {}, ActualizarUsua
   }
 };
 
-/** Elimina un usuario por ID */
+/** Desactiva un usuario por ID (borrado lógico) */
 export const eliminar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const eliminado = await servicio.eliminar(req.params.id);
     if (!eliminado) {
-      res.status(404).json({ mensaje: 'Usuario no encontrado' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
       return;
     }
-    res.json({ mensaje: 'Usuario eliminado' });
+    res.status(204).send();
   } catch (error) {
     next(error);
   }

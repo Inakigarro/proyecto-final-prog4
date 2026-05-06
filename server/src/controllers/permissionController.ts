@@ -23,7 +23,7 @@ export const obtener = async (req: Request, res: Response, next: NextFunction): 
   try {
     const permiso = await servicio.obtenerPorId(req.params.id);
     if (!permiso) {
-      res.status(404).json({ mensaje: 'Permiso no encontrado' });
+      res.status(404).json({ message: 'Permiso no encontrado' });
       return;
     }
     res.json(permiso);

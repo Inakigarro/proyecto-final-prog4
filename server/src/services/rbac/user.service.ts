@@ -1,5 +1,5 @@
 import User, { IUser } from "../../models/User";
-import { CrearUsuarioDto, ActualizarUsuarioDto, UsuarioResponseDto, RolResponseDto } from "../../types";
+import { CrearUsuarioDto, ActualizarUsuarioDto, UsuarioResponseDto } from "../../types";
 import { IUserService } from "../../types/rbac/user.service.interface";
 import { IRole } from "../../models/Role";
 import { IPermission } from "../../models/Permission";
@@ -43,8 +43,8 @@ export class UserService implements IUserService {
    * @returns Lista de usuarios como DTOs de respuesta.
    */
   async obtenerTodos(): Promise<UsuarioResponseDto[]> {
-    const usuarios = await User.find().populate(POPULATE_ROLES);
-    return usuarios.map(mapearAResponseDto);
+    const usuarios = await User.find().lean().populate(POPULATE_ROLES);
+    return (usuarios as unknown as IUser[]).map(mapearAResponseDto);
   }
 
   /**
@@ -53,9 +53,9 @@ export class UserService implements IUserService {
    * @returns El usuario encontrado o null si no existe.
    */
   async obtenerPorId(id: string): Promise<UsuarioResponseDto | null> {
-    const usuario = await User.findById(id).populate(POPULATE_ROLES);
+    const usuario = await User.findById(id).lean().populate(POPULATE_ROLES);
     if (!usuario) return null;
-    return mapearAResponseDto(usuario);
+    return mapearAResponseDto(usuario as unknown as IUser);
   }
 
   /**
@@ -64,9 +64,9 @@ export class UserService implements IUserService {
    * @returns El usuario encontrado o null si no existe.
    */
   async obtenerPerfil(id: string): Promise<UsuarioResponseDto | null> {
-    const usuario = await User.findById(id).populate(POPULATE_ROLES);
+    const usuario = await User.findById(id).lean().populate(POPULATE_ROLES);
     if (!usuario) return null;
-    return mapearAResponseDto(usuario);
+    return mapearAResponseDto(usuario as unknown as IUser);
   }
 
   /**
@@ -76,7 +76,6 @@ export class UserService implements IUserService {
    */
   async crear(dto: CrearUsuarioDto): Promise<UsuarioResponseDto> {
     const usuario = await User.create(dto);
-    // Popular roles después de crear para devolver datos completos
     await usuario.populate(POPULATE_ROLES);
     return mapearAResponseDto(usuario);
   }
@@ -102,19 +101,19 @@ export class UserService implements IUserService {
     const usuario = await User.findByIdAndUpdate(id, dto, {
       new: true,
       runValidators: true,
-    }).populate(POPULATE_ROLES);
+    }).lean().populate(POPULATE_ROLES);
 
     if (!usuario) return null;
-    return mapearAResponseDto(usuario);
+    return mapearAResponseDto(usuario as unknown as IUser);
   }
 
   /**
-   * Elimina un usuario por su ID.
-   * @param id - ID del usuario a eliminar.
-   * @returns true si fue eliminado, false si no se encontró.
+   * Desactiva un usuario por su ID (borrado lógico).
+   * @param id - ID del usuario a desactivar.
+   * @returns true si fue desactivado, false si no se encontró.
    */
   async eliminar(id: string): Promise<boolean> {
-    const resultado = await User.findByIdAndDelete(id);
+    const resultado = await User.findByIdAndUpdate(id, { activo: false });
     return resultado !== null;
   }
 }

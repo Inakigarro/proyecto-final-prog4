@@ -4,6 +4,7 @@ export interface ICategory extends Document {
   _id: Types.ObjectId;
   nombre: string;
   items: Types.ObjectId[];
+  activo: boolean;
 }
 
 const categorySchema = new Schema<ICategory>(
@@ -17,11 +18,9 @@ const categorySchema = new Schema<ICategory>(
     },
     items: {
       type: [{ type: Schema.Types.ObjectId, ref: 'Item' }],
-      validate: {
-        validator: (arr: Types.ObjectId[]) => arr.length >= 1,
-        message: 'Una categoria debe tener al menos 1 item asociado',
-      },
+      default: [],
     },
+    activo: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

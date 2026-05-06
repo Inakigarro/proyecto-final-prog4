@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { logger } from '../config/logger';
 
 /**
  * Middleware global de manejo de errores.
@@ -9,36 +10,36 @@ export const errorHandler = (error: any, _req: Request, res: Response, _next: Ne
   // Error de clave duplicada en MongoDB (ej: email o nombre ya existe)
   if (error.code === 11000) {
     const campo = Object.keys(error.keyValue)[0];
-    res.status(409).json({ mensaje: `El valor del campo '${campo}' ya está en uso` });
+    res.status(409).json({ message: `El valor del campo '${campo}' ya está en uso` });
     return;
   }
 
   // Error de validación de Mongoose
   if (error.name === 'ValidationError') {
-    const mensajes = Object.values(error.errors).map((e: any) => e.message);
-    res.status(400).json({ mensaje: 'Error de validación', errores: mensajes });
+    const errores = Object.values(error.errors).map((e: any) => e.message);
+    res.status(400).json({ message: 'Error de validación', errores });
     return;
   }
 
   // ObjectId inválido (ej: /api/users/id-que-no-es-objectid)
   if (error.name === 'CastError') {
-    res.status(400).json({ mensaje: `ID inválido: ${error.value}` });
+    res.status(400).json({ message: `ID inválido: ${error.value}` });
     return;
   }
 
   // Token JWT malformado (llega aquí si se propaga más allá del middleware auth)
   if (error.name === 'JsonWebTokenError') {
-    res.status(401).json({ mensaje: 'Token inválido' });
+    res.status(401).json({ message: 'Token inválido' });
     return;
   }
 
   // Token JWT expirado
   if (error.name === 'TokenExpiredError') {
-    res.status(401).json({ mensaje: 'Token expirado' });
+    res.status(401).json({ message: 'Token expirado' });
     return;
   }
 
   // Error genérico
-  console.error(error);
-  res.status(500).json({ mensaje: 'Error interno del servidor' });
+  logger.error('Error interno del servidor', { error: String(error), stack: error?.stack });
+  res.status(500).json({ message: 'Error interno del servidor' });
 };
