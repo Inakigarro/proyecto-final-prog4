@@ -114,3 +114,21 @@
     grid-area: subtotal;
   }
 }
+
+.cart-row-problema {
+  background: #fff7e6;
+  border-left: 3px solid #d49d2a;
+}
+
+.cart-row-motivo {
+  margin: 6px 0 0 0;
+  font-size: 13px;
+  color: #b3700d;
+  font-weight: 500;
+}
+
+.cart-row-precio-aviso {
+  color: #1a73e8;
+  font-size: 12px;
+  font-weight: 500;
+}
