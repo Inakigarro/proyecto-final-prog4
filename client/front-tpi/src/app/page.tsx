@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import CardProduct from "@/component/layout/card/card";
 import { useCart } from "@/context/CartContext";
+
+/** Breakpoint debajo del cual se navega directo a /carrito al agregar. */
+const MOBILE_BREAKPOINT = 768;
 
 type Product = {
   id: string;
@@ -21,6 +25,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { agregar } = useCart();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -40,6 +45,19 @@ export default function Home() {
 
     fetchProducts();
   }, []);
+
+  const handleAgregar = (product: Product) => {
+    agregar({
+      itemId: product.id,
+      nombre: product.nombre,
+      precioUnitario: product.precioUnitario,
+      cantidad: 1,
+    });
+
+    if (window.innerWidth < MOBILE_BREAKPOINT) {
+      router.push("/carrito");
+    }
+  };
 
   if (loading) {
     return (
@@ -73,14 +91,7 @@ export default function Home() {
                 title={product.nombre}
                 price={`$${product.precioUnitario}`}
                 description={`Categoría: ${product.category.map(cat => cat.nombre).join(", ")}`}
-                onAddToCart={() =>
-                  agregar({
-                    itemId: product.id,
-                    nombre: product.nombre,
-                    precioUnitario: product.precioUnitario,
-                    cantidad: 1,
-                  })
-                }
+                onAddToCart={() => handleAgregar(product)}
               />
             ))}
           </div>

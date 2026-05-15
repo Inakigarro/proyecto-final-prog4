@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * CartContext — estado global del carrito de compras.
+ *
+ * El carrito vive 100% en el cliente. Se persiste en localStorage para
+ * sobrevivir a recargas. El backend solo se consulta en /validate y /checkout.
+ */
+
 import {
   createContext,
   useCallback,
@@ -11,9 +18,14 @@ import {
 } from 'react';
 import type { CartItem } from '@/lib/cart-types';
 
+
+// Tipos internos
+
+
 interface CartState {
   items: CartItem[];
   hidratado: boolean;
+  ultimoAgregado: CartItem | null;
 }
 
 type CartAction =
@@ -21,47 +33,41 @@ type CartAction =
   | { type: 'AGREGAR'; item: CartItem }
   | { type: 'QUITAR'; itemId: string }
   | { type: 'ACTUALIZAR_CANTIDAD'; itemId: string; cantidad: number }
-  | { type: 'VACIAR' };
+  | { type: 'VACIAR' }
+  | { type: 'CERRAR_CONFIRMACION' };
 
 interface CartContextValue {
   state: CartState;
   cantidadTotal: number;
   subtotalEstimado: number;
-
-  /**
-   * Agrega un item al carrito. Si ya existe, suma cantidades.
-   * @param item Datos del item a agregar (debe traer cantidad >= 1).
-   */
   agregar: (item: CartItem) => void;
-  /** Elimina un item del carrito por id. */
   quitar: (itemId: string) => void;
-  /**
-   * Setea la cantidad de un item. Si la cantidad queda <= 0, lo elimina.
-   * @param itemId    Id del item a modificar.
-   * @param cantidad  Nueva cantidad (entero).
-   */
   actualizarCantidad: (itemId: string, cantidad: number) => void;
-  /** Vacía el carrito completo. */
   vaciar: () => void;
+  cerrarConfirmacion: () => void;
 }
 
-/** Key de localStorage donde se persiste el carrito. */
+// Constantes
+
 const STORAGE_KEY = 'techpoint:cart';
 
 const ESTADO_INICIAL: CartState = {
   items: [],
   hidratado: false,
+  ultimoAgregado: null,
 };
+
+// Reducer (puro, testeable sin mocks)
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'HIDRATAR':
-      return { items: action.items, hidratado: true };
+      return { ...state, items: action.items, hidratado: true };
 
     case 'AGREGAR': {
       const existente = state.items.find((i) => i.itemId === action.item.itemId);
+      const nuevoUltimoAgregado: CartItem = { ...action.item };
 
-      // Si ya está, sumamos cantidades sin duplicar la fila.
       if (existente) {
         return {
           ...state,
@@ -70,10 +76,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
               ? { ...i, cantidad: i.cantidad + action.item.cantidad }
               : i
           ),
+          ultimoAgregado: nuevoUltimoAgregado,
         };
       }
 
-      return { ...state, items: [...state.items, action.item] };
+      return {
+        ...state,
+        items: [...state.items, action.item],
+        ultimoAgregado: nuevoUltimoAgregado,
+      };
     }
 
     case 'QUITAR':
@@ -83,7 +94,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       };
 
     case 'ACTUALIZAR_CANTIDAD': {
-      // Cantidad <= 0 equivale a quitar el item del carrito.
       if (action.cantidad <= 0) {
         return {
           ...state,
@@ -101,18 +111,19 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'VACIAR':
       return { ...state, items: [] };
 
+    case 'CERRAR_CONFIRMACION':
+      return { ...state, ultimoAgregado: null };
+
     default:
       return state;
   }
 }
 
+// Context
+
 const CartContext = createContext<CartContextValue | null>(null);
 
-/**
- * Provider del carrito. Debe envolver toda la app (típicamente en layout.tsx).
- * Maneja la hidratación desde localStorage en el primer render del cliente
- * y persiste cambios en cada actualización posterior.
- */
+// Provider
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, ESTADO_INICIAL);
 
@@ -121,13 +132,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       const items = raw ? (JSON.parse(raw) as CartItem[]) : [];
-      // Sanity check: si alguien manipuló el storage, ignoramos lo inválido.
       const itemsValidos = Array.isArray(items)
         ? items.filter(esCartItemValido)
         : [];
       dispatch({ type: 'HIDRATAR', items: itemsValidos });
     } catch {
-      // localStorage corrupto o no disponible: arrancamos con carrito vacío.
       dispatch({ type: 'HIDRATAR', items: [] });
     }
   }, []);
@@ -138,10 +147,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
     } catch {
+      // Storage lleno o deshabilitado, silenciamos.
     }
   }, [state.items, state.hidratado]);
 
-  // Actions estables (referencia constante) para no romper memos en consumers.
+  // Actions estables.
   const agregar = useCallback((item: CartItem) => {
     dispatch({ type: 'AGREGAR', item });
   }, []);
@@ -158,7 +168,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'VACIAR' });
   }, []);
 
-  // Derivados memoizados.
+  const cerrarConfirmacion = useCallback(() => {
+    dispatch({ type: 'CERRAR_CONFIRMACION' });
+  }, []);
+
   const cantidadTotal = useMemo(
     () => state.items.reduce((acc, i) => acc + i.cantidad, 0),
     [state.items]
@@ -182,15 +195,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     quitar,
     actualizarCantidad,
     vaciar,
+    cerrarConfirmacion,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
-/**
- * Hook para consumir el carrito desde cualquier client component.
- * Lanza error si se usa fuera de CartProvider — esto detecta bugs temprano.
- */
+// Hook de consumo
+
 export function useCart(): CartContextValue {
   const ctx = useContext(CartContext);
   if (!ctx) {
@@ -199,10 +211,8 @@ export function useCart(): CartContextValue {
   return ctx;
 }
 
-/**
- * valida que un objeto deserializado de localStorage
- * tenga la forma esperada de CartItem.
- */
+// Helpers
+
 function esCartItemValido(x: unknown): x is CartItem {
   if (!x || typeof x !== 'object') return false;
   const o = x as Record<string, unknown>;
