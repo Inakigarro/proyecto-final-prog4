@@ -2,16 +2,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 40px;
-  padding: 0 16px;
+  height: 64px;
+  padding: 0 32px;
   background: #102a43;
   color: #ffffff;
-  gap: 16px;
+  gap: 24px;
   min-width: 0;
 }
 
 .navbar-logo {
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -28,15 +28,15 @@
 
 .navbar-search input {
   width: 100%;
-  max-width: 320px;
-  height: 28px;
+  max-width: 480px;
+  height: 40px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
-  padding: 0 12px;
+  padding: 0 18px;
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   outline: none;
-  font-size: 12px;
+  font-size: 14px;
   min-width: 0;
 }
 
@@ -47,13 +47,13 @@
 .navbar-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
   flex-shrink: 0;
 }
 
 .navbar-list {
   display: flex;
-  gap: 10px;
+  gap: 4px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -66,9 +66,9 @@
 .navbar-link {
   color: #ffffff;
   text-decoration: none;
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 12px;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 8px;
   transition: background 0.16s ease;
   white-space: nowrap;
 }
@@ -83,8 +83,8 @@
   background: transparent;
   color: #ffffff;
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: 42px;
+  height: 42px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -99,13 +99,49 @@
 }
 
 .login-icon {
-  font-size: 14px;
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .app-navbar {
+    height: 56px;
+    padding: 0 16px;
+    gap: 16px;
+  }
+
+  .navbar-logo {
+    font-size: 15px;
+  }
+
+  .navbar-search input {
+    max-width: 100%;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .navbar-list {
+    gap: 2px;
+  }
+
+  .navbar-link {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .icon-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .login-icon {
+    font-size: 16px;
+  }
 }
 
 @media (max-width: 640px) {
   .app-navbar {
-    padding: 0 10px;
-    gap: 10px;
+    padding: 0 12px;
+    gap: 12px;
   }
 
   .navbar-search {
@@ -113,11 +149,11 @@
   }
 
   .navbar-list {
-    gap: 6px;
+    gap: 2px;
   }
 
   .navbar-link {
-    font-size: 11px;
-    padding: 5px 8px;
+    font-size: 12px;
+    padding: 6px 8px;
   }
 }
