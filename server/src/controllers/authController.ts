@@ -2,11 +2,15 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import User, { validarComplejidadPassword } from '../models/User';
+import User from '../models/User';
 import Role from '../models/Role';
 import RefreshToken from '../models/RefreshToken';
 import PasswordResetToken from '../models/PasswordResetToken';
 import { LoginInput, RegisterInput, AuthResponse, JwtPayload, RequestConUsuario } from '../types';
+import { IUser } from '../models/User';
+import { IRefreshToken } from '../models/RefreshToken';
+
+type RefreshTokenPopulado = Omit<IRefreshToken, 'usuario'> & { usuario: IUser };
 
 /** Genera un access token JWT de corta duración (15 minutos) */
 const generarAccessToken = (payload: JwtPayload): string => {
@@ -35,16 +39,6 @@ export const register = async (
   next: NextFunction
 ): Promise<void> => {
   const { nombre, apellido, email, password, fechaNacimiento } = req.body;
-  if (!nombre || !apellido || !email || !password || !fechaNacimiento) {
-    res.status(400).json({ message: 'Todos los campos son obligatorios: nombre, apellido, email, password, fechaNacimiento' });
-    return;
-  }
-
-  const FECHA_REGEX = /^\d{2}\/\d{2}\/\d{4}$/;
-  if (!FECHA_REGEX.test(fechaNacimiento)) {
-    res.status(400).json({ message: 'Formato de fecha inválido. Use dd/MM/YYYY' });
-    return;
-  }
 
   const session = await mongoose.startSession();
   try {
@@ -86,11 +80,6 @@ export const login = async (
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      res.status(400).json({ message: 'Email y contraseña son obligatorios' });
-      return;
-    }
-
     const usuario = await User.findOne({ email, activo: true }).select('+password');
     if (!usuario) {
       res.status(401).json({ message: 'Credenciales inválidas' });
@@ -122,18 +111,13 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
   try {
     const { refreshToken: tokenRecibido } = req.body as { refreshToken: string };
 
-    if (!tokenRecibido) {
-      res.status(400).json({ message: 'Refresh token requerido' });
-      return;
-    }
-
     const tokenGuardado = await RefreshToken.findOne({ token: tokenRecibido }).populate('usuario');
     if (!tokenGuardado) {
       res.status(401).json({ message: 'Refresh token inválido o expirado' });
       return;
     }
 
-    const usuario = tokenGuardado.usuario as any;
+    const { usuario } = tokenGuardado as unknown as RefreshTokenPopulado;
 
     // Rotar: eliminar el token anterior y emitir uno nuevo
     await tokenGuardado.deleteOne();
@@ -173,11 +157,6 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
   try {
     const { email } = req.body as { email: string };
 
-    if (!email) {
-      res.status(400).json({ message: 'El email es obligatorio' });
-      return;
-    }
-
     const usuario = await User.findOne({ email, activo: true });
     // Respuesta genérica siempre para no revelar si el email existe
     if (!usuario) {
@@ -204,16 +183,6 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 export const resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { token, nuevaPassword } = req.body as { token: string; nuevaPassword: string };
-
-    if (!token || !nuevaPassword) {
-      res.status(400).json({ message: 'Token y nueva contraseña son obligatorios' });
-      return;
-    }
-
-    if (!validarComplejidadPassword(nuevaPassword)) {
-      res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo especial' });
-      return;
-    }
 
     const tokenGuardado = await PasswordResetToken.findOne({ token });
     if (!tokenGuardado) {

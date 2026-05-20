@@ -1,17 +1,22 @@
-import { ICategory } from "../../models/Category";
+import { CrearCategoryDto, ActualizarCategoryDto, CategoryResponseDto } from '../categories.dto';
 
-export interface CategoryService {
-  createCategory(category: ICategory): Promise< ICategory >;
+/**
+ * Contrato del servicio de categorías.
+ * Nota: los métodos exponen DTOs de respuesta, no documentos Mongoose crudos.
+ */
+export interface ICategoryService {
+  /** Crea una nueva categoría */
+  crear(dto: CrearCategoryDto): Promise<CategoryResponseDto>;
 
-  updateCategory(id: string, category: Partial< ICategory >): Promise<ICategory>;
+  /** Actualiza una categoría activa por ID. Devuelve null si no existe. */
+  actualizar(id: string, dto: ActualizarCategoryDto): Promise<CategoryResponseDto | null>;
 
-  disableCategory(id: string): Promise<void>;
+  /** Borrado lógico. Devuelve true si existía y fue desactivada. */
+  eliminar(id: string): Promise<boolean>;
 
-  getAllCategories(): Promise<ICategory[]>;
+  /** Lista todas las categorías activas con sus items populados */
+  buscarTodasConItems(): Promise<CategoryResponseDto[]>;
 
-  getAllCategoriesWithItems(): Promise<ICategory[]>;
-
-  getCategoryById(id: string): Promise<ICategory | null>;
-
-  getCategoryWithItemsById(id: string): Promise<ICategory | null>;
+  /** Obtiene una categoría activa por ID con sus items populados. Devuelve null si no existe. */
+  buscarPorIdConItems(id: string): Promise<CategoryResponseDto | null>;
 }

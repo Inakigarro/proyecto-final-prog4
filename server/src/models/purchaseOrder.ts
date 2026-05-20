@@ -1,5 +1,4 @@
 import { Schema, model, Document, Types } from 'mongoose';
-import PurchaseOrderDetail from './purchaseOrderDetail';
 
 // Forma del documento PurchaseOrder en la base de datos
 export interface IPurchaseOrder extends Document {
@@ -12,15 +11,6 @@ export interface IPurchaseOrder extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
-
-/**
- * Calcula el monto total de la orden aplicando los descuentos acumulados.
- * Cada descuento se aplica como un porcentaje (0-100) sobre el monto.
- */
-const calcularMontoTotal = (montoBase: number, descuentos: number[]): number => {
-  const factorDescuento = descuentos.reduce((acc, descuento) => acc * (1 - descuento / 100), 1);
-  return parseFloat((montoBase * factorDescuento).toFixed(2));
-};
 
 const purchaseOrderSchema = new Schema<IPurchaseOrder>(
   {
@@ -50,13 +40,9 @@ const purchaseOrderSchema = new Schema<IPurchaseOrder>(
   { timestamps: true }
 );
 
-// Calcula el monto total antes de guardar sumando los montos de los detalles
-// y aplicando los descuentos a nivel de orden
-purchaseOrderSchema.pre('save', async function (next) {
-  const detalles = await PurchaseOrderDetail.find({ _id: { $in: this.detalles } });
-  const montoBase = detalles.reduce((acc, detalle) => acc + detalle.monto, 0);
-  this.montoTotal = calcularMontoTotal(montoBase, this.descuentos);
-  next();
-});
+// Nota: montoTotal es calculado y asignado explícitamente por CartService.checkout
+// antes de llamar a PurchaseOrder.create(). No se recalcula en pre-save porque
+// la consulta a PurchaseOrderDetail no puede ver detalles no confirmados
+// dentro de una sesión de transacción activa.
 
 export default model<IPurchaseOrder>('PurchaseOrder', purchaseOrderSchema);

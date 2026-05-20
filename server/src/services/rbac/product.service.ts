@@ -6,21 +6,19 @@ import { IProductService } from "../../types/rbac/product.service.interface";
 
 const POPULATE_CATEGORIES = { path: 'category' };
 
-/**
- * Convierte un documento Mongoose al DTO de respuesta.
- * @param product - Documento del item desde MongoDB con categorías populadas.
- * @returns DTO con los datos públicos del item.
- */
-function mapearAResponseDto(product: IItem): ItemResponse {
-  const categorias = product.category as unknown as ICategory[];
+type ItemPopulado = Omit<IItem, 'category'> & { category: ICategory[] };
 
+/**
+ * Convierte un documento Mongoose (con categorías populadas) al DTO de respuesta.
+ */
+function mapearAResponseDto(product: ItemPopulado): ItemResponse {
   return {
     id: product._id.toString(),
     nombre: product.nombre,
     descripcion: product.descripcion,
     precioUnitario: product.precioUnitario,
     stock: product.stock,
-    category: categorias.map((cat) => ({
+    category: product.category.map((cat) => ({
       id: cat._id.toString(),
       nombre: cat.nombre,
       items: cat.items.map((i) => i.toString()),
@@ -38,7 +36,7 @@ export class ProductService implements IProductService {
   async createProduct(product: CrearItemDto): Promise<ItemResponse> {
     const item = await Item.create(product);
     await item.populate(POPULATE_CATEGORIES);
-    return mapearAResponseDto(item);
+    return mapearAResponseDto(item as unknown as ItemPopulado);
   }
 
   /**
@@ -58,7 +56,7 @@ export class ProductService implements IProductService {
       { new: true }
     ).lean().populate(POPULATE_CATEGORIES);
 
-    return updated ? mapearAResponseDto(updated as unknown as IItem) : null;
+    return updated ? mapearAResponseDto(updated as unknown as ItemPopulado) : null;
   }
 
   /**
@@ -106,7 +104,7 @@ export class ProductService implements IProductService {
     ]);
 
     return {
-      datos: (productos as unknown as IItem[]).map(mapearAResponseDto),
+      datos: (productos as unknown as ItemPopulado[]).map(mapearAResponseDto),
       total,
       pagina,
       limite,
@@ -121,6 +119,6 @@ export class ProductService implements IProductService {
    */
   async getProductById(id: string): Promise<ItemResponse | null> {
     const product = await Item.findOne({ _id: id, activo: { $ne: false } }).lean().populate(POPULATE_CATEGORIES);
-    return product ? mapearAResponseDto(product as unknown as IItem) : null;
+    return product ? mapearAResponseDto(product as unknown as ItemPopulado) : null;
   }
 }

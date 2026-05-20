@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import Category, { ICategory } from "../../models/Category";
 import { IItem } from "../../models/Item";
 import { CrearCategoryDto, ActualizarCategoryDto, CategoryResponseDto } from "../../types/categories.dto";
+import { ICategoryService } from "../../types/rbac/category.service.interface";
 
 /**
  * Convierte un documento Mongoose al DTO de respuesta.
@@ -20,7 +21,7 @@ const mapearACategoryResponseDto = (category: ICategory): CategoryResponseDto =>
 /**
  * Implementación del servicio de categorías.
  */
-export class CategoryService {
+export class CategoryService implements ICategoryService {
   /**
    * Crea una nueva categoría.
    */

@@ -1,8 +1,12 @@
 import { Router } from 'express';
-import * as cartController from '../controllers/cartController';
+import { CartService } from '../services/rbac/cart.service';
+import { crearCartController } from '../controllers/cartController';
 import { verificarToken } from '../middlewares/auth';
+import { validar } from '../middlewares/validar';
+import { ValidarCarritoSchema, CheckoutSchema } from '../schemas/cart.schemas';
 
 const router = Router();
+const controller = crearCartController(new CartService());
 
 /**
  * Todas las rutas del carrito requieren usuario autenticado.
@@ -11,7 +15,7 @@ const router = Router();
  */
 router.use(verificarToken);
 
-router.post('/validate', cartController.validar);
-router.post('/checkout', cartController.checkout);
+router.post('/validate', validar(ValidarCarritoSchema), controller.validar);
+router.post('/checkout', validar(CheckoutSchema),       controller.checkout);
 
 export default router;

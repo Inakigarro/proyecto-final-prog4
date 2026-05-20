@@ -2,6 +2,7 @@ import 'dotenv/config';
 import mongoose, { Types } from 'mongoose';
 import Category, { ICategory } from '../models/Category';
 import Item, { IItem } from '../models/Item';
+import { logger } from '../config/logger';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CATÁLOGO TECNOLÓGICO
@@ -72,7 +73,7 @@ const CATALOGO: { categoria: string; items: { nombre: string; precioUnitario: nu
  */
 async function seed(): Promise<void> {
   await mongoose.connect(process.env.MONGODB_URI as string);
-  console.log('Conectado a MongoDB');
+  logger.info('Conectado a MongoDB');
 
   let categoriasSincronizadas = 0;
   let itemsSincronizados = 0;
@@ -95,14 +96,11 @@ async function seed(): Promise<void> {
     await categoria.save();
 
     categoriasSincronizadas++;
-    console.log(`✓ Categoría '${grupo.categoria}' con ${idsItems.length} items`);
+    logger.info(`✓ Categoría sincronizada`, { categoria: grupo.categoria, items: idsItems.length });
   }
 
-  console.log('');
-  console.log(`✓ Total: ${categoriasSincronizadas} categorías y ${itemsSincronizados} items sincronizados`);
-
+  logger.info(`✓ Seeder finalizado`, { categorias: categoriasSincronizadas, items: itemsSincronizados });
   await mongoose.disconnect();
-  console.log('Seeder finalizado');
 }
 
 /**
@@ -143,6 +141,6 @@ async function upsertItem(
 }
 
 seed().catch((error) => {
-  console.error('Error en el seeder:', error);
+  logger.error('Error en el seeder', { error: String(error) });
   process.exit(1);
 });

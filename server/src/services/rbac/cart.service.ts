@@ -2,13 +2,12 @@ import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 import Item, { IItem } from '../../models/Item';
 import PaymentMethod from '../../models/paymentMethod';
-import PurchaseOrder, { IPurchaseOrder } from '../../models/purchaseOrder';
+import PurchaseOrder from '../../models/purchaseOrder';
 import PurchaseOrderDetail, {
   IPurchaseOrderDetail,
 } from '../../models/purchaseOrderDetail';
 import User from '../../models/User';
 import {
-  CartItemDto,
   CheckoutDto,
   CheckoutResponse,
   DetalleOrdenResponse,
@@ -17,19 +16,7 @@ import {
   ValidarCarritoDto,
 } from '../../types/rbac/cart.dtos';
 import { ICartService } from '../../types/rbac/cart.service.interface';
-
-/**
- * Calcula el monto total aplicando descuentos acumulativos en porcentaje.
- * Misma lógica que la del modelo PurchaseOrder, replicada para usar
- * antes de persistir la orden.
- */
-function calcularMontoTotal(montoBase: number, descuentos: number[]): number {
-  const factorDescuento = descuentos.reduce(
-    (acc, descuento) => acc * (1 - descuento / 100),
-    1
-  );
-  return parseFloat((montoBase * factorDescuento).toFixed(2));
-}
+import { aplicarDescuentos } from '../../utils/descuentos';
 
 /**
  * Valida que un id sea un ObjectId de Mongo bien formado.
@@ -54,17 +41,18 @@ function validarDescuentos(descuentos: number[]): void {
   }
 }
 
+type PurchaseOrderDetailPopulado = Omit<IPurchaseOrderDetail, 'item'> & { item: IItem };
+
 /**
  * Mapea un PurchaseOrderDetail (con item populado) a su DTO de respuesta.
  */
 function mapearDetalleAResponseDto(
-  detalle: IPurchaseOrderDetail
+  detalle: PurchaseOrderDetailPopulado
 ): DetalleOrdenResponse {
-  const item = detalle.item as unknown as IItem;
   return {
     id: detalle._id.toString(),
-    itemId: item._id.toString(),
-    nombreItem: item.nombre,
+    itemId: detalle.item._id.toString(),
+    nombreItem: detalle.item.nombre,
     cantidad: detalle.cantidad,
     precioUnitario: detalle.precioUnitario,
     monto: detalle.monto,
@@ -224,7 +212,7 @@ export class CartService implements ICartService {
 
       // Calcular el monto total y crear la orden
       const montoBase = detalles.reduce((acc, d) => acc + d.monto, 0);
-      const montoTotal = calcularMontoTotal(montoBase, descuentos);
+      const montoTotal = aplicarDescuentos(montoBase, descuentos);
 
       const [orden] = await PurchaseOrder.create(
         [{ usuario: usuario._id, detalles: detalles.map((d) => d._id), metodoPago: metodoPago._id, descuentos, montoTotal }],
@@ -242,7 +230,7 @@ export class CartService implements ICartService {
         ordenId: orden._id.toString(),
         usuarioId: usuario._id.toString(),
         metodoPagoId: metodoPago._id.toString(),
-        detalles: detallesPopulados.map(mapearDetalleAResponseDto),
+        detalles: (detallesPopulados as unknown as PurchaseOrderDetailPopulado[]).map(mapearDetalleAResponseDto),
         descuentos: orden.descuentos,
         montoTotal: orden.montoTotal,
         fechaCreacion: orden.createdAt,

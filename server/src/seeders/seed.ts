@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Permission, { IPermission } from '../models/Permission';
 import Role from '../models/Role';
 import User from '../models/User';
+import { logger } from '../config/logger';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PERMISOS INICIALES
@@ -34,7 +35,7 @@ const ROL_USUARIO         = 'usuario';
 
 async function seed(): Promise<void> {
   await mongoose.connect(process.env.MONGODB_URI as string);
-  console.log('Conectado a MongoDB');
+  logger.info('Conectado a MongoDB');
 
   // 1. Crear o actualizar todos los permisos definidos arriba
   const permisosGuardados: IPermission[] = [];
@@ -46,7 +47,7 @@ async function seed(): Promise<void> {
     );
     permisosGuardados.push(permiso);
   }
-  console.log(`✓ ${permisosGuardados.length} permisos sincronizados`);
+  logger.info(`✓ ${permisosGuardados.length} permisos sincronizados`);
 
   // 2. Crear o actualizar el rol SuperAdmin con TODOS los permisos
   const idsTodosLosPermisos = permisosGuardados.map((p) => p._id);
@@ -55,7 +56,7 @@ async function seed(): Promise<void> {
     { nombre: SUPERADMIN_ROL, descripcion: 'Acceso total a la aplicación', permisos: idsTodosLosPermisos },
     { upsert: true, new: true }
   );
-  console.log(`✓ Rol '${SUPERADMIN_ROL}' sincronizado con ${idsTodosLosPermisos.length} permisos`);
+  logger.info(`✓ Rol '${SUPERADMIN_ROL}' sincronizado`, { permisos: idsTodosLosPermisos.length });
 
   // 3. Crear o actualizar el rol Usuario con permisos básicos de lectura
   const permisosUsuario = permisosGuardados.filter((p) => p.nombre === 'leer_usuario');
@@ -64,7 +65,7 @@ async function seed(): Promise<void> {
     { nombre: ROL_USUARIO, descripcion: 'Usuario estándar de la aplicación', permisos: permisosUsuario.map((p) => p._id) },
     { upsert: true, new: true }
   );
-  console.log(`✓ Rol '${ROL_USUARIO}' sincronizado`);
+  logger.info(`✓ Rol '${ROL_USUARIO}' sincronizado`);
 
   // 4. Crear el usuario SuperAdmin si no existe
   const usuarioExistente = await User.findOne({ email: SUPERADMIN_EMAIL });
@@ -77,24 +78,24 @@ async function seed(): Promise<void> {
       fechaNacimiento: new Date(1990, 0, 1),
       roles: [rolSuperAdmin._id],
     });
-    console.log(`✓ Usuario SuperAdmin creado: ${SUPERADMIN_EMAIL}`);
-    console.log(`  Contraseña inicial: ${SUPERADMIN_PASSWORD}  ← cambiar en producción`);
+    logger.info(`✓ Usuario SuperAdmin creado`, { email: SUPERADMIN_EMAIL });
+    logger.warn(`Contraseña inicial expuesta en log — cambiar en producción`, { password: SUPERADMIN_PASSWORD });
   } else {
     // Asegurarse de que tenga el rol superadmin asignado
     if (!usuarioExistente.roles.some((r) => r.equals(rolSuperAdmin._id))) {
       usuarioExistente.roles.push(rolSuperAdmin._id);
       await usuarioExistente.save();
-      console.log(`✓ Rol '${SUPERADMIN_ROL}' asignado al usuario SuperAdmin existente`);
+      logger.info(`✓ Rol '${SUPERADMIN_ROL}' asignado al usuario SuperAdmin existente`);
     } else {
-      console.log(`✓ Usuario SuperAdmin ya existe: ${SUPERADMIN_EMAIL}`);
+      logger.info(`✓ Usuario SuperAdmin ya existe`, { email: SUPERADMIN_EMAIL });
     }
   }
 
   await mongoose.disconnect();
-  console.log('Seeder finalizado');
+  logger.info('Seeder finalizado');
 }
 
 seed().catch((error) => {
-  console.error('Error en el seeder:', error);
+  logger.error('Error en el seeder', { error: String(error) });
   process.exit(1);
 });

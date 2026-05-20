@@ -98,13 +98,13 @@ luego filtra ítems con `$or`. El `countDocuments` y el `find` se ejecutan en pa
 
 ---
 
-## Fase 2 — Calidad de código (eliminar deuda técnica)
+## ✅ Fase 2 — Calidad de código (completada)
 
 No cambian la arquitectura, pero elevan la confiabilidad y mantenibilidad del código.
 
 ---
 
-### 2.1 Extraer `calcularMontoTotal` a un único utilitario compartido
+### ✅ 2.1 Extraer `calcularMontoTotal` a un único utilitario compartido
 
 **Problema:** La misma función está copiada en tres archivos:
 - `server/src/models/purchaseOrder.ts`
@@ -126,7 +126,7 @@ Luego reemplazar las tres implementaciones con un import a esta función.
 
 ---
 
-### 2.2 Eliminar los `as unknown as` reemplazándolos con tipos correctos
+### ✅ 2.2 Eliminar los `as unknown as` reemplazándolos con tipos correctos
 
 **Problema:** El cast `as unknown as` bypasea el sistema de tipos. Aparece en:
 - `cart.service.ts` — `detalle.item as unknown as IItem`
@@ -146,7 +146,7 @@ type ItemPopulado = Omit<IItem, 'category'> & { category: ICategory[] };
 
 ---
 
-### 2.3 Tipar `usuario` en `refreshToken` en lugar de usar `as any`
+### ✅ 2.3 Tipar `usuario` en `refreshToken` en lugar de usar `as any`
 
 **Archivo:** `server/src/controllers/authController.ts`
 
@@ -161,7 +161,7 @@ const tokenConUsuario = tokenGuardado as unknown as RefreshTokenPopulado;
 
 ---
 
-### 2.4 Agregar validación de variables de entorno al arranque
+### ✅ 2.4 Agregar validación de variables de entorno al arranque
 
 **Problema:** Si `JWT_SECRET` o `MONGODB_URI` no están definidas, el servidor arranca igual
 y falla en runtime con un error críptico.
@@ -184,7 +184,7 @@ Llamar `validarEnv()` en `index.ts` antes de cualquier otra inicialización.
 
 ---
 
-### 2.5 Reemplazar `console.log` / `console.error` con el logger estructurado
+### ✅ 2.5 Reemplazar `console.log` / `console.error` con el logger estructurado
 
 **Tarea:** Buscar todos los `console.log` y `console.error` en `server/src/` y reemplazarlos
 con llamadas al logger estructurado que ya existe en `config/logger.ts`.
@@ -196,7 +196,7 @@ grep -rn "console\." server/src/
 
 ---
 
-## Fase 3 — Validación de inputs con Zod
+## ✅ Fase 3 — Validación de inputs con Zod (completada)
 
 **Por qué Zod:** Genera tipos TypeScript automáticamente desde los schemas, evitando duplicar
 la definición entre el schema de validación y el tipo. Es la opción más ergonómica en proyectos
@@ -204,7 +204,7 @@ TypeScript puros.
 
 ---
 
-### 3.1 Instalar Zod
+### ✅ 3.1 Instalar Zod
 
 ```bash
 cd server && npm install zod
@@ -212,7 +212,7 @@ cd server && npm install zod
 
 ---
 
-### 3.2 Crear schemas de validación
+### ✅ 3.2 Crear schemas de validación
 
 **Archivo nuevo:** `server/src/schemas/auth.schemas.ts`
 
@@ -268,7 +268,7 @@ export const CrearItemSchema = z.object({
 
 ---
 
-### 3.3 Crear middleware genérico de validación
+### ✅ 3.3 Crear middleware genérico de validación
 
 **Archivo nuevo:** `server/src/middlewares/validar.ts`
 
@@ -293,7 +293,7 @@ export const validar = (schema: ZodSchema) =>
 
 ---
 
-### 3.4 Aplicar el middleware en las rutas
+### ✅ 3.4 Aplicar el middleware en las rutas
 
 ```typescript
 // authRoutes.ts
@@ -313,7 +313,7 @@ Con esto, los controllers pueden eliminar todas las validaciones manuales de cam
 
 ---
 
-## Fase 4 — Inyección de dependencias (patrón simple)
+## ✅ Fase 4 — Inyección de dependencias (patrón simple) (completada)
 
 **Objetivo:** Desacoplar los controllers de la instanciación de servicios para permitir
 testeo unitario real sin hackear imports.
@@ -322,7 +322,7 @@ No es necesario usar un framework de DI como InversifyJS. El patrón factory es 
 
 ---
 
-### 4.1 Convertir los controllers a factories
+### ✅ 4.1 Convertir los controllers a factories
 
 ```typescript
 // server/src/controllers/productController.ts
@@ -362,15 +362,29 @@ const controller = crearProductController(mockServicio);
 
 Aplicar el mismo patrón a los 7 controllers.
 
+**Implementado:** `product`, `cart`, `user`, `role`, `permission`, `category`.
+
+**`authController` — diferido:** usa modelos Mongoose directamente (sin servicio propio).
+Convertirlo requiere extraer un `AuthService` completo, que está fuera del alcance de esta
+fase. Los tests de sus endpoints (Fase 5.3) se cubren con integración contra
+`mongodb-memory-server`, donde no se necesita mock del servicio.
+
+**Corrección adicional:** `category.service.interface.ts` tenía nombres de métodos
+desactualizados (e.g., `createCategory` → `crear`). Se reescribió la interfaz como
+`ICategoryService` con los métodos reales, y se agregó `implements ICategoryService` a
+`CategoryService`.
+
 ---
 
-## Fase 5 — Tests
+## ✅ Fase 5 — Tests (completada)
 
 Sin tests, el código no puede considerarse de nivel Semi-Senior.
 
+**Resultado:** 34 tests passing (10 unitarios + 24 integración). 0 failures.
+
 ---
 
-### 5.1 Configurar Jest + ts-jest
+### ✅ 5.1 Configurar Jest + ts-jest
 
 ```bash
 cd server && npm install -D jest ts-jest @types/jest
@@ -388,7 +402,7 @@ export default {
 
 ---
 
-### 5.2 Tests unitarios de servicios (prioridad alta)
+### ✅ 5.2 Tests unitarios de servicios (prioridad alta)
 
 Hacer primero la Fase 4 (DI) para poder pasar mocks sin complicaciones.
 
@@ -411,7 +425,7 @@ Hacer primero la Fase 4 (DI) para poder pasar mocks sin complicaciones.
 
 ---
 
-### 5.3 Tests de integración de endpoints (prioridad media)
+### ✅ 5.3 Tests de integración de endpoints (prioridad media)
 
 ```bash
 npm install -D supertest @types/supertest mongodb-memory-server
@@ -467,13 +481,13 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 | 1.3 | Reset token eliminado del response | ✅ Completo |
 | 1.4 | Campo `descripcion` en Item | ✅ Completo |
 | 1.5 | Paginación y búsqueda en productos | ✅ Completo |
-| 2 | Calidad de código (DRY, tipado, logging, env vars) | ⏳ Pendiente |
-| 3 | Validación de inputs con Zod | ⏳ Pendiente |
-| 4 | Inyección de dependencias (factory pattern) | ⏳ Pendiente |
-| 5 | Tests unitarios e integración | ⏳ Pendiente |
+| 2 | Calidad de código (DRY, tipado, logging, env vars) | ✅ Completo |
+| 3 | Validación de inputs con Zod | ✅ Completo |
+| 4 | Inyección de dependencias (factory pattern) | ✅ Completo |
+| 5 | Tests unitarios e integración | ✅ Completo |
 | 6 | Documentación Swagger | ⏳ Pendiente |
 
-**Orden recomendado para lo que queda:** 2 → 3 → 4 → 5.2 → 5.3 → 6
+**Orden recomendado para lo que queda:** 6
 
 La Fase 4 (DI) debe hacerse antes de los tests de integración (5.3) porque los simplifica
 considerablemente. Los tests unitarios del utilitario `aplicarDescuentos` (5.2) se pueden

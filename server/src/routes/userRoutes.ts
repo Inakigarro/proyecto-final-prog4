@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import * as userController from '../controllers/userController';
+import { UserService } from '../services/rbac/user.service';
+import { crearUserController } from '../controllers/userController';
 import { verificarToken } from '../middlewares/auth';
 import { verificarSuperAdmin } from '../middlewares/verificarSuperAdmin';
 
@@ -9,18 +10,19 @@ import { verificarSuperAdmin } from '../middlewares/verificarSuperAdmin';
  * Las rutas de escritura y listado requieren rol superadmin.
  */
 const router = Router();
+const controller = crearUserController(new UserService());
 
 // Ruta del perfil propio — solo requiere estar autenticado
-router.get('/me', verificarToken, userController.perfil);
+router.get('/me', verificarToken, controller.perfil);
 
 // Resto de rutas requieren autenticación y rol superadmin
 router.use(verificarToken);
 router.use(verificarSuperAdmin);
 
-router.get('/', userController.listar);
-router.get('/:id', userController.obtener);
-router.post('/', userController.crear);
-router.put('/:id', userController.actualizar);
-router.delete('/:id', userController.eliminar);
+router.get('/',     controller.listar);
+router.get('/:id',  controller.obtener);
+router.post('/',    controller.crear);
+router.put('/:id',  controller.actualizar);
+router.delete('/:id', controller.eliminar);
 
 export default router;
