@@ -3,6 +3,7 @@ import { Schema, model, Document, Types } from 'mongoose';
 export interface IItem extends Document {
   _id: Types.ObjectId;
   nombre: string;
+  descripcion?: string;
   precioUnitario: number;
   stock: number;
   category: Types.ObjectId[];
@@ -17,6 +18,11 @@ const itemSchema = new Schema<IItem>(
       unique: true,
       trim: true,
       minlength: [3, 'El nombre del item debe tener al menos 3 caracteres'],
+    },
+    descripcion: {
+      type: String,
+      trim: true,
+      maxlength: [500, 'La descripción no puede superar los 500 caracteres'],
     },
     precioUnitario: {
       type: Number,

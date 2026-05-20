@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import mongoose from 'mongoose';
 import Item, { IItem } from '../../models/Item';
 import PaymentMethod from '../../models/paymentMethod';
 import PurchaseOrder, { IPurchaseOrder } from '../../models/purchaseOrder';
@@ -159,7 +160,7 @@ export class CartService implements ICartService {
    *  4. Crea la PurchaseOrder con el montoTotal calculado.
    */
   async checkout(usuarioId: string, dto: CheckoutDto): Promise<CheckoutResponse> {
-    // 1) Validaciones iniciales del DTO
+    // Validaciones del DTO antes de abrir la sesión
     validarObjectId(usuarioId, 'usuarioId');
     validarObjectId(dto.metodoPagoId, 'metodoPagoId');
 
@@ -178,90 +179,61 @@ export class CartService implements ICartService {
     const descuentos = dto.descuentos ?? [];
     validarDescuentos(descuentos);
 
-    // 2) Verificamos usuario activo
-    const usuario = await User.findById(usuarioId);
-    if (!usuario) {
-      throw new Error('El usuario no existe');
-    }
-    if (!usuario.activo) {
-      throw new Error('El usuario está inactivo y no puede realizar compras');
-    }
-
-    // 3) Verificamos método de pago activo
-    const metodoPago = await PaymentMethod.findById(dto.metodoPagoId);
-    if (!metodoPago) {
-      throw new Error('El método de pago no existe');
-    }
-    if (!metodoPago.activo) {
-      throw new Error('El método de pago está inactivo');
-    }
-
-    // 4) Descontamos stock atómicamente y guardamos qué descontamos para
-    //    poder revertir si algo falla más adelante.
-    const stockDescontado: { itemId: string; cantidad: number }[] = [];
-
+    const session = await mongoose.startSession();
     try {
+      session.startTransaction();
+
+      // Verificar usuario activo
+      const usuario = await User.findById(usuarioId).session(session);
+      if (!usuario) throw new Error('El usuario no existe');
+      if (!usuario.activo) throw new Error('El usuario está inactivo y no puede realizar compras');
+
+      // Verificar método de pago activo
+      const metodoPago = await PaymentMethod.findById(dto.metodoPagoId).session(session);
+      if (!metodoPago) throw new Error('El método de pago no existe');
+      if (!metodoPago.activo) throw new Error('El método de pago está inactivo');
+
+      // Descontar stock atómicamente. Si el update no encuentra el documento
+      // (item inexistente o stock insuficiente), abortamos la transacción.
       for (const pedido of dto.items) {
         const itemActualizado = await Item.findOneAndUpdate(
           { _id: pedido.itemId, stock: { $gte: pedido.cantidad } },
           { $inc: { stock: -pedido.cantidad } },
-          { new: true }
+          { new: true, session }
         );
 
         if (!itemActualizado) {
-          // O el item no existe o el stock es insuficiente. Diferenciamos
-          // para devolver un mensaje útil.
-          const existe = await Item.exists({ _id: pedido.itemId });
-          if (!existe) {
-            throw new Error(`El item ${pedido.itemId} no existe`);
-          }
-          throw new Error(
-            `Stock insuficiente para el item ${pedido.itemId}`
-          );
+          const existe = await Item.exists({ _id: pedido.itemId }).session(session);
+          if (!existe) throw new Error(`El item ${pedido.itemId} no existe`);
+          throw new Error(`Stock insuficiente para el item ${pedido.itemId}`);
         }
-
-        stockDescontado.push({
-          itemId: pedido.itemId,
-          cantidad: pedido.cantidad,
-        });
       }
 
-      // 5) Creamos los detalles. El pre-save del modelo calcula `monto`.
-      //    Releemos el precio actual del item para snapshotearlo en el detalle.
+      // Crear los detalles. El pre-save del modelo calcula `monto`.
       const detalles: IPurchaseOrderDetail[] = [];
       for (const pedido of dto.items) {
-        const item = await Item.findById(pedido.itemId);
-        if (!item) {
-          // Caso defensivo: ya descontamos su stock arriba, pero por algún
-          // motivo desapareció. Tratamos como error y rollback se encarga.
-          throw new Error(
-            `El item ${pedido.itemId} desapareció durante el checkout`
-          );
-        }
+        const item = await Item.findById(pedido.itemId).session(session);
+        if (!item) throw new Error(`El item ${pedido.itemId} desapareció durante el checkout`);
 
-        const detalle = await PurchaseOrderDetail.create({
-          item: item._id,
-          cantidad: pedido.cantidad,
-          precioUnitario: item.precioUnitario,
-          descuentos: [],
-        });
+        const [detalle] = await PurchaseOrderDetail.create(
+          [{ item: item._id, cantidad: pedido.cantidad, precioUnitario: item.precioUnitario, descuentos: [] }],
+          { session }
+        );
         detalles.push(detalle);
       }
 
-      // 6) Calculamos el montoBase sumando los detalles ya guardados
+      // Calcular el monto total y crear la orden
       const montoBase = detalles.reduce((acc, d) => acc + d.monto, 0);
       const montoTotal = calcularMontoTotal(montoBase, descuentos);
 
-      // 7) Creamos la orden
-      const orden: IPurchaseOrder = await PurchaseOrder.create({
-        usuario: usuario._id,
-        detalles: detalles.map((d) => d._id),
-        metodoPago: metodoPago._id,
-        descuentos,
-        montoTotal,
-      });
+      const [orden] = await PurchaseOrder.create(
+        [{ usuario: usuario._id, detalles: detalles.map((d) => d._id), metodoPago: metodoPago._id, descuentos, montoTotal }],
+        { session }
+      );
 
-      // 8) Populamos los items en los detalles para armar la response
+      await session.commitTransaction();
+
+      // Popular los items para armar la respuesta (fuera de la transacción, solo lectura)
       const detallesPopulados = await PurchaseOrderDetail.find({
         _id: { $in: detalles.map((d) => d._id) },
       }).populate('item');
@@ -273,25 +245,13 @@ export class CartService implements ICartService {
         detalles: detallesPopulados.map(mapearDetalleAResponseDto),
         descuentos: orden.descuentos,
         montoTotal: orden.montoTotal,
-        fechaCreacion: (orden as IPurchaseOrder & { createdAt: Date })
-          .createdAt,
+        fechaCreacion: orden.createdAt,
       };
     } catch (error) {
-      // Rollback manual del stock descontado. Si esto falla a su vez, lo
-      // logueamos pero priorizamos rethrow del error original.
-      await Promise.all(
-        stockDescontado.map((s) =>
-          Item.findByIdAndUpdate(s.itemId, { $inc: { stock: s.cantidad } })
-        )
-      ).catch((rollbackError) => {
-        // eslint-disable-next-line no-console
-        console.error(
-          'Error revirtiendo stock durante rollback de checkout:',
-          rollbackError
-        );
-      });
-
+      await session.abortTransaction();
       throw error;
+    } finally {
+      session.endSession();
     }
   }
 }

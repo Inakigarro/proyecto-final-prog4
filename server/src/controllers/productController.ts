@@ -1,6 +1,6 @@
 import { ProductService } from "../services/rbac/product.service";
 import { Request, Response, NextFunction } from "express";
-import { CrearItemDto } from "../types/item.dtos";
+import { CrearItemDto, FiltrosProducto } from "../types/item.dtos";
 
 const servicio = new ProductService();
 
@@ -18,15 +18,20 @@ export const crear = async (
   }
 };
 
-/** Devuelve todos los items activos con su categoría populada */
+/** Lista los items activos con paginación y filtro de texto opcional */
 export const listar = async (
-  _req: Request,
+  req: Request<{}, {}, {}, { pagina?: string; limite?: string; q?: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const productos = await servicio.getAllProducts();
-    res.json(productos);
+    const filtros: FiltrosProducto = {
+      pagina: req.query.pagina ? parseInt(req.query.pagina, 10) : 1,
+      limite: req.query.limite ? parseInt(req.query.limite, 10) : 20,
+      q: req.query.q?.trim() || undefined,
+    };
+    const resultado = await servicio.listarProductos(filtros);
+    res.json(resultado);
   } catch (error) {
     next(error);
   }

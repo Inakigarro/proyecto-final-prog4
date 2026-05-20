@@ -191,7 +191,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
     await PasswordResetToken.create({ token, usuario: usuario._id, expiresAt });
 
-    res.json({ message: 'Token de restablecimiento generado', resetToken: token });
+    res.json({ message: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña.' });
   } catch (error) {
     next(error);
   }

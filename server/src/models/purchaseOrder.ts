@@ -9,6 +9,8 @@ export interface IPurchaseOrder extends Document {
   metodoPago: Types.ObjectId;
   descuentos: number[];
   montoTotal: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
