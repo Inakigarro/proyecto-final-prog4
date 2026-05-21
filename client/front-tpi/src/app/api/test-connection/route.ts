@@ -9,7 +9,7 @@ export async function GET() {
     // IMPORTANTE: Cuando este código corre en un API Route (Node.js), el rewrite de Next.js NO aplica.
     // Por eso, hay que usar la URL completa del backend:
     const res = await fetch(
-      `http://localhost:${process.env.PORT || 4000}/api`,
+      `http://localhost:${process.env.PORT || 4001}/api`,
       {
         method: "GET",
         headers: {
