@@ -9,9 +9,14 @@ const router = Router();
 const controller = crearCartController(new CartService());
 
 /**
- * Todas las rutas del carrito requieren usuario autenticado.
  * El carrito es híbrido: el frontend lo mantiene en memoria y consume
  * estos endpoints para validar el estado y para confirmar la compra.
+ *
+ * /validate es público: permite que cualquier visitante arme su carrito
+ * y vea precios y stock actualizados sin necesidad de loguearse.
+ *
+ * /checkout sí requiere usuario autenticado, ya que confirma la compra
+ * y crea la orden asociada al usuario.
  */
 router.use(verificarToken);
 
