@@ -1,0 +1,134 @@
+.cart-row {
+  display: grid;
+  grid-template-columns: 1fr auto 100px 32px;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.cart-row-info {
+  min-width: 0; /* permite que el texto se trunque sin romper el grid */
+}
+
+.cart-row-nombre {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  /* trunca con elipsis si el nombre es muy largo */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cart-row-precio-unitario {
+  margin: 0;
+  font-size: 13px;
+  color: #6b6b6b;
+}
+
+.cart-row-controles {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cart-qty-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.cart-qty-btn:hover {
+  background: #f3f3f3;
+  border-color: #999;
+}
+
+.cart-qty-value {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.cart-row-subtotal {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: right;
+}
+
+.cart-row-eliminar {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  color: #888;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.cart-row-eliminar:hover {
+  background: #fce8e8;
+  color: #d83a3a;
+}
+
+/* Mobile: apilamos en dos filas */
+@media (max-width: 600px) {
+  .cart-row {
+    grid-template-columns: 1fr 32px;
+    grid-template-areas:
+      'info eliminar'
+      'controles subtotal';
+    row-gap: 12px;
+  }
+
+  .cart-row-info {
+    grid-area: info;
+  }
+
+  .cart-row-eliminar {
+    grid-area: eliminar;
+  }
+
+  .cart-row-controles {
+    grid-area: controles;
+  }
+
+  .cart-row-subtotal {
+    grid-area: subtotal;
+  }
+}
+
+.cart-row-problema {
+  background: #fff7e6;
+  border-left: 3px solid #d49d2a;
+}
+
+.cart-row-motivo {
+  margin: 6px 0 0 0;
+  font-size: 13px;
+  color: #b3700d;
+  font-weight: 500;
+}
+
+.cart-row-precio-aviso {
+  color: #1a73e8;
+  font-size: 12px;
+  font-weight: 500;
+}

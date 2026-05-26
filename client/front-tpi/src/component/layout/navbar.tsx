@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import "./navbar.css";
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import Link from "next/link";
+import CartIcon from "../cart/CartIcon";
+
+import { usePathname, useRouter } from "next/navigation";
 interface EnlacesNav {
   etiqueta: string;
   ruta: string;
@@ -64,9 +66,7 @@ const Navbar = () => {
         <button type="button" className="icon-button" aria-label="Login">
           <span className="login-icon">🔒</span>
         </button>
-        <button type="button" className="icon-button" aria-label="Carrito">
-          <span className="login-icon">🛒</span>
-        </button>
+        <CartIcon />
       </div>
     </header>
   );
