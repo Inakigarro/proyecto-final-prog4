@@ -1,11 +1,11 @@
 "use client";
 
-import React from "react";
+import { useState } from "react";
 import "./navbar.css";
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
 import CartIcon from "../cart/CartIcon";
 
+import { usePathname, useRouter } from "next/navigation";
 interface EnlacesNav {
   etiqueta: string;
   ruta: string;
@@ -19,14 +19,31 @@ const enlacesNav: EnlacesNav[] = [
 
 const Navbar = () => {
   const rutaActual = usePathname();
+  const router = useRouter();
+  const [query, setQuery] = useState("");
 
   return (
     <header className="app-navbar">
       <div className="navbar-logo">TechPoint</div>
 
-      <div className="navbar-search">
-        <input type="text" placeholder="Buscar..." />
-      </div>
+      <form
+        className="navbar-search"
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const trimmed = query.trim();
+          if (!trimmed) return;
+          router.push(`/search-result?query=${encodeURIComponent(trimmed)}`);
+        }}
+      >
+        <input
+          type="search"
+          placeholder="Buscar..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Buscar productos"
+        />
+      </form>
 
       <div className="navbar-actions">
         <ul className="navbar-list">
