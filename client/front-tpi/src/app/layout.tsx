@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/component/layout/navbar";
 import { CartProvider } from "@/context/CartContext";
 import CartToast from "@/component/cart/CartToast";
+import CartDrawer from "@/component/cart/CartDrawer";
 
 export const metadata: Metadata = {
   title: "TechPoint",
@@ -22,6 +23,7 @@ export default function RootLayout({
           <Navbar />
           <main>{children}</main>
           <CartToast />
+          <CartDrawer />
         </CartProvider>
       </body>
     </html>

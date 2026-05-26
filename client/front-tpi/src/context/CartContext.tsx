@@ -26,6 +26,7 @@ interface CartState {
   items: CartItem[];
   hidratado: boolean;
   ultimoAgregado: CartItem | null;
+  drawerAbierto: boolean;
 }
 
 type CartAction =
@@ -34,7 +35,9 @@ type CartAction =
   | { type: 'QUITAR'; itemId: string }
   | { type: 'ACTUALIZAR_CANTIDAD'; itemId: string; cantidad: number }
   | { type: 'VACIAR' }
-  | { type: 'CERRAR_CONFIRMACION' };
+  | { type: 'CERRAR_CONFIRMACION' }
+  | { type: 'ABRIR_DRAWER' }
+  | { type: 'CERRAR_DRAWER' };
 
 interface CartContextValue {
   state: CartState;
@@ -45,6 +48,8 @@ interface CartContextValue {
   actualizarCantidad: (itemId: string, cantidad: number) => void;
   vaciar: () => void;
   cerrarConfirmacion: () => void;
+  abrirDrawer: () => void;
+  cerrarDrawer: () => void;
 }
 
 // Constantes
@@ -55,6 +60,7 @@ const ESTADO_INICIAL: CartState = {
   items: [],
   hidratado: false,
   ultimoAgregado: null,
+  drawerAbierto: false,
 };
 
 // Reducer (puro, testeable sin mocks)
@@ -114,6 +120,12 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'CERRAR_CONFIRMACION':
       return { ...state, ultimoAgregado: null };
 
+    case 'ABRIR_DRAWER':
+      return { ...state, drawerAbierto: true };
+
+    case 'CERRAR_DRAWER':
+      return { ...state, drawerAbierto: false };
+
     default:
       return state;
   }
@@ -172,6 +184,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'CERRAR_CONFIRMACION' });
   }, []);
 
+  const abrirDrawer = useCallback(() => {
+    dispatch({ type: 'ABRIR_DRAWER' });
+  }, []);
+
+  const cerrarDrawer = useCallback(() => {
+    dispatch({ type: 'CERRAR_DRAWER' });
+  }, []);
+
   const cantidadTotal = useMemo(
     () => state.items.reduce((acc, i) => acc + i.cantidad, 0),
     [state.items]
@@ -196,6 +216,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     actualizarCantidad,
     vaciar,
     cerrarConfirmacion,
+    abrirDrawer,
+    cerrarDrawer,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
