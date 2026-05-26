@@ -26,6 +26,13 @@
 
 .productList {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 24px;
+}
+
+.sinResultados {
+  color: var(--color-muted);
+  font-size: 1rem;
+  text-align: center;
+  padding: 48px 0;
 }
