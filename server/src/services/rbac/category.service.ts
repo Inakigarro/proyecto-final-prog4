@@ -1,22 +1,39 @@
-import { Types } from "mongoose";
 import Category, { ICategory } from "../../models/Category";
 import { IItem } from "../../models/Item";
-import { CrearCategoryDto, ActualizarCategoryDto, CategoryResponseDto } from "../../types/categories.dto";
+import { CrearCategoryDto, ActualizarCategoryDto, CategoryResumenDto, CategoryDetalleDto } from "../../types/categories.dto";
 import { ICategoryService } from "../../types/rbac/category.service.interface";
+import { Types } from "mongoose";
 
 /**
- * Convierte un documento Mongoose al DTO de respuesta.
- * Si items está populado, devuelve los nombres; si no, devuelve los IDs como strings.
+ * Convierte un documento de categoría al DTO de resumen.
+ * No requiere populate: usa items.length directamente sobre el array de ObjectIds.
  */
-const mapearACategoryResponseDto = (category: ICategory): CategoryResponseDto => ({
+const mapearAResumenDto = (category: ICategory): CategoryResumenDto => ({
   id: category._id.toString(),
   nombre: category.nombre,
-  items: (category.items as unknown as (IItem | Types.ObjectId)[]).map((item) =>
-    typeof item === "object" && "nombre" in item
-      ? (item as IItem).nombre
-      : item.toString()
-  ),
+  cantidadItems: category.items.length,
 });
+
+/**
+ * Convierte un documento de categoría con items populados al DTO de detalle.
+ * Incluye un resumen de cada item (id, nombre, precioUnitario) sin sus categorías.
+ */
+const mapearADetalleDto = (category: ICategory): CategoryDetalleDto => {
+  const items = category.items as unknown as (IItem | Types.ObjectId)[];
+  return {
+    id: category._id.toString(),
+    nombre: category.nombre,
+    cantidadItems: items.length,
+    items: items.map((item) => {
+      if (typeof item === "object" && "nombre" in item) {
+        const i = item as IItem;
+        return { id: i._id.toString(), nombre: i.nombre, precioUnitario: i.precioUnitario };
+      }
+      // Fallback: no debería ocurrir si el populate funcionó correctamente
+      return { id: item.toString(), nombre: "", precioUnitario: 0 };
+    }),
+  };
+};
 
 /**
  * Implementación del servicio de categorías.
@@ -25,23 +42,23 @@ export class CategoryService implements ICategoryService {
   /**
    * Crea una nueva categoría.
    */
-  async crear(categoryData: CrearCategoryDto): Promise<CategoryResponseDto> {
+  async crear(categoryData: CrearCategoryDto): Promise<CategoryResumenDto> {
     const nuevaCategory = new Category(categoryData);
     const categoryGuardada = await nuevaCategory.save();
-    return mapearACategoryResponseDto(categoryGuardada);
+    return mapearAResumenDto(categoryGuardada);
   }
 
   /**
    * Actualiza una categoría activa existente.
    */
-  async actualizar(id: string, categoryData: ActualizarCategoryDto): Promise<CategoryResponseDto | null> {
+  async actualizar(id: string, categoryData: ActualizarCategoryDto): Promise<CategoryResumenDto | null> {
     const categoryActualizada = await Category.findOneAndUpdate(
       { _id: id, activo: { $ne: false } },
       categoryData,
       { new: true }
     ).lean();
     if (!categoryActualizada) return null;
-    return mapearACategoryResponseDto(categoryActualizada as unknown as ICategory);
+    return mapearAResumenDto(categoryActualizada as unknown as ICategory);
   }
 
   /**
@@ -57,36 +74,23 @@ export class CategoryService implements ICategoryService {
   }
 
   /**
-   * Busca todas las categorías activas sin popular los items.
+   * Lista todas las categorías activas con su cantidad de items.
+   * No popula los items para mantener respuestas livianas.
    */
-  async buscarTodas(): Promise<CategoryResponseDto[]> {
+  async buscarTodas(): Promise<CategoryResumenDto[]> {
     const categorias = await Category.find({ activo: { $ne: false } }).lean();
-    return (categorias as unknown as ICategory[]).map(mapearACategoryResponseDto);
+    return (categorias as unknown as ICategory[]).map(mapearAResumenDto);
   }
 
   /**
-   * Busca todas las categorías activas con los items populados.
+   * Obtiene una categoría activa por ID con sus items resumidos (id, nombre, precioUnitario).
+   * Solo trae los campos necesarios de cada item para evitar profundidad innecesaria.
    */
-  async buscarTodasConItems(): Promise<CategoryResponseDto[]> {
-    const categorias = await Category.find({ activo: { $ne: false } }).lean().populate("items");
-    return (categorias as unknown as ICategory[]).map(mapearACategoryResponseDto);
-  }
-
-  /**
-   * Busca una categoría activa por su ID sin popular los items.
-   */
-  async buscarPorId(id: string): Promise<CategoryResponseDto | null> {
-    const category = await Category.findOne({ _id: id, activo: { $ne: false } }).lean();
+  async buscarPorId(id: string): Promise<CategoryDetalleDto | null> {
+    const category = await Category.findOne({ _id: id, activo: { $ne: false } })
+      .populate({ path: "items", select: "nombre precioUnitario" })
+      .lean();
     if (!category) return null;
-    return mapearACategoryResponseDto(category as unknown as ICategory);
-  }
-
-  /**
-   * Busca una categoría activa por su ID con los items populados.
-   */
-  async buscarPorIdConItems(id: string): Promise<CategoryResponseDto | null> {
-    const category = await Category.findOne({ _id: id, activo: { $ne: false } }).lean().populate("items");
-    if (!category) return null;
-    return mapearACategoryResponseDto(category as unknown as ICategory);
+    return mapearADetalleDto(category as unknown as ICategory);
   }
 }

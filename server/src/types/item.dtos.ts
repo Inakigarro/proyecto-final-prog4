@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { CategoryResponseDto } from "./categories.dto";
+import { CategoryResumenDto } from "./categories.dto";
 
 export interface FiltrosProducto {
   q?: string;
@@ -29,5 +29,6 @@ export interface ItemResponse {
   descripcion?: string;
   precioUnitario: number;
   stock: number;
-  category: CategoryResponseDto[];
+  /** Categorías del producto en formato resumido (sin el array de items de cada categoría). */
+  category: CategoryResumenDto[];
 }

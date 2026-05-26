@@ -4,12 +4,17 @@ import Category, { ICategory } from "../../models/Category";
 import { CrearItemDto, FiltrosProducto, ItemResponse, ProductosPageResponse } from "../../types/item.dtos";
 import { IProductService } from "../../types/rbac/product.service.interface";
 
-const POPULATE_CATEGORIES = { path: 'category' };
+/**
+ * Populate de categorías: solo trae nombre e items (para el count).
+ * No se populan los items dentro de la categoría para evitar profundidad innecesaria.
+ */
+const POPULATE_CATEGORIES = { path: 'category', select: 'nombre items' };
 
 type ItemPopulado = Omit<IItem, 'category'> & { category: ICategory[] };
 
 /**
  * Convierte un documento Mongoose (con categorías populadas) al DTO de respuesta.
+ * Las categorías se devuelven en formato resumido: id, nombre y cantidad de items.
  */
 function mapearAResponseDto(product: ItemPopulado): ItemResponse {
   return {
@@ -21,7 +26,7 @@ function mapearAResponseDto(product: ItemPopulado): ItemResponse {
     category: product.category.map((cat) => ({
       id: cat._id.toString(),
       nombre: cat.nombre,
-      items: cat.items.map((i) => i.toString()),
+      cantidadItems: cat.items.length,
     })),
   };
 }

@@ -8,28 +8,28 @@ import { CrearCategoryDto, ActualizarCategoryDto } from "../types/categories.dto
  */
 export const crearCategoryController = (servicio: ICategoryService) => ({
 
-  /** Devuelve todas las categorías con sus items populados */
+  /** Devuelve todas las categorías activas con su cantidad de items */
   listar: async (
     _req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
     try {
-      const categorias = await servicio.buscarTodasConItems();
+      const categorias = await servicio.buscarTodas();
       res.json(categorias);
     } catch (error) {
       next(error);
     }
   },
 
-  /** Devuelve una categoría por ID con sus items populados */
+  /** Devuelve una categoría por ID con sus items resumidos (id, nombre, precioUnitario) */
   obtenerPorId: async (
     req: Request<{ id: string }>,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
     try {
-      const categoria = await servicio.buscarPorIdConItems(req.params.id);
+      const categoria = await servicio.buscarPorId(req.params.id);
       if (!categoria) {
         res.status(404).json({ message: "Categoría no encontrada" });
         return;
