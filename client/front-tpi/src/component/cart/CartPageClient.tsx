@@ -17,6 +17,7 @@ import type {
   ValidarCarritoDto,
 } from '@/lib/cart-types';
 import CartItemRow from './CartItemRow';
+import ConfirmDialog from './ConfirmDialog';
 import './CartPageClient.css';
 
 /** Tiempo de espera tras el último cambio antes de pegar al backend. */
@@ -31,6 +32,7 @@ type EstadoValidacion =
 const CartPageClient = () => {
   const { state, subtotalEstimado, vaciar } = useCart();
   const [validacion, setValidacion] = useState<EstadoValidacion>({ tipo: 'idle' });
+  const [confirmacionVaciarAbierta, setConfirmacionVaciarAbierta] = useState(false);
 
   // Refs para debounce y para descartar respuestas obsoletas.
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -126,6 +128,11 @@ const CartPageClient = () => {
   const puedeConfirmar =
     validacion.tipo === 'ok' && validacion.data.carritoValido;
 
+  const handleConfirmarVaciar = () => {
+    vaciar();
+    setConfirmacionVaciarAbierta(false);
+  };
+
   return (
     <div className="cart-page">
       <header className="cart-page-header">
@@ -133,11 +140,7 @@ const CartPageClient = () => {
         <button
           type="button"
           className="cart-page-vaciar"
-          onClick={() => {
-            if (window.confirm('¿Vaciar todo el carrito?')) {
-              vaciar();
-            }
-          }}
+          onClick={() => setConfirmacionVaciarAbierta(true)}
         >
           Vaciar carrito
         </button>
@@ -219,6 +222,17 @@ const CartPageClient = () => {
           </Link>
         </aside>
       </div>
+
+      <ConfirmDialog
+        abierto={confirmacionVaciarAbierta}
+        titulo="Vaciar carrito"
+        mensaje="¿Seguro que querés vaciar todo el carrito? Esta acción no se puede deshacer."
+        textoConfirmar="Sí, vaciar"
+        textoCancelar="Cancelar"
+        destructivo
+        onConfirmar={handleConfirmarVaciar}
+        onCancelar={() => setConfirmacionVaciarAbierta(false)}
+      />
     </div>
   );
 };
