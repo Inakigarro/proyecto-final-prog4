@@ -1,0 +1,96 @@
+/* Toast de confirmación al agregar al carrito.
+   Posicionado abajo a la derecha, con entrada animada desde abajo. */
+
+.cart-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 280px;
+  max-width: 360px;
+  padding: 14px 16px;
+  background-color: #1f2937;
+  color: #f9fafb;
+  border: 1px solid #374151;
+  border-left: 4px solid #22c55e;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  font-family: inherit;
+  animation: cart-toast-in 220ms ease-out;
+}
+
+.cart-toast-check {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background-color: #22c55e;
+  color: #052e16;
+  font-weight: 700;
+  border-radius: 50%;
+  font-size: 14px;
+}
+
+.cart-toast-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-toast-titulo {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.cart-toast-producto {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #d1d5db;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cart-toast-cerrar {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.cart-toast-cerrar:hover {
+  color: #f9fafb;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes cart-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ajuste para mobile: ocupa el ancho con margen lateral. */
+@media (max-width: 480px) {
+  .cart-toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    min-width: 0;
+    max-width: none;
+  }
+}

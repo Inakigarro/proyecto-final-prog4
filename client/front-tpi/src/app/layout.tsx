@@ -2,7 +2,8 @@ import { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/component/layout/navbar";
 import { CartProvider } from "@/context/CartContext";
-import CartAddedDrawer from "@/component/cart/CartAddedDrawer";
+import CartToast from "@/component/cart/CartToast";
+import CartDrawer from "@/component/cart/CartDrawer";
 
 export const metadata: Metadata = {
   title: "TechPoint",
@@ -21,7 +22,8 @@ export default function RootLayout({
         <CartProvider>
           <Navbar />
           <main>{children}</main>
-          <CartAddedDrawer />
+          <CartToast />
+          <CartDrawer />
         </CartProvider>
       </body>
     </html>
