@@ -15,6 +15,7 @@ type Producto = {
   id: string;
   nombre: string;
   precioUnitario: number;
+  descripcion?: string;
   imageSrc?: string;
   /** Texto promocional que la API enviará en el futuro (ej. "Cuotas sin interés"). */
   cucarda?: string;
@@ -37,7 +38,7 @@ export default function PageListProduct() {
         const res = await fetch(url);
         if (!res.ok) throw new Error("Error al obtener productos");
         const data = await res.json();
-        setProducts(data.products ?? []);
+        setProducts(data.products.datos ?? []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error desconocido");
       } finally {
@@ -91,9 +92,7 @@ export default function PageListProduct() {
                   imageSrc={product.imageSrc}
                   categoria={product.category[0]?.nombre}
                   cucarda={product.cucarda}
-                  description={
-                    product.category[0]?.items.join(" · ") || undefined
-                  }
+                  description={product.descripcion ?? ""}
                 />
               ))}
             </div>
