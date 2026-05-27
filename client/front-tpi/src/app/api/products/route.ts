@@ -3,11 +3,12 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
+    // El backend espera el filtro de texto como "q" (no "query").
     const query = url.searchParams.get("query");
-    const backendUrl = new URL("http://localhost:4000/api/products");
+    const backendUrl = new URL("http://localhost:4001/api/products");
 
     if (query) {
-      backendUrl.searchParams.set("query", query);
+      backendUrl.searchParams.set("q", query);
     }
 
     const res = await fetch(backendUrl.toString(), {

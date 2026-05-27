@@ -6,12 +6,14 @@
  * backend agregue nuevos campos al modelo.
  */
 
-/** Categoría de producto tal como la devuelve el backend (populada). */
+/**
+ * Categoría de producto tal como la devuelve el backend (CategoryResumenDto).
+ * Nota: el backend ya no expone el array de items, solo la cantidad.
+ */
 export interface Categoria {
   id: string;
   nombre: string;
-  /** IDs de los ítems que pertenecen a esta categoría. */
-  items: string[];
+  cantidadItems: number;
 }
 
 /**

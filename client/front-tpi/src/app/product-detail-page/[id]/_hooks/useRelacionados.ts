@@ -4,9 +4,18 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import type { Producto } from "../types";
 
-/** Forma del response de GET /api/products */
+/**
+ * Forma del response de GET /api/products (Next.js API route).
+ * El route handler envuelve la respuesta paginada del backend bajo `products`.
+ */
 interface ProductosResponse {
-  products: Producto[];
+  products: {
+    datos: Producto[];
+    total: number;
+    pagina: number;
+    limite: number;
+    totalPaginas: number;
+  };
 }
 
 /**
@@ -34,10 +43,11 @@ export function useRelacionados(producto: Producto | null): Producto[] {
         const data = await apiFetch<ProductosResponse>("/api/products");
         if (cancelado) return;
 
+        const todos = data.products?.datos ?? [];
         const categoriasActuales = producto.category.map((c) => c.id);
 
         setRelacionados(
-          (data.products ?? []).filter(
+          todos.filter(
             (p) =>
               p.id !== producto.id &&
               p.category.some((c) => categoriasActuales.includes(c.id))

@@ -8,7 +8,7 @@ import CardProduct from "@/component/card/card";
 type Categoria = {
   id: string;
   nombre: string;
-  items: string[];
+  cantidadItems: number;
 };
 
 type Producto = {
