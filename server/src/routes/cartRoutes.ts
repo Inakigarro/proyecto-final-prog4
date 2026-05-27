@@ -1,8 +1,12 @@
 import { Router } from 'express';
-import * as cartController from '../controllers/cartController';
+import { CartService } from '../services/rbac/cart.service';
+import { crearCartController } from '../controllers/cartController';
 import { verificarToken } from '../middlewares/auth';
+import { validar } from '../middlewares/validar';
+import { ValidarCarritoSchema, CheckoutSchema } from '../schemas/cart.schemas';
 
 const router = Router();
+const controller = crearCartController(new CartService());
 
 /**
  * El carrito es híbrido: el frontend lo mantiene en memoria y consume
@@ -14,7 +18,9 @@ const router = Router();
  * /checkout sí requiere usuario autenticado, ya que confirma la compra
  * y crea la orden asociada al usuario.
  */
-router.post('/validate', cartController.validar);
-router.post('/checkout', verificarToken, cartController.checkout);
+router.use(verificarToken);
+
+router.post('/validate', validar(ValidarCarritoSchema), controller.validar);
+router.post('/checkout', validar(CheckoutSchema),       controller.checkout);
 
 export default router;

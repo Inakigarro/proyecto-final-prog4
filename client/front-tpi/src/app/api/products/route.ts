@@ -4,7 +4,7 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const query = url.searchParams.get("query");
-    const backendUrl = new URL("http://localhost:4001/api/products");
+    const backendUrl = new URL("http://localhost:4000/api/products");
 
     if (query) {
       backendUrl.searchParams.set("query", query);

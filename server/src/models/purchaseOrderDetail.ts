@@ -1,4 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import { aplicarDescuentos } from '../utils/descuentos';
 
 // Forma del documento PurchaseOrderDetail en la base de datos
 export interface IPurchaseOrderDetail extends Document {
@@ -9,16 +10,6 @@ export interface IPurchaseOrderDetail extends Document {
   descuentos: number[];
   monto: number;
 }
-
-/**
- * Calcula el monto total del detalle aplicando los descuentos acumulados.
- * Cada descuento se aplica como un porcentaje (0-100) sobre el monto.
- */
-const calcularMonto = (precioUnitario: number, cantidad: number, descuentos: number[]): number => {
-  const subtotal = precioUnitario * cantidad;
-  const factorDescuento = descuentos.reduce((acc, descuento) => acc * (1 - descuento / 100), 1);
-  return parseFloat((subtotal * factorDescuento).toFixed(2));
-};
 
 const purchaseOrderDetailSchema = new Schema<IPurchaseOrderDetail>(
   {
@@ -51,7 +42,8 @@ const purchaseOrderDetailSchema = new Schema<IPurchaseOrderDetail>(
 
 // Calcula el monto antes de guardar
 purchaseOrderDetailSchema.pre('save', function (next) {
-  this.monto = calcularMonto(this.precioUnitario, this.cantidad, this.descuentos);
+  const subtotal = this.precioUnitario * this.cantidad;
+  this.monto = aplicarDescuentos(subtotal, this.descuentos);
   next();
 });
 
