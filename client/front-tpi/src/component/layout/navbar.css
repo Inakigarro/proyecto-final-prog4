@@ -102,6 +102,40 @@
   font-size: 18px;
 }
 
+/* Usuario autenticado en el navbar */
+.navbar-usuario {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-usuario-nombre {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navbar-logout {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.navbar-logout:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+}
+
 @media (max-width: 768px) {
   .app-navbar {
     height: 56px;

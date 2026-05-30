@@ -1,33 +1,25 @@
 'use client';
 
-/**
- * LoginGateModal — placeholder visual del login.
- *
- * NO valida nada. Solo deja claro al dev que tome el ticket de auth dónde
- * tiene que ir el login real. El form es decorativo (email/password no se
- * leen) y el botón "Continuar" navega directo a /carrito.
- *
- * Cuando se implemente auth real, este componente debería ser reemplazado
- * por el modal de login posta, conectado al AuthContext correspondiente.
- */
-
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import './LoginGateModal.css';
 
 interface LoginGateModalProps {
   abierto: boolean;
   onCerrar: () => void;
+  /** Callback opcional que se ejecuta después de un login exitoso */
+  onLoginExitoso?: () => void;
 }
 
-const LoginGateModal = ({ abierto, onCerrar }: LoginGateModalProps) => {
-  const router = useRouter();
+const LoginGateModal = ({ abierto, onCerrar, onLoginExitoso }: LoginGateModalProps) => {
+  const { login } = useAuth();
 
-  // Estado local del form. No se valida ni se envía a ningún lado.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [cargando, setCargando] = useState(false);
 
-  // Cerrar con Escape + bloquear scroll del body mientras está abierto.
+  // Cerrar con Escape + bloquear scroll del body mientras está abierto
   useEffect(() => {
     if (!abierto) return;
 
@@ -45,19 +37,31 @@ const LoginGateModal = ({ abierto, onCerrar }: LoginGateModalProps) => {
     };
   }, [abierto, onCerrar]);
 
-  // Limpiar el form cada vez que se cierra.
+  // Limpiar el formulario cada vez que se cierra
   useEffect(() => {
     if (!abierto) {
       setEmail('');
       setPassword('');
+      setError(null);
     }
   }, [abierto]);
 
   if (!abierto) return null;
 
-  const handleContinuar = () => {
-    onCerrar();
-    router.push('/carrito');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setCargando(true);
+
+    try {
+      await login(email.trim(), password);
+      onLoginExitoso?.();
+      onCerrar();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
@@ -88,7 +92,7 @@ const LoginGateModal = ({ abierto, onCerrar }: LoginGateModalProps) => {
           </button>
         </header>
 
-        <div className="login-gate-body">
+        <form className="login-gate-body" onSubmit={handleSubmit} noValidate>
           <label className="login-gate-label">
             <span>Email</span>
             <input
@@ -97,7 +101,9 @@ const LoginGateModal = ({ abierto, onCerrar }: LoginGateModalProps) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@email.com"
-              autoComplete="off"
+              autoComplete="email"
+              required
+              disabled={cargando}
             />
           </label>
 
@@ -109,27 +115,26 @@ const LoginGateModal = ({ abierto, onCerrar }: LoginGateModalProps) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              autoComplete="off"
+              autoComplete="current-password"
+              required
+              disabled={cargando}
             />
           </label>
 
-          <button
-            type="button"
-            className="login-gate-cta"
-            onClick={handleContinuar}
-          >
-            Continuar
-          </button>
-        </div>
+          {error && (
+            <div className="login-gate-error" role="alert">
+              {error}
+            </div>
+          )}
 
-        <div className="login-gate-aviso">
-          <strong>⚠ PLACEHOLDER</strong>
-          <p>
-            Este modal es solo un marcador visual. No valida credenciales.
-            Acá va el login real cuando se implemente el módulo de
-            autenticación.
-          </p>
-        </div>
+          <button
+            type="submit"
+            className="login-gate-cta"
+            disabled={cargando || !email || !password}
+          >
+            {cargando ? 'Ingresando...' : 'Ingresar'}
+          </button>
+        </form>
       </div>
     </>
   );

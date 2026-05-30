@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/component/layout/navbar";
+import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import CartToast from "@/component/cart/CartToast";
 import CartDrawer from "@/component/cart/CartDrawer";
@@ -19,12 +20,14 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
-        <CartProvider>
-          <Navbar />
-          <main>{children}</main>
-          <CartToast />
-          <CartDrawer />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Navbar />
+            <main>{children}</main>
+            <CartToast />
+            <CartDrawer />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

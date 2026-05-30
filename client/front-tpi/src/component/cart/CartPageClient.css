@@ -189,6 +189,21 @@
   color: #f9fafb;
 }
 
+.cart-page-error-login {
+  background: transparent;
+  border: none;
+  color: #93c5fd;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+  font-family: inherit;
+}
+
+.cart-page-error-login:hover {
+  color: #bfdbfe;
+}
+
 .cart-page-warning {
   background: rgba(234, 179, 8, 0.12);
   border-left: 4px solid #eab308;

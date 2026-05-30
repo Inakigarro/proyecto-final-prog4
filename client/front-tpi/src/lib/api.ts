@@ -14,13 +14,16 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Devuelve el access token disponible o null si no hay sesión. (esto cuando este implementado el auth)
- * Stub temporal: lee de NEXT_PUBLIC_DEV_TOKEN.
- */
+// Access token almacenado en memoria (no en localStorage para evitar XSS).
+// AuthContext llama a setAccessToken después de login/refresh.
+let _accessToken: string | null = null;
+
+export function setAccessToken(token: string | null): void {
+  _accessToken = token;
+}
+
 function obtenerToken(): string | null {
-  const token = process.env.NEXT_PUBLIC_DEV_TOKEN;
-  return token && token.length > 0 ? token : null;
+  return _accessToken;
 }
 
 /**

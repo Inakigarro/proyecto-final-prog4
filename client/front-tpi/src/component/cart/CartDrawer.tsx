@@ -14,7 +14,9 @@
  */
 
 import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import CartItemRow from './CartItemRow';
 import LoginGateModal from './LoginGateModal';
 import type {
@@ -27,11 +29,12 @@ import './CartDrawer.css';
 const CartDrawer = () => {
   const { state, cantidadTotal, subtotalEstimado, cerrarDrawer, vaciar } =
     useCart();
+  const { state: authState } = useAuth();
+  const router = useRouter();
 
   const abierto = state.drawerAbierto;
   const items = state.items;
 
-  // Estado local del LoginGate (placeholder hasta que exista AuthContext real).
   const [loginAbierto, setLoginAbierto] = useState(false);
 
   // Validación contra el backend.
@@ -114,7 +117,11 @@ const CartDrawer = () => {
 
   const handleFinalizar = () => {
     cerrarDrawer();
-    setLoginAbierto(true);
+    if (authState.isAutenticado) {
+      router.push('/carrito');
+    } else {
+      setLoginAbierto(true);
+    }
   };
 
   return (
@@ -223,6 +230,7 @@ const CartDrawer = () => {
       <LoginGateModal
         abierto={loginAbierto}
         onCerrar={() => setLoginAbierto(false)}
+        onLoginExitoso={() => router.push('/carrito')}
       />
     </>
   );
