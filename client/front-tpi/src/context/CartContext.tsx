@@ -16,8 +16,6 @@
  */
 
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
-import { Provider as ReduxProvider } from 'react-redux';
-import { store } from '@/store';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   agregar as agregarAction,
@@ -89,10 +87,10 @@ function CartHidratator() {
  */
 export function CartProvider({ children }: { children: ReactNode }) {
   return (
-    <ReduxProvider store={store}>
+    <>
       <CartHidratator />
       {children}
-    </ReduxProvider>
+    </>
   );
 }
 

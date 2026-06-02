@@ -1,88 +1,40 @@
 'use client';
 
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useReducer,
-  useRef,
-} from 'react';
+/**
+ * AuthContext — adapter sobre Redux Toolkit.
+ *
+ * Mantiene la API pública (AuthProvider y useAuth) idéntica a la versión
+ * original basada en useReducer + Context, pero por dentro lee/escribe
+ * contra el store de Redux.
+ *
+ * AuthProvider es el límite del <ReduxProvider> (es el wrapper más externo
+ * en el layout), por eso lo monta aquí junto al AuthHidratator.
+ * CartProvider y cualquier otro proveedor que viva adentro heredan el store.
+ */
+
+import { useCallback, useEffect, type ReactNode } from 'react';
+import { Provider as ReduxProvider } from 'react-redux';
+import { store, type AppDispatch } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+  hidratado as hidratadoAction,
+  cargaCompleta as cargaCompletaAction,
+  logout as logoutAction,
+} from '@/store/authSlice';
 import { setAccessToken } from '@/lib/api';
 
-// ── Tipos públicos ────────────────────────────────────────────────────────────
-
-export type AccionPermiso = 'create' | 'read' | 'update' | 'delete';
-
-export interface Permiso {
-  id: string;
-  nombre: string;
-  recurso: string;
-  accion: AccionPermiso;
-  descripcion?: string;
-}
-
-export interface Rol {
-  id: string;
-  nombre: string;
-  descripcion?: string;
-  permisos: Permiso[];
-}
-
-export interface UsuarioPerfil {
-  id: string;
-  nombre: string;
-  apellido: string;
-  email: string;
-  activo: boolean;
-  roles: Rol[];
-}
-
-export interface AuthState {
-  usuario: UsuarioPerfil | null;
-  isAutenticado: boolean;
-  /** true mientras se verifica si hay una sesión guardada (hidratación inicial) */
-  isCargando: boolean;
-}
-
-// ── Reducer ───────────────────────────────────────────────────────────────────
-
-type AuthAction =
-  | { type: 'HIDRATADO'; payload: UsuarioPerfil }
-  | { type: 'CARGA_COMPLETA' }
-  | { type: 'LOGOUT' };
-
-function authReducer(state: AuthState, action: AuthAction): AuthState {
-  switch (action.type) {
-    case 'HIDRATADO':
-      return { usuario: action.payload, isAutenticado: true, isCargando: false };
-    case 'CARGA_COMPLETA':
-      return { ...state, isCargando: false };
-    case 'LOGOUT':
-      return { usuario: null, isAutenticado: false, isCargando: false };
-    default:
-      return state;
-  }
-}
-
-// ── Contexto ──────────────────────────────────────────────────────────────────
-
-interface AuthContextValue {
-  state: AuthState;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  tienePermiso: (recurso: string, accion: AccionPermiso) => boolean;
-  tieneRol: (nombre: string) => boolean;
-  esSuperAdmin: () => boolean;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+// Re-exportar tipos del slice para que los consumidores no cambien sus imports.
+export type { AccionPermiso, Permiso, Rol, UsuarioPerfil, AuthState } from '@/store/authSlice';
+import type { AccionPermiso, AuthState, UsuarioPerfil } from '@/store/authSlice';
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const REFRESH_TOKEN_KEY = 'techpoint:refresh_token';
 /** Refresca el access token 1 minuto antes de que expire (token dura 15 min) */
 const INTERVALO_REFRESH_MS = 14 * 60 * 1000;
+
+/** Timer de renovación automática (singleton — una sola sesión activa). */
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ── Helpers de red (fuera del componente para no recrearse) ───────────────────
 
@@ -94,77 +46,104 @@ async function fetchPerfil(accessToken: string): Promise<UsuarioPerfil> {
   return res.json() as Promise<UsuarioPerfil>;
 }
 
-// ── Proveedor ─────────────────────────────────────────────────────────────────
+/**
+ * Intenta renovar la sesión usando el refresh token guardado en localStorage.
+ * Si tiene éxito, actualiza el access token en memoria y despacha el perfil.
+ * Si falla (token vencido/inválido), cierra la sesión.
+ * Al finalizar con éxito, programa el próximo refresh automático.
+ */
+async function intentarRefresh(dispatch: AppDispatch): Promise<void> {
+  const storedRefresh = localStorage.getItem(REFRESH_TOKEN_KEY);
+  if (!storedRefresh) {
+    setAccessToken(null);
+    dispatch(logoutAction());
+    return;
+  }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(authReducer, {
-    usuario: null,
-    isAutenticado: false,
-    isCargando: true,
-  });
+  try {
+    const res = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: storedRefresh }),
+    });
 
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    if (!res.ok) throw new Error('Refresh token inválido o expirado');
 
-  /**
-   * Intenta renovar la sesión usando el refresh token guardado en localStorage.
-   * Si tiene éxito, actualiza el access token en memoria y el perfil en el estado.
-   * Si falla (token vencido/inválido), cierra la sesión.
-   * Al finalizar con éxito, programa el próximo refresh automático.
-   */
-  const intentarRefresh = useCallback(async (): Promise<void> => {
-    const storedRefresh = localStorage.getItem(REFRESH_TOKEN_KEY);
-    if (!storedRefresh) {
-      setAccessToken(null);
-      dispatch({ type: 'LOGOUT' });
-      return;
-    }
+    const { accessToken, refreshToken: nuevoRefresh } = await res.json() as {
+      accessToken: string;
+      refreshToken: string;
+    };
 
-    try {
-      const res = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: storedRefresh }),
-      });
+    localStorage.setItem(REFRESH_TOKEN_KEY, nuevoRefresh);
+    setAccessToken(accessToken);
 
-      if (!res.ok) throw new Error('Refresh token inválido o expirado');
+    const usuario = await fetchPerfil(accessToken);
+    dispatch(hidratadoAction(usuario));
 
-      const { accessToken, refreshToken: nuevoRefresh } = await res.json() as {
-        accessToken: string;
-        refreshToken: string;
-      };
+    if (refreshTimer) clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => intentarRefresh(dispatch), INTERVALO_REFRESH_MS);
+  } catch {
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    setAccessToken(null);
+    if (refreshTimer) clearTimeout(refreshTimer);
+    dispatch(logoutAction());
+  }
+}
 
-      localStorage.setItem(REFRESH_TOKEN_KEY, nuevoRefresh);
-      setAccessToken(accessToken);
+// ── Hidratador ────────────────────────────────────────────────────────────────
 
-      const usuario = await fetchPerfil(accessToken);
-      dispatch({ type: 'HIDRATADO', payload: usuario });
+/**
+ * Verifica si hay un refresh token guardado y restaura la sesión al montar.
+ * Vive dentro del <ReduxProvider> para poder usar useAppDispatch.
+ */
+function AuthHidratator() {
+  const dispatch = useAppDispatch();
 
-      // Programar próxima renovación automática
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(intentarRefresh, INTERVALO_REFRESH_MS);
-    } catch {
-      localStorage.removeItem(REFRESH_TOKEN_KEY);
-      setAccessToken(null);
-      if (timerRef.current) clearTimeout(timerRef.current);
-      dispatch({ type: 'LOGOUT' });
-    }
-  }, []); // dispatch y timerRef son referencias estables
-
-  // Hidratación inicial: si hay refresh token guardado, restaurar la sesión
   useEffect(() => {
     const storedRefresh = localStorage.getItem(REFRESH_TOKEN_KEY);
 
     if (!storedRefresh) {
-      dispatch({ type: 'CARGA_COMPLETA' });
+      dispatch(cargaCompletaAction());
       return;
     }
 
-    intentarRefresh();
+    intentarRefresh(dispatch);
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (refreshTimer) clearTimeout(refreshTimer);
     };
-  }, [intentarRefresh]);
+  }, [dispatch]);
+
+  return null;
+}
+
+// ── Proveedor ─────────────────────────────────────────────────────────────────
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  return (
+    <ReduxProvider store={store}>
+      <AuthHidratator />
+      {children}
+    </ReduxProvider>
+  );
+}
+
+// ── Tipos de contexto públicos ────────────────────────────────────────────────
+
+export interface AuthContextValue {
+  state: AuthState;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  tienePermiso: (recurso: string, accion: AccionPermiso) => boolean;
+  tieneRol: (nombre: string) => boolean;
+  esSuperAdmin: () => boolean;
+}
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
+
+export function useAuth(): AuthContextValue {
+  const dispatch = useAppDispatch();
+  const state = useAppSelector((s) => s.auth);
 
   /**
    * Inicia sesión con email y contraseña.
@@ -192,13 +171,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(accessToken);
 
       const usuario = await fetchPerfil(accessToken);
-      dispatch({ type: 'HIDRATADO', payload: usuario });
+      dispatch(hidratadoAction(usuario));
 
-      // Programar renovación automática
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(intentarRefresh, INTERVALO_REFRESH_MS);
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => intentarRefresh(dispatch), INTERVALO_REFRESH_MS);
     },
-    [intentarRefresh]
+    [dispatch]
   );
 
   /**
@@ -222,9 +200,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     setAccessToken(null);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    dispatch({ type: 'LOGOUT' });
-  }, []);
+    if (refreshTimer) clearTimeout(refreshTimer);
+    dispatch(logoutAction());
+  }, [dispatch]);
 
   /** Verifica si el usuario tiene un permiso específico sobre un recurso */
   const tienePermiso = useCallback(
@@ -251,19 +229,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [tieneRol]
   );
 
-  return (
-    <AuthContext.Provider
-      value={{ state, login, logout, tienePermiso, tieneRol, esSuperAdmin }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-// ── Hook ──────────────────────────────────────────────────────────────────────
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth debe usarse dentro de AuthProvider');
-  return ctx;
+  return { state, login, logout, tienePermiso, tieneRol, esSuperAdmin };
 }
