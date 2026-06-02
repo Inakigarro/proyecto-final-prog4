@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import styles from "./page.module.css";
 import CardProduct from "@/component/card/card";
+import Breadcrumb from "@/component/layout/Breadcrumb";
 
 type Categoria = {
   id: string;
@@ -73,6 +74,11 @@ export default function PageListProduct() {
     <div className={styles.page}>
       <main className={styles.main}>
         <div className={styles.containerPrincipal}>
+          <Breadcrumb
+            segmentos={[
+              { etiqueta: query ? `"${query}"` : "Todos los productos" },
+            ]}
+          />
           <h2>
             {query ? `Resultados para: "${query}"` : "Todos los productos"}
           </h2>

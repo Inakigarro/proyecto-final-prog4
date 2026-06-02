@@ -6,13 +6,13 @@ import Link from "next/link";
 import CartIcon from "../cart/CartIcon";
 
 import { usePathname, useRouter } from "next/navigation";
+
 interface EnlacesNav {
   etiqueta: string;
   ruta: string;
 }
 
 const enlacesNav: EnlacesNav[] = [
-  { etiqueta: "Inicio", ruta: "/" },
   { etiqueta: "Promociones", ruta: "/promociones" },
   { etiqueta: "Quiénes somos", ruta: "/test-connection" },
 ];
@@ -24,7 +24,7 @@ const Navbar = () => {
 
   return (
     <header className="app-navbar">
-      <div className="navbar-logo">TechPoint</div>
+      <Link href="/" className="navbar-logo">TechPoint</Link>
 
       <form
         className="navbar-search"
@@ -34,6 +34,7 @@ const Navbar = () => {
           const trimmed = query.trim();
           if (!trimmed) return;
           router.push(`/search-result?query=${encodeURIComponent(trimmed)}`);
+          setQuery("");
         }}
       >
         <input
@@ -63,7 +64,7 @@ const Navbar = () => {
           })}
         </ul>
 
-        <button type="button" className="icon-button" aria-label="Login">
+        <button type="button" className="icon-button" aria-label="Iniciar sesión">
           <span className="login-icon">🔒</span>
         </button>
         <CartIcon />
