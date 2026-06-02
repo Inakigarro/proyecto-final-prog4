@@ -1,43 +1,41 @@
 'use client';
 
 /**
- * CartContext — estado global del carrito de compras.
+ * CartContext — adapter sobre Redux Toolkit.
  *
- * El carrito vive 100% en el cliente. Se persiste en localStorage para
- * sobrevivir a recargas. El backend solo se consulta en /validate y /checkout.
+ * Este archivo solía contener toda la lógica del carrito (useReducer +
+ * localStorage). Tras la migración a Redux, se mantiene únicamente como
+ * adapter para no romper a los consumidores: la API pública (CartProvider
+ * y useCart) sigue siendo idéntica, pero por dentro lee/escribe contra el
+ * store de Redux.
+ *
+ * Componentes que consumen useCart() (CartIcon, CartDrawer, CartToast,
+ * CartItemRow, CartPageClient, LoginGateModal, etc.) no necesitan
+ * modificarse. Si en el futuro se decide migrarlos a useSelector /
+ * useDispatch directos, este archivo se puede eliminar.
  */
 
+import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
+import { Provider as ReduxProvider } from 'react-redux';
+import { store } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-  type ReactNode,
-} from 'react';
+  agregar as agregarAction,
+  quitar as quitarAction,
+  actualizarCantidad as actualizarCantidadAction,
+  vaciar as vaciarAction,
+  cerrarConfirmacion as cerrarConfirmacionAction,
+  abrirDrawer as abrirDrawerAction,
+  cerrarDrawer as cerrarDrawerAction,
+  hidratar as hidratarAction,
+} from '@/store/cartSlice';
+import { STORAGE_KEY } from '@/store/localStorageMiddleware';
 import type { CartItem } from '@/lib/cart-types';
+import type { CartState } from '@/store/cartSlice';
 
 
-// Tipos internos
+// API pública del hook (idéntica a la versión Context original).
 
-
-interface CartState {
-  items: CartItem[];
-  hidratado: boolean;
-  ultimoAgregado: CartItem | null;
-  drawerAbierto: boolean;
-}
-
-type CartAction =
-  | { type: 'HIDRATAR'; items: CartItem[] }
-  | { type: 'AGREGAR'; item: CartItem }
-  | { type: 'QUITAR'; itemId: string }
-  | { type: 'ACTUALIZAR_CANTIDAD'; itemId: string; cantidad: number }
-  | { type: 'VACIAR' }
-  | { type: 'CERRAR_CONFIRMACION' }
-  | { type: 'ABRIR_DRAWER' }
-  | { type: 'CERRAR_DRAWER' };
 
 interface CartContextValue {
   state: CartState;
@@ -52,94 +50,18 @@ interface CartContextValue {
   cerrarDrawer: () => void;
 }
 
-// Constantes
 
-const STORAGE_KEY = 'techpoint:cart';
+// Componente interno: hidrata el store desde localStorage al montar.
 
-const ESTADO_INICIAL: CartState = {
-  items: [],
-  hidratado: false,
-  ultimoAgregado: null,
-  drawerAbierto: false,
-};
 
-// Reducer (puro, testeable sin mocks)
+/**
+ * Lee el carrito persistido en localStorage y dispara la acción `hidratar`
+ * una sola vez al montar. Vive dentro del <ReduxProvider> para que pueda
+ * usar useAppDispatch.
+ */
+function CartHidratator() {
+  const dispatch = useAppDispatch();
 
-function cartReducer(state: CartState, action: CartAction): CartState {
-  switch (action.type) {
-    case 'HIDRATAR':
-      return { ...state, items: action.items, hidratado: true };
-
-    case 'AGREGAR': {
-      const existente = state.items.find((i) => i.itemId === action.item.itemId);
-      const nuevoUltimoAgregado: CartItem = { ...action.item };
-
-      if (existente) {
-        return {
-          ...state,
-          items: state.items.map((i) =>
-            i.itemId === action.item.itemId
-              ? { ...i, cantidad: i.cantidad + action.item.cantidad }
-              : i
-          ),
-          ultimoAgregado: nuevoUltimoAgregado,
-        };
-      }
-
-      return {
-        ...state,
-        items: [...state.items, action.item],
-        ultimoAgregado: nuevoUltimoAgregado,
-      };
-    }
-
-    case 'QUITAR':
-      return {
-        ...state,
-        items: state.items.filter((i) => i.itemId !== action.itemId),
-      };
-
-    case 'ACTUALIZAR_CANTIDAD': {
-      if (action.cantidad <= 0) {
-        return {
-          ...state,
-          items: state.items.filter((i) => i.itemId !== action.itemId),
-        };
-      }
-      return {
-        ...state,
-        items: state.items.map((i) =>
-          i.itemId === action.itemId ? { ...i, cantidad: action.cantidad } : i
-        ),
-      };
-    }
-
-    case 'VACIAR':
-      return { ...state, items: [] };
-
-    case 'CERRAR_CONFIRMACION':
-      return { ...state, ultimoAgregado: null };
-
-    case 'ABRIR_DRAWER':
-      return { ...state, drawerAbierto: true };
-
-    case 'CERRAR_DRAWER':
-      return { ...state, drawerAbierto: false };
-
-    default:
-      return state;
-  }
-}
-
-// Context
-
-const CartContext = createContext<CartContextValue | null>(null);
-
-// Provider
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, ESTADO_INICIAL);
-
-  // Hidratar desde localStorage al montar (solo cliente).
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -147,51 +69,48 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const itemsValidos = Array.isArray(items)
         ? items.filter(esCartItemValido)
         : [];
-      dispatch({ type: 'HIDRATAR', items: itemsValidos });
+      dispatch(hidratarAction(itemsValidos));
     } catch {
-      dispatch({ type: 'HIDRATAR', items: [] });
+      dispatch(hidratarAction([]));
     }
-  }, []);
+  }, [dispatch]);
 
-  // Persistir en localStorage tras cualquier cambio post-hidratación.
-  useEffect(() => {
-    if (!state.hidratado) return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
-    } catch {
-      // Storage lleno o deshabilitado, silenciamos.
-    }
-  }, [state.items, state.hidratado]);
+  return null;
+}
 
-  // Actions estables.
-  const agregar = useCallback((item: CartItem) => {
-    dispatch({ type: 'AGREGAR', item });
-  }, []);
 
-  const quitar = useCallback((itemId: string) => {
-    dispatch({ type: 'QUITAR', itemId });
-  }, []);
+// Provider público.
 
-  const actualizarCantidad = useCallback((itemId: string, cantidad: number) => {
-    dispatch({ type: 'ACTUALIZAR_CANTIDAD', itemId, cantidad });
-  }, []);
 
-  const vaciar = useCallback(() => {
-    dispatch({ type: 'VACIAR' });
-  }, []);
+/**
+ * Envuelve a {children} con el <Provider> de Redux y monta el hidratador
+ * del carrito. Se sigue exportando como CartProvider para que layout.tsx
+ * no se modifique.
+ */
+export function CartProvider({ children }: { children: ReactNode }) {
+  return (
+    <ReduxProvider store={store}>
+      <CartHidratator />
+      {children}
+    </ReduxProvider>
+  );
+}
 
-  const cerrarConfirmacion = useCallback(() => {
-    dispatch({ type: 'CERRAR_CONFIRMACION' });
-  }, []);
 
-  const abrirDrawer = useCallback(() => {
-    dispatch({ type: 'ABRIR_DRAWER' });
-  }, []);
+// Hook de consumo.
 
-  const cerrarDrawer = useCallback(() => {
-    dispatch({ type: 'CERRAR_DRAWER' });
-  }, []);
 
+/**
+ * Hook de acceso al carrito. Internamente combina useAppSelector +
+ * useAppDispatch del store de Redux, pero hacia afuera mantiene la
+ * misma firma que la versión basada en Context, para no obligar a
+ * cambiar los componentes que lo consumen.
+ */
+export function useCart(): CartContextValue {
+  const dispatch = useAppDispatch();
+  const state = useAppSelector((s) => s.cart);
+
+  // Derivados memoizados (equivalentes a los del Context original).
   const cantidadTotal = useMemo(
     () => state.items.reduce((acc, i) => acc + i.cantidad, 0),
     [state.items]
@@ -207,7 +126,45 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [state.items]
   );
 
-  const value: CartContextValue = {
+  // Actions estables (referencias constantes por uso de useCallback).
+  const agregar = useCallback(
+    (item: CartItem) => {
+      dispatch(agregarAction(item));
+    },
+    [dispatch]
+  );
+
+  const quitar = useCallback(
+    (itemId: string) => {
+      dispatch(quitarAction(itemId));
+    },
+    [dispatch]
+  );
+
+  const actualizarCantidad = useCallback(
+    (itemId: string, cantidad: number) => {
+      dispatch(actualizarCantidadAction({ itemId, cantidad }));
+    },
+    [dispatch]
+  );
+
+  const vaciar = useCallback(() => {
+    dispatch(vaciarAction());
+  }, [dispatch]);
+
+  const cerrarConfirmacion = useCallback(() => {
+    dispatch(cerrarConfirmacionAction());
+  }, [dispatch]);
+
+  const abrirDrawer = useCallback(() => {
+    dispatch(abrirDrawerAction());
+  }, [dispatch]);
+
+  const cerrarDrawer = useCallback(() => {
+    dispatch(cerrarDrawerAction());
+  }, [dispatch]);
+
+  return {
     state,
     cantidadTotal,
     subtotalEstimado,
@@ -219,22 +176,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     abrirDrawer,
     cerrarDrawer,
   };
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
-// Hook de consumo
-
-export function useCart(): CartContextValue {
-  const ctx = useContext(CartContext);
-  if (!ctx) {
-    throw new Error('useCart debe usarse dentro de <CartProvider>');
-  }
-  return ctx;
-}
 
 // Helpers
 
+
+/**
+ * Valida que un objeto cargado desde localStorage sea un CartItem válido.
+ * Previene errores si alguien manipula el storage o si cambian los tipos.
+ */
 function esCartItemValido(x: unknown): x is CartItem {
   if (!x || typeof x !== 'object') return false;
   const o = x as Record<string, unknown>;
