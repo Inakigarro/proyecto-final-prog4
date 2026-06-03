@@ -1,3 +1,4 @@
+import type { TipoPromocion } from "./promociones";
 
 export interface CartItem {
   itemId: string;
@@ -25,21 +26,51 @@ export interface CheckoutDto {
   descuentos?: number[];
 }
 
-/** Resultado de validar un único item del carrito. */
+/** Resumen de la promoción aplicada a un item validado por el backend. */
+export interface PromocionAplicadaResponse {
+  idPromocion: string;
+  nombrePromocion: string;
+  tipoPromocion: TipoPromocion;
+  /** Texto corto para mostrar al usuario (ej. "15% OFF", "3x2"). */
+  etiqueta: string;
+}
+
+/**
+ * Resultado de validar un único item del carrito.
+ *
+ * `subtotal` es el monto FINAL a pagar por este item (con promo aplicada).
+ * Para mostrar el subtotal SIN descuento, calcular `precioUnitario * cantidadSolicitada`.
+ */
 export interface ItemValidadoResponse {
   itemId: string;
   nombre: string;
   cantidadSolicitada: number;
   stockDisponible: number;
+  /** Precio unitario base sin descuento. */
   precioUnitario: number;
+  /** Precio unitario tras aplicar DESCUENTO_PORCENTUAL. No se llena para NXM/SEGUNDA_UNIDAD. */
+  precioUnitarioConDescuento?: number;
+  /** Subtotal final con descuento aplicado. */
   subtotal: number;
+  /** subtotalSinDescuento - subtotal. 0 si no hay promo. */
+  ahorroTotal: number;
+  /** Promoción usada para el cálculo. */
+  promocionAplicada?: PromocionAplicadaResponse;
   disponible: boolean;
   motivo?: string;
 }
 
-/** Respuesta de POST /api/cart/validate. */
+/**
+ * Respuesta de POST /api/cart/validate.
+ *
+ * `total` es el monto FINAL a pagar (con promociones aplicadas).
+ * `subtotalSinDescuentos` es la suma sin promos.
+ * `ahorroTotal` es `subtotalSinDescuentos - total`.
+ */
 export interface ValidacionCarritoResponse {
   items: ItemValidadoResponse[];
+  subtotalSinDescuentos: number;
+  ahorroTotal: number;
   total: number;
   carritoValido: boolean;
 }

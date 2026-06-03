@@ -120,9 +120,16 @@ const CartPageClient = () => {
       ? new Map(validacion.data.items.map((v) => [v.itemId, v]))
       : null;
 
-  // Total a mostrar: el del backend si está validado, sino el local.
+  // Totales del backend (con promos aplicadas) o fallback al estimado local
   const totalAMostrar =
     validacion.tipo === 'ok' ? validacion.data.total : subtotalEstimado;
+  const subtotalSinDescuentos =
+    validacion.tipo === 'ok'
+      ? validacion.data.subtotalSinDescuentos
+      : subtotalEstimado;
+  const ahorroTotal =
+    validacion.tipo === 'ok' ? validacion.data.ahorroTotal : 0;
+  const hayAhorro = ahorroTotal > 0;
 
   // Botón "Confirmar compra" habilitado solo en condiciones buenas.
   const puedeConfirmar =
@@ -182,6 +189,20 @@ const CartPageClient = () => {
 
         <aside className="cart-page-resumen" aria-label="Resumen de la compra">
           <h2>Resumen</h2>
+
+          {/* Desglose: subtotal sin descuentos, ahorro y total final */}
+          {hayAhorro && (
+            <>
+              <div className="cart-page-resumen-fila cart-page-resumen-fila-secundaria">
+                <span>Subtotal</span>
+                <span>${subtotalSinDescuentos.toLocaleString('es-AR')}</span>
+              </div>
+              <div className="cart-page-resumen-fila cart-page-resumen-fila-ahorro">
+                <span>Descuentos por promociones</span>
+                <span>−${ahorroTotal.toLocaleString('es-AR')}</span>
+              </div>
+            </>
+          )}
 
           <div className="cart-page-resumen-fila">
             <span>{validacion.tipo === 'ok' ? 'Total' : 'Subtotal'}</span>

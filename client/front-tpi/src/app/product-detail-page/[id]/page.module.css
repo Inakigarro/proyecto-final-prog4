@@ -114,6 +114,24 @@
   margin: 0;
 }
 
+/* Bloque precio cuando hay DESCUENTO_PORCENTUAL: tachado arriba + descuento abajo */
+.bloquePrecio {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.precioTachado {
+  font-size: 1.1rem;
+  color: var(--color-muted);
+  text-decoration: line-through;
+  line-height: 1.1;
+}
+
+.precioDescuento {
+  color: var(--color-accent-hover);
+}
+
 /* Selector de cantidad */
 
 .cantidadBloque {

@@ -129,6 +129,18 @@
   line-height: 1.1;
 }
 
+/* Precio original tachado cuando hay DESCUENTO_PORCENTUAL aplicado */
+.card-precio-tachado {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  text-decoration: line-through;
+  line-height: 1;
+}
+
+.card-precio-descuento {
+  color: var(--color-accent-hover);
+}
+
 /* ── Botón CTA ──────────────────────────────────────────── */
 
 .card-cta {

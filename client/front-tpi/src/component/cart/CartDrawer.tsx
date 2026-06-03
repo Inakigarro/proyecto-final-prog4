@@ -108,8 +108,11 @@ const CartDrawer = () => {
     return () => controller.abort();
   }, [abierto, items]);
 
-  // Total a mostrar: prefiere el validado del backend, fallback al estimado local.
+  // Total a mostrar: prefiere el validado del backend (con promos aplicadas),
+  // fallback al estimado local sin descuento.
   const totalMostrado = validacion?.total ?? subtotalEstimado;
+  const ahorroTotal = validacion?.ahorroTotal ?? 0;
+  const hayAhorro = ahorroTotal > 0;
   const hayItems = items.length > 0;
 
   const handleFinalizar = () => {
@@ -193,8 +196,14 @@ const CartDrawer = () => {
 
             {hayItems && (
               <footer className="cart-drawer-footer">
+                {hayAhorro && (
+                  <div className="cart-drawer-ahorro">
+                    <span>Descuentos aplicados</span>
+                    <span>−${ahorroTotal.toLocaleString('es-AR')}</span>
+                  </div>
+                )}
                 <div className="cart-drawer-total">
-                  <span>Subtotal</span>
+                  <span>Total</span>
                   <span className="cart-drawer-total-monto">
                     ${totalMostrado.toLocaleString('es-AR')}
                   </span>

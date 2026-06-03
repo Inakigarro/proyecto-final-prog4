@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import CardProduct from "@/component/card/card";
-import { derivarCucarda, type Promocion } from "@/lib/promociones";
+import { buscarPromocionAplicable, type Promocion } from "@/lib/promociones";
 import type { Producto } from "../types";
 import styles from "../page.module.css";
 
@@ -78,7 +78,7 @@ export default function RelatedSlider({
           const comparando = productosComparados.includes(producto.id);
           const limiteAlcanzado =
             productosComparados.length >= maxComparados && !comparando;
-          const cucardaPromocional = derivarCucarda(producto.id, promociones);
+          const promocionAplicable = buscarPromocionAplicable(producto.id, promociones);
 
           return (
             <div key={producto.id} className={styles.sliderItem}>
@@ -88,7 +88,8 @@ export default function RelatedSlider({
                 precioUnitario={producto.precioUnitario}
                 imageSrc={producto.imageSrc}
                 categoria={producto.category[0]?.nombre}
-                cucarda={cucardaPromocional ?? producto.cucarda}
+                promocion={promocionAplicable}
+                cucarda={producto.cucarda}
               />
 
               <button

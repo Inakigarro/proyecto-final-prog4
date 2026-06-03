@@ -110,20 +110,116 @@ const descuentoEfectivo = (promocion: Promocion): number => {
 };
 
 /**
- * Dado un producto y un conjunto de promociones, devuelve el texto de la cucarda
- * correspondiente a la promo con mayor descuento aparente que lo incluya.
- * Devuelve `undefined` si ninguna promo aplica al producto.
+ * Dado un producto y un conjunto de promociones, devuelve la promo con mayor
+ * descuento aparente que lo incluya. Empate → primera en orden.
+ * Devuelve `undefined` si ninguna aplica.
+ */
+export const buscarPromocionAplicable = (
+  idProducto: string,
+  promociones: Promocion[],
+): Promocion | undefined => {
+  const aplicables = promociones.filter((promocion) =>
+    promocion.idsProductos.includes(idProducto),
+  );
+  if (aplicables.length === 0) return undefined;
+  return aplicables.reduce((mejor, actual) =>
+    descuentoEfectivo(actual) > descuentoEfectivo(mejor) ? actual : mejor,
+  );
+};
+
+/**
+ * Versión "texto" de `buscarPromocionAplicable`: devuelve directamente la
+ * etiqueta de cucarda. Útil cuando solo se necesita display.
  */
 export const derivarCucarda = (
   idProducto: string,
   promociones: Promocion[],
 ): string | undefined => {
-  const aplicables = promociones.filter((promocion) =>
-    promocion.idsProductos.includes(idProducto),
-  );
-  if (aplicables.length === 0) return undefined;
-  const mejorPromocion = aplicables.reduce((mejor, actual) =>
-    descuentoEfectivo(actual) > descuentoEfectivo(mejor) ? actual : mejor,
-  );
-  return describirPromocion(mejorPromocion);
+  const promocion = buscarPromocionAplicable(idProducto, promociones);
+  return promocion ? describirPromocion(promocion) : undefined;
+};
+
+export interface ResultadoDescuento {
+  /** precioUnitario * cantidad, sin promoción. */
+  subtotalSinDescuento: number;
+  /** Monto final a pagar por este item con la promo aplicada. */
+  subtotalConDescuento: number;
+  /**
+   * Precio unitario con descuento. Solo se llena para DESCUENTO_PORCENTUAL.
+   * En NXM y SEGUNDA_UNIDAD el precio unitario individual no cambia.
+   */
+  precioUnitarioConDescuento?: number;
+  /** subtotalSinDescuento - subtotalConDescuento. */
+  ahorroTotal: number;
+}
+
+const redondear = (valor: number): number => parseFloat(valor.toFixed(2));
+
+/**
+ * Calcula el descuento de un item según la promoción aplicada.
+ * Misma lógica que el helper del backend — espejada en cliente para que
+ * las cards puedan pintar precio tachado sin esperar al validate.
+ */
+export const calcularDescuentoItem = (
+  precioUnitario: number,
+  cantidad: number,
+  promocion?: Promocion,
+): ResultadoDescuento => {
+  const subtotalSinDescuento = redondear(precioUnitario * cantidad);
+  if (!promocion || cantidad <= 0) {
+    return {
+      subtotalSinDescuento,
+      subtotalConDescuento: subtotalSinDescuento,
+      ahorroTotal: 0,
+    };
+  }
+
+  const { tipoPromocion, parametros } = promocion;
+  switch (tipoPromocion) {
+    case "DESCUENTO_PORCENTUAL": {
+      const porcentaje = parametros.porcentaje ?? 0;
+      const precioConDescuento = redondear(precioUnitario * (1 - porcentaje / 100));
+      const subtotalConDescuento = redondear(precioConDescuento * cantidad);
+      return {
+        subtotalSinDescuento,
+        subtotalConDescuento,
+        precioUnitarioConDescuento: precioConDescuento,
+        ahorroTotal: redondear(subtotalSinDescuento - subtotalConDescuento),
+      };
+    }
+    case "NXM": {
+      const lleva = parametros.cantidadLleva ?? 0;
+      const paga = parametros.cantidadPaga ?? 0;
+      if (lleva <= 0 || paga <= 0 || lleva <= paga) {
+        return {
+          subtotalSinDescuento,
+          subtotalConDescuento: subtotalSinDescuento,
+          ahorroTotal: 0,
+        };
+      }
+      const grupos = Math.floor(cantidad / lleva);
+      const unidadesGratis = grupos * (lleva - paga);
+      const unidadesAPagar = cantidad - unidadesGratis;
+      const subtotalConDescuento = redondear(unidadesAPagar * precioUnitario);
+      return {
+        subtotalSinDescuento,
+        subtotalConDescuento,
+        ahorroTotal: redondear(subtotalSinDescuento - subtotalConDescuento),
+      };
+    }
+    case "SEGUNDA_UNIDAD": {
+      const descuento = parametros.descuentoSegundaUnidad ?? 0;
+      const factor = 1 - descuento / 100;
+      const pares = Math.floor(cantidad / 2);
+      const impares = cantidad % 2;
+      const subtotalConDescuento = redondear(
+        pares * precioUnitario * (1 + factor) + impares * precioUnitario,
+      );
+      return {
+        subtotalSinDescuento,
+        subtotalConDescuento,
+        ahorroTotal: redondear(subtotalSinDescuento - subtotalConDescuento),
+      };
+    }
+  }
 };

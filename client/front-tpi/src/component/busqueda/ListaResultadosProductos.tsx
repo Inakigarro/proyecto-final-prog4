@@ -2,7 +2,7 @@
 
 import CardProduct from "../card/card";
 import type { Producto } from "@/lib/productos";
-import { derivarCucarda, type Promocion } from "@/lib/promociones";
+import { buscarPromocionAplicable, type Promocion } from "@/lib/promociones";
 import styles from "./ListaResultadosProductos.module.css";
 
 interface ListaResultadosProductosProps {
@@ -31,7 +31,8 @@ const ListaResultadosProductos = ({
           precioUnitario={producto.precioUnitario}
           imageSrc={producto.imageSrc}
           categoria={producto.category[0]?.nombre}
-          cucarda={derivarCucarda(producto.id, promociones) ?? producto.cucarda}
+          promocion={buscarPromocionAplicable(producto.id, promociones)}
+          cucarda={producto.cucarda}
           description={producto.descripcion ?? ""}
         />
       ))}

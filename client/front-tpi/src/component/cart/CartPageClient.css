@@ -101,6 +101,24 @@
   color: var(--color-dark-text);
 }
 
+/* Filas secundarias del desglose: subtotal sin descuento (más liviano) */
+.cart-page-resumen-fila-secundaria {
+  font-size: 14px;
+  padding: 6px 0;
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+/* Fila de ahorro: misma estructura pero color verde */
+.cart-page-resumen-fila-ahorro {
+  font-size: 14px;
+  color: var(--color-success);
+  font-weight: 600;
+  padding: 6px 0 12px;
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
 .cart-page-resumen-nota {
   font-size: 13px;
   color: var(--color-dark-muted);

@@ -29,7 +29,7 @@ import RelatedSlider from "./_components/RelatedSlider";
 import Comparador from "./_components/Comparador";
 import Breadcrumb from "@/component/layout/Breadcrumb";
 import { usePromociones } from "@/component/promociones/usePromociones";
-import { derivarCucarda } from "@/lib/promociones";
+import { buscarPromocionAplicable, describirPromocion } from "@/lib/promociones";
 import styles from "./page.module.css";
 
 /** Cantidad máxima de productos que se pueden comparar con el actual. */
@@ -123,8 +123,12 @@ export default function PaginaProducto() {
   // ── Layout ───────────────────────────────────────────────
 
   const idsComparados = productosComparados.map((p) => p.id);
-  // Cucarda derivada de la promo de mayor descuento aparente que incluya este producto
-  const cucardaPromocional = derivarCucarda(producto.id, promociones);
+  // Promo de mayor descuento que incluye al producto principal: se usa para
+  // cucarda del hero, precio tachado del panel y header de comparador.
+  const promocionAplicable = buscarPromocionAplicable(producto.id, promociones);
+  const cucardaPromocional = promocionAplicable
+    ? describirPromocion(promocionAplicable)
+    : undefined;
 
   return (
     <div className={styles.pagina}>
@@ -144,6 +148,7 @@ export default function PaginaProducto() {
           onCantidadChange={setCantidad}
           onAgregarAlCarrito={handleAgregarAlCarrito}
           onComprarAhora={handleComprarAhora}
+          promocion={promocionAplicable}
         />
       </section>
 
