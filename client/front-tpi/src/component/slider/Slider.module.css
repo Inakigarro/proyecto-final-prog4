@@ -3,7 +3,7 @@
   width: 100%;
   overflow: hidden;
   border-radius: 12px;
-  background: #e2e8f0;
+  background: var(--color-border);
 }
 
 .track {
@@ -52,7 +52,7 @@
   justify-content: center;
   z-index: 2;
   transition: background 0.18s;
-  color: #102a43;
+  color: var(--color-primary-dark);
   padding: 0;
 }
 

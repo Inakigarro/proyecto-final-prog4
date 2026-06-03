@@ -1,5 +1,7 @@
 import styles from "./page.module.css";
 import Slider, { Slide } from "@/component/slider/Slider";
+import VitrinaProductos from "@/component/vitrina/VitrinaProductos";
+import { obtenerProductos } from "@/lib/productos";
 
 const slides: Slide[] = [
   {
@@ -37,7 +39,9 @@ const infoCards = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const productosDestacados = await obtenerProductos({ limite: 8 });
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
@@ -53,6 +57,12 @@ export default function Home() {
               </article>
             ))}
           </section>
+
+          <VitrinaProductos
+            titulo="Productos destacados"
+            productos={productosDestacados}
+            mensajeVacio="No pudimos cargar los productos en este momento."
+          />
         </div>
       </main>
     </div>

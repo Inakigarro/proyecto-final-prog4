@@ -27,6 +27,7 @@ import HeroProducto from "./_components/HeroProducto";
 import PanelInfo from "./_components/PanelInfo";
 import RelatedSlider from "./_components/RelatedSlider";
 import Comparador from "./_components/Comparador";
+import Breadcrumb from "@/component/layout/Breadcrumb";
 import styles from "./page.module.css";
 
 /** Cantidad máxima de productos que se pueden comparar con el actual. */
@@ -122,6 +123,8 @@ export default function PaginaProducto() {
 
   return (
     <div className={styles.pagina}>
+
+      <Breadcrumb segmentos={[{ etiqueta: producto.nombre }]} />
 
       {/* Hero: imagen del producto + panel de información y acciones */}
       <section className={styles.hero}>

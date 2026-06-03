@@ -26,8 +26,8 @@
 }
 
 .infoCard {
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 32px 24px;
   display: flex;
@@ -50,13 +50,13 @@
 .infoTitulo {
   font-size: 16px;
   font-weight: 700;
-  color: #102a43;
+  color: var(--color-text);
   margin: 0;
 }
 
 .infoDescripcion {
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-muted);
   margin: 0;
   line-height: 1.6;
 }

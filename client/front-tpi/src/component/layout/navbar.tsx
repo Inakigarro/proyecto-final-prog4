@@ -1,53 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import "./navbar.css";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import "./navbar.css";
 import CartIcon from "../cart/CartIcon";
+import BarraBusqueda from "./BarraBusqueda";
+import CategoriasMenu from "./CategoriasMenu";
+import MenuMovilDrawer, { type EnlacePrincipal } from "./MenuMovilDrawer";
+import { useCategorias } from "./useCategorias";
 
-import { usePathname, useRouter } from "next/navigation";
-interface EnlacesNav {
-  etiqueta: string;
-  ruta: string;
-}
-
-const enlacesNav: EnlacesNav[] = [
-  { etiqueta: "Inicio", ruta: "/" },
+const enlacesPrincipales: EnlacePrincipal[] = [
   { etiqueta: "Promociones", ruta: "/promociones" },
   { etiqueta: "Quiénes somos", ruta: "/test-connection" },
 ];
 
 const Navbar = () => {
   const rutaActual = usePathname();
-  const router = useRouter();
-  const [query, setQuery] = useState("");
+  const { categorias } = useCategorias();
 
   return (
     <header className="app-navbar">
-      <div className="navbar-logo">TechPoint</div>
+      <MenuMovilDrawer categorias={categorias} enlaces={enlacesPrincipales} />
 
-      <form
-        className="navbar-search"
-        role="search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const trimmed = query.trim();
-          if (!trimmed) return;
-          router.push(`/search-result?query=${encodeURIComponent(trimmed)}`);
-        }}
-      >
-        <input
-          type="search"
-          placeholder="Buscar..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Buscar productos"
-        />
-      </form>
+      <Link href="/" className="navbar-logo">TechPoint</Link>
+
+      <CategoriasMenu categorias={categorias} />
+
+      <BarraBusqueda />
 
       <div className="navbar-actions">
         <ul className="navbar-list">
-          {enlacesNav.map(({ etiqueta, ruta }) => {
+          {enlacesPrincipales.map(({ etiqueta, ruta }) => {
             const estaActivo = rutaActual === ruta;
             return (
               <li key={ruta} className="navbar-item">
@@ -63,7 +46,7 @@ const Navbar = () => {
           })}
         </ul>
 
-        <button type="button" className="icon-button" aria-label="Login">
+        <button type="button" className="icon-button" aria-label="Iniciar sesión">
           <span className="login-icon">🔒</span>
         </button>
         <CartIcon />

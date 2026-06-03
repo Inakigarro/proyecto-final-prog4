@@ -1,5 +1,4 @@
-/* Toast de confirmación al agregar al carrito.
-   Posicionado abajo a la derecha, con entrada animada desde abajo. */
+/* Toast de confirmación al agregar al carrito. */
 
 .cart-toast {
   position: fixed;
@@ -12,10 +11,10 @@
   min-width: 280px;
   max-width: 360px;
   padding: 14px 16px;
-  background-color: #1f2937;
-  color: #f9fafb;
-  border: 1px solid #374151;
-  border-left: 4px solid #22c55e;
+  background-color: var(--color-dark-surface);
+  color: var(--color-dark-text);
+  border: 1px solid var(--color-dark-border);
+  border-left: 4px solid var(--color-success);
   border-radius: 10px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
   font-family: inherit;
@@ -28,8 +27,8 @@
   height: 28px;
   display: grid;
   place-items: center;
-  background-color: #22c55e;
-  color: #052e16;
+  background-color: var(--color-success);
+  color: var(--color-success-dark);
   font-weight: 700;
   border-radius: 50%;
   font-size: 14px;
@@ -44,13 +43,13 @@
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #f9fafb;
+  color: var(--color-dark-text);
 }
 
 .cart-toast-producto {
   margin: 2px 0 0;
   font-size: 13px;
-  color: #d1d5db;
+  color: var(--color-dark-text-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -60,7 +59,7 @@
   flex-shrink: 0;
   background: transparent;
   border: none;
-  color: #9ca3af;
+  color: var(--color-dark-muted);
   cursor: pointer;
   font-size: 14px;
   padding: 4px;
@@ -69,7 +68,7 @@
 }
 
 .cart-toast-cerrar:hover {
-  color: #f9fafb;
+  color: var(--color-dark-text);
   background-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -84,7 +83,6 @@
   }
 }
 
-/* Ajuste para mobile: ocupa el ancho con margen lateral. */
 @media (max-width: 480px) {
   .cart-toast {
     left: 16px;

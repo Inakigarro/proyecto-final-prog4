@@ -1,0 +1,172 @@
+.vitrina {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.encabezado {
+  display: flex;
+  align-items: center;
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* Contenedor relativo para que las flechas se posicionen sobre la pista */
+.contenedor {
+  position: relative;
+}
+
+.pista {
+  list-style: none;
+  margin: 0;
+  padding: 4px 4px 12px;
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 4px;
+  /* Oculta la scrollbar nativa — navegación vía flechas/dots */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.pista::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ancho del slot por breakpoint, calculado para que entren N cards completas
+   con un gap de 16px entre ellas: (100% - (N-1)*16px) / N */
+.slot {
+  flex: 0 0 calc((100% - 64px) / 5); /* 5 visibles en desktop */
+  scroll-snap-align: start;
+  display: flex;
+}
+
+.slot > * {
+  width: 100%;
+}
+
+.vacio {
+  color: var(--color-muted);
+  font-size: 14px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+/* ── Flechas laterales (mismo estilo que el Slider) ──────── */
+.flecha {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  color: var(--color-primary-dark);
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  transition: background 0.18s, opacity 0.18s;
+}
+
+.flecha:hover:not(:disabled) {
+  background: #ffffff;
+}
+
+.flecha:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.flechaIzq {
+  left: 14px;
+}
+
+.flechaDer {
+  right: 14px;
+}
+
+/* ── Dots de paginación ─────────────────────────────────── */
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--color-muted);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.18s, border-color 0.18s, transform 0.18s;
+}
+
+.dot:hover {
+  border-color: var(--color-text);
+}
+
+.dotActivo {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  transform: scale(1.15);
+}
+
+/* ── Responsive: cantidad de cards visibles por breakpoint ── */
+@media (max-width: 1280px) {
+  .slot {
+    flex-basis: calc((100% - 48px) / 4);
+  }
+}
+
+@media (max-width: 1024px) {
+  .slot {
+    flex-basis: calc((100% - 32px) / 3);
+  }
+}
+
+@media (max-width: 768px) {
+  .titulo {
+    font-size: 18px;
+  }
+
+  .flecha {
+    width: 36px;
+    height: 36px;
+    font-size: 26px;
+  }
+
+  .flechaIzq {
+    left: 8px;
+  }
+
+  .flechaDer {
+    right: 8px;
+  }
+
+  .slot {
+    flex-basis: calc((100% - 16px) / 2);
+  }
+}
+
+@media (max-width: 480px) {
+  .slot {
+    flex-basis: 85%;
+  }
+}
