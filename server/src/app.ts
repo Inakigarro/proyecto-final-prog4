@@ -9,6 +9,7 @@ import permissionRoutes from './routes/permissionRoutes';
 import productRoutes from './routes/productRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import cartRoutes from './routes/cartRoutes';
+import promotionRoutes from './routes/promotionRoutes';
 
 /**
  * Crea y configura la aplicación Express.
@@ -36,6 +37,7 @@ export function crearApp() {
   app.use('/api/products',    productRoutes);
   app.use('/api/categories',  categoryRoutes);
   app.use('/api/cart',        cartRoutes);
+  app.use('/api/promotions',  promotionRoutes);
 
   app.use((_req, res) => {
     res.status(404).json({ message: 'Ruta no encontrada' });

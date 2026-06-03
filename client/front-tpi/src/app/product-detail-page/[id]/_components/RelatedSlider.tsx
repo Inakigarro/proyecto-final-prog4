@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import CardProduct from "@/component/card/card";
+import { derivarCucarda, type Promocion } from "@/lib/promociones";
 import type { Producto } from "../types";
 import styles from "../page.module.css";
 
@@ -14,6 +15,8 @@ interface RelatedSliderProps {
   maxComparados: number;
   /** Callback al hacer click en "Comparar" de una card. */
   onToggleComparar: (producto: Producto) => void;
+  /** Promociones activas — se usan para derivar la cucarda de cada card. */
+  promociones?: Promocion[];
 }
 
 /**
@@ -31,6 +34,7 @@ export default function RelatedSlider({
   productosComparados,
   maxComparados,
   onToggleComparar,
+  promociones = [],
 }: RelatedSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [mostrarFlechas, setMostrarFlechas] = useState(false);
@@ -70,19 +74,21 @@ export default function RelatedSlider({
       )}
 
       <div className={styles.sliderTrack} ref={trackRef}>
-        {productos.map((p) => {
-          const comparando = productosComparados.includes(p.id);
-          const limiteAlcanzado = productosComparados.length >= maxComparados && !comparando;
+        {productos.map((producto) => {
+          const comparando = productosComparados.includes(producto.id);
+          const limiteAlcanzado =
+            productosComparados.length >= maxComparados && !comparando;
+          const cucardaPromocional = derivarCucarda(producto.id, promociones);
 
           return (
-            <div key={p.id} className={styles.sliderItem}>
+            <div key={producto.id} className={styles.sliderItem}>
               <CardProduct
-                itemId={p.id}
-                title={p.nombre}
-                precioUnitario={p.precioUnitario}
-                imageSrc={p.imageSrc}
-                categoria={p.category[0]?.nombre}
-                cucarda={p.cucarda}
+                itemId={producto.id}
+                title={producto.nombre}
+                precioUnitario={producto.precioUnitario}
+                imageSrc={producto.imageSrc}
+                categoria={producto.category[0]?.nombre}
+                cucarda={cucardaPromocional ?? producto.cucarda}
               />
 
               <button
@@ -91,7 +97,7 @@ export default function RelatedSlider({
                   ${comparando ? styles.compararBtnActivo : ""}
                   ${limiteAlcanzado ? styles.compararBtnDisabled : ""}
                 `.trim()}
-                onClick={() => !limiteAlcanzado && onToggleComparar(p)}
+                onClick={() => !limiteAlcanzado && onToggleComparar(producto)}
                 disabled={limiteAlcanzado}
                 title={limiteAlcanzado ? `Máximo ${maxComparados} productos` : undefined}
               >

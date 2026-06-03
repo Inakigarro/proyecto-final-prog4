@@ -3,11 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import CardProduct from "../card/card";
 import type { Producto } from "@/lib/productos";
+import { derivarCucarda, type Promocion } from "@/lib/promociones";
 import styles from "./VitrinaProductos.module.css";
 
 interface VitrinaProductosProps {
   titulo: string;
   productos: Producto[];
+  /** Promociones activas — se usan para pintar la cucarda en cada card. */
+  promociones?: Promocion[];
   /** Texto cuando la lista viene vacía (backend caído o sin productos). */
   mensajeVacio?: string;
 }
@@ -15,6 +18,7 @@ interface VitrinaProductosProps {
 const VitrinaProductos = ({
   titulo,
   productos,
+  promociones = [],
   mensajeVacio = "No hay productos para mostrar.",
 }: VitrinaProductosProps) => {
   const refPista = useRef<HTMLUListElement>(null);
@@ -80,7 +84,7 @@ const VitrinaProductos = ({
                     precioUnitario={producto.precioUnitario}
                     imageSrc={producto.imageSrc}
                     categoria={producto.category[0]?.nombre}
-                    cucarda={producto.cucarda}
+                    cucarda={derivarCucarda(producto.id, promociones) ?? producto.cucarda}
                     description={producto.descripcion ?? ""}
                   />
                 </li>

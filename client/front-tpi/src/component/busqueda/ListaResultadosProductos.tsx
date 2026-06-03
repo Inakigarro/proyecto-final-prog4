@@ -2,15 +2,19 @@
 
 import CardProduct from "../card/card";
 import type { Producto } from "@/lib/productos";
+import { derivarCucarda, type Promocion } from "@/lib/promociones";
 import styles from "./ListaResultadosProductos.module.css";
 
 interface ListaResultadosProductosProps {
   productos: Producto[];
+  /** Promociones activas — se usan para pintar la cucarda en cada card. */
+  promociones?: Promocion[];
   mensajeVacio?: string;
 }
 
 const ListaResultadosProductos = ({
   productos,
+  promociones = [],
   mensajeVacio = "No se encontraron productos.",
 }: ListaResultadosProductosProps) => {
   if (productos.length === 0) {
@@ -27,7 +31,7 @@ const ListaResultadosProductos = ({
           precioUnitario={producto.precioUnitario}
           imageSrc={producto.imageSrc}
           categoria={producto.category[0]?.nombre}
-          cucarda={producto.cucarda}
+          cucarda={derivarCucarda(producto.id, promociones) ?? producto.cucarda}
           description={producto.descripcion ?? ""}
         />
       ))}
