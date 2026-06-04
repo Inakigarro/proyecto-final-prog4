@@ -4,8 +4,8 @@
  * CartDrawer — mini-cart lateral.
  *
  * Se abre cuando state.drawerAbierto === true (disparado desde CartIcon).
- * Al abrirse, dispara la validación contra POST /api/cart/validate para
- * mostrar info real de stock y precio.
+ * Al hacer click en "Finalizar compra" verifica si el usuario está autenticado;
+ * si no lo está, abre el LoginGateModal.
  *
  * Se cierra con: botón X, click en overlay, tecla Escape, "Seguir comprando",
  * o al abrir el LoginGateModal desde "Finalizar compra".
@@ -13,40 +13,24 @@
  * Montar una sola vez en el RootLayout.
  */
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import CartItemRow from './CartItemRow';
 import LoginGateModal from './LoginGateModal';
-import type {
-  ItemValidadoResponse,
-  ValidarCarritoDto,
-  ValidacionCarritoResponse,
-} from '@/lib/cart-types';
 import './CartDrawer.css';
 
 const CartDrawer = () => {
   const { state, cantidadTotal, subtotalEstimado, cerrarDrawer, vaciar } =
     useCart();
+  const { state: authState } = useAuth();
+  const router = useRouter();
 
   const abierto = state.drawerAbierto;
   const items = state.items;
 
-  // Estado local del LoginGate (placeholder hasta que exista AuthContext real).
   const [loginAbierto, setLoginAbierto] = useState(false);
-
-  // Validación contra el backend.
-  const [validando, setValidando] = useState(false);
-  const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
-  const [validacion, setValidacion] = useState<ValidacionCarritoResponse | null>(
-    null
-  );
-
-  // Mapa itemId → ItemValidadoResponse para pasar a cada row.
-  const mapaValidados = useMemo(() => {
-    const m = new Map<string, ItemValidadoResponse>();
-    validacion?.items.forEach((v) => m.set(v.itemId, v));
-    return m;
-  }, [validacion]);
 
   // Cerrar con Escape + bloquear scroll del body mientras está abierto.
   useEffect(() => {
@@ -66,55 +50,15 @@ const CartDrawer = () => {
     };
   }, [abierto, cerrarDrawer]);
 
-  // Validar contra el backend cuando se abre o cuando cambian los items.
-  useEffect(() => {
-    if (!abierto || items.length === 0) {
-      setValidacion(null);
-      setErrorValidacion(null);
-      return;
-    }
-
-    const controller = new AbortController();
-
-    const validar = async () => {
-      setValidando(true);
-      setErrorValidacion(null);
-      try {
-        const body: ValidarCarritoDto = {
-          items: items.map((i) => ({ itemId: i.itemId, cantidad: i.cantidad })),
-        };
-        const res = await fetch('/api/cart/validate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        });
-        if (!res.ok) {
-          throw new Error(`Error ${res.status} al validar carrito`);
-        }
-        const data = (await res.json()) as ValidacionCarritoResponse;
-        setValidacion(data);
-      } catch (err) {
-        if ((err as Error).name === 'AbortError') return;
-        setErrorValidacion(
-          err instanceof Error ? err.message : 'Error desconocido'
-        );
-      } finally {
-        setValidando(false);
-      }
-    };
-
-    validar();
-    return () => controller.abort();
-  }, [abierto, items]);
-
-  // Total a mostrar: prefiere el validado del backend, fallback al estimado local.
-  const totalMostrado = validacion?.total ?? subtotalEstimado;
   const hayItems = items.length > 0;
 
   const handleFinalizar = () => {
     cerrarDrawer();
-    setLoginAbierto(true);
+    if (authState.isAutenticado) {
+      router.push('/carrito');
+    } else {
+      setLoginAbierto(true);
+    }
   };
 
   return (
@@ -168,26 +112,15 @@ const CartDrawer = () => {
               )}
 
               {hayItems && (
-                <>
-                  {validando && (
-                    <p className="cart-drawer-status">Verificando stock...</p>
-                  )}
-                  {errorValidacion && (
-                    <p className="cart-drawer-status cart-drawer-status-error">
-                      No pudimos verificar el stock: {errorValidacion}
-                    </p>
-                  )}
-
-                  <div className="cart-drawer-items">
-                    {items.map((item) => (
-                      <CartItemRow
-                        key={item.itemId}
-                        item={item}
-                        validado={mapaValidados.get(item.itemId) ?? null}
-                      />
-                    ))}
-                  </div>
-                </>
+                <div className="cart-drawer-items">
+                  {items.map((item) => (
+                    <CartItemRow
+                      key={item.itemId}
+                      item={item}
+                      validado={null}
+                    />
+                  ))}
+                </div>
               )}
             </div>
 
@@ -196,14 +129,13 @@ const CartDrawer = () => {
                 <div className="cart-drawer-total">
                   <span>Subtotal</span>
                   <span className="cart-drawer-total-monto">
-                    ${totalMostrado.toLocaleString('es-AR')}
+                    ${subtotalEstimado.toLocaleString('es-AR')}
                   </span>
                 </div>
                 <button
                   type="button"
                   className="cart-drawer-cta-primario"
                   onClick={handleFinalizar}
-                  disabled={validacion?.carritoValido === false}
                 >
                   Finalizar compra
                 </button>
@@ -223,6 +155,7 @@ const CartDrawer = () => {
       <LoginGateModal
         abierto={loginAbierto}
         onCerrar={() => setLoginAbierto(false)}
+        onLoginExitoso={() => router.push('/carrito')}
       />
     </>
   );
