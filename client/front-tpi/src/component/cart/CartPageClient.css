@@ -206,6 +206,21 @@
   color: var(--color-dark-text);
 }
 
+.cart-page-error-login {
+  background: transparent;
+  border: none;
+  color: #93c5fd;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+  font-family: inherit;
+}
+
+.cart-page-error-login:hover {
+  color: #bfdbfe;
+}
+
 .cart-page-warning {
   background: var(--color-warning-bg);
   border-left: 4px solid var(--color-warning);

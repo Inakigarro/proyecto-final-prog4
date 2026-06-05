@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { apiFetch, ApiError } from '@/lib/api';
 import type {
   ValidacionCarritoResponse,
@@ -18,6 +19,7 @@ import type {
 } from '@/lib/cart-types';
 import CartItemRow from './CartItemRow';
 import ConfirmDialog from './ConfirmDialog';
+import LoginGateModal from './LoginGateModal';
 import './CartPageClient.css';
 
 /** Tiempo de espera tras el último cambio antes de pegar al backend. */
@@ -31,8 +33,10 @@ type EstadoValidacion =
 
 const CartPageClient = () => {
   const { state, subtotalEstimado, vaciar } = useCart();
+  const { state: authState } = useAuth();
   const [validacion, setValidacion] = useState<EstadoValidacion>({ tipo: 'idle' });
   const [confirmacionVaciarAbierta, setConfirmacionVaciarAbierta] = useState(false);
+  const [loginAbierto, setLoginAbierto] = useState(false);
 
   // Refs para debounce y para descartar respuestas obsoletas.
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -131,9 +135,17 @@ const CartPageClient = () => {
     validacion.tipo === 'ok' ? validacion.data.ahorroTotal : 0;
   const hayAhorro = ahorroTotal > 0;
 
-  // Botón "Confirmar compra" habilitado solo en condiciones buenas.
+  // Botón "Confirmar compra" habilitado solo si el carrito es válido y hay sesión activa.
   const puedeConfirmar =
-    validacion.tipo === 'ok' && validacion.data.carritoValido;
+    validacion.tipo === 'ok' && validacion.data.carritoValido && authState.isAutenticado;
+
+  const handleConfirmarCompra = () => {
+    if (!authState.isAutenticado) {
+      setLoginAbierto(true);
+      return;
+    }
+    // TODO: implementar llamada a POST /api/cart/checkout
+  };
 
   const handleConfirmarVaciar = () => {
     vaciar();
@@ -159,8 +171,14 @@ const CartPageClient = () => {
           <strong>No se pudo validar el carrito.</strong>{' '}
           {validacion.status === 401 ? (
             <>
-              Tu sesión expiró. Renová el token de prueba en{' '}
-              <code>.env.local</code> y reiniciá el dev server.
+              Necesitás iniciar sesión para continuar.{' '}
+              <button
+                type="button"
+                className="cart-page-error-login"
+                onClick={() => setLoginAbierto(true)}
+              >
+                Iniciar sesión
+              </button>
             </>
           ) : (
             <>{validacion.mensaje}</>
@@ -228,14 +246,17 @@ const CartPageClient = () => {
           <button
             type="button"
             className="cart-page-cta-primary"
-            disabled={!puedeConfirmar}
+            disabled={validacion.tipo === 'ok' && !validacion.data.carritoValido}
+            onClick={handleConfirmarCompra}
             title={
-              puedeConfirmar
+              !authState.isAutenticado
+                ? 'Iniciá sesión para confirmar la compra'
+                : puedeConfirmar
                 ? 'Confirmar compra (próximo paso)'
                 : 'Hay items con problemas o el carrito no fue validado'
             }
           >
-            Confirmar compra
+            {authState.isAutenticado ? 'Confirmar compra' : 'Iniciar sesión para comprar'}
           </button>
 
           <Link href="/" className="cart-page-cta-secondary">
@@ -253,6 +274,11 @@ const CartPageClient = () => {
         destructivo
         onConfirmar={handleConfirmarVaciar}
         onCancelar={() => setConfirmacionVaciarAbierta(false)}
+      />
+
+      <LoginGateModal
+        abierto={loginAbierto}
+        onCerrar={() => setLoginAbierto(false)}
       />
     </div>
   );
