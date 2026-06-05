@@ -17,8 +17,8 @@
   max-width: 420px;
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
-  background-color: #111827;
-  color: #f9fafb;
+  background-color: var(--color-dark-bg);
+  color: var(--color-dark-text);
   border-radius: 12px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   z-index: 1101;
@@ -34,7 +34,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 18px 20px;
-  border-bottom: 1px solid #1f2937;
+  border-bottom: 1px solid var(--color-dark-border);
 }
 
 .login-gate-titulo {
@@ -46,7 +46,7 @@
 .login-gate-cerrar {
   background: transparent;
   border: none;
-  color: #9ca3af;
+  color: var(--color-dark-muted);
   cursor: pointer;
   font-size: 16px;
   padding: 6px 10px;
@@ -55,7 +55,7 @@
 }
 
 .login-gate-cerrar:hover {
-  color: #f9fafb;
+  color: var(--color-dark-text);
   background-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -72,16 +72,16 @@
   flex-direction: column;
   gap: 6px;
   font-size: 13px;
-  color: #d1d5db;
+  color: var(--color-dark-text-2);
   font-weight: 500;
 }
 
 .login-gate-input {
   padding: 10px 12px;
-  background-color: #1f2937;
-  border: 1px solid #374151;
+  background-color: var(--color-dark-surface);
+  border: 1px solid var(--color-dark-border);
   border-radius: 8px;
-  color: #f9fafb;
+  color: var(--color-dark-text);
   font-size: 14px;
   font-family: inherit;
   outline: none;
@@ -89,19 +89,19 @@
 }
 
 .login-gate-input:focus {
-  border-color: #3b82f6;
-  background-color: #1a2333;
+  border-color: var(--color-primary);
+  background-color: var(--color-dark-bg);
 }
 
 .login-gate-input::placeholder {
-  color: #6b7280;
+  color: var(--color-dark-muted);
 }
 
 .login-gate-cta {
   margin-top: 6px;
   padding: 12px;
-  background-color: #2563eb;
-  color: white;
+  background-color: var(--color-highlight);
+  color: #fff;
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -111,7 +111,7 @@
 }
 
 .login-gate-cta:hover {
-  background-color: #1d4ed8;
+  background-color: var(--color-accent-hover);
 }
 
 /* Mensaje de error de credenciales */

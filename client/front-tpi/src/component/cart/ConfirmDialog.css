@@ -15,8 +15,8 @@
   transform: translate(-50%, -50%);
   width: calc(100% - 32px);
   max-width: 400px;
-  background-color: #111827;
-  color: #f9fafb;
+  background-color: var(--color-dark-bg);
+  color: var(--color-dark-text);
   border-radius: 12px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   z-index: 1101;
@@ -33,7 +33,7 @@
 .confirm-dialog-mensaje {
   margin: 0 0 20px;
   font-size: 14px;
-  color: #d1d5db;
+  color: var(--color-dark-text-2);
   line-height: 1.5;
 }
 
@@ -57,8 +57,8 @@
 
 .confirm-dialog-btn-cancelar {
   background-color: transparent;
-  color: #d1d5db;
-  border: 1px solid #374151;
+  color: var(--color-dark-text-2);
+  border: 1px solid var(--color-dark-border);
 }
 
 .confirm-dialog-btn-cancelar:hover {
@@ -66,20 +66,20 @@
 }
 
 .confirm-dialog-btn-confirmar {
-  background-color: #2563eb;
-  color: white;
+  background-color: var(--color-highlight);
+  color: #fff;
 }
 
 .confirm-dialog-btn-confirmar:hover {
-  background-color: #1d4ed8;
+  background-color: var(--color-accent-hover);
 }
 
 .confirm-dialog-btn-destructivo {
-  background-color: #dc2626;
+  background-color: var(--color-error);
 }
 
 .confirm-dialog-btn-destructivo:hover {
-  background-color: #b91c1c;
+  background-color: #a0403a;
 }
 
 /* Animaciones */
