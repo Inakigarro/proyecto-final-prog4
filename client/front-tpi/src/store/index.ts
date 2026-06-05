@@ -3,13 +3,11 @@
  *
  * Configura el store global con configureStore (RTK), registra los
  * slices y monta el middleware de persistencia en localStorage.
- *
- * Por ahora solo contiene el slice del carrito; cuando se sumen más
- * slices (auth, ordenes, etc.) se agregan al objeto reducer.
  */
 
 import { configureStore } from '@reduxjs/toolkit';
 import cartReducer, { type CartState } from './cartSlice';
+import authReducer, { type AuthState } from './authSlice';
 import { localStorageMiddleware } from './localStorageMiddleware';
 
 /**
@@ -21,11 +19,13 @@ import { localStorageMiddleware } from './localStorageMiddleware';
  */
 export interface RootState {
   cart: CartState;
+  auth: AuthState;
 }
 
 export const store = configureStore({
   reducer: {
     cart: cartReducer,
+    auth: authReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(localStorageMiddleware),

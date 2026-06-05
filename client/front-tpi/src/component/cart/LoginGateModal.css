@@ -114,29 +114,20 @@
   background-color: var(--color-accent-hover);
 }
 
-/* Aviso de placeholder al pie */
-.login-gate-aviso {
-  flex-shrink: 0;
-  margin: 0 20px 20px;
-  padding: 12px 14px;
-  background-color: var(--color-warning-bg);
-  border: 1px solid var(--color-warning-border);
+/* Mensaje de error de credenciales */
+.login-gate-error {
+  padding: 10px 12px;
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
   border-radius: 8px;
-  font-size: 12px;
-  color: var(--color-warning-text);
-}
-
-.login-gate-aviso strong {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--color-warning-text);
   font-size: 13px;
-  letter-spacing: 0.5px;
+  color: #fca5a5;
+  line-height: 1.4;
 }
 
-.login-gate-aviso p {
-  margin: 0;
-  line-height: 1.5;
+.login-gate-cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* Animaciones */
