@@ -6,7 +6,8 @@ import User from '../models/User';
 import Role from '../models/Role';
 import RefreshToken from '../models/RefreshToken';
 import PasswordResetToken from '../models/PasswordResetToken';
-import { LoginInput, RegisterInput, AuthResponse, JwtPayload, RequestConUsuario } from '../types';
+import { LoginInput, RegisterInput, AuthResponse, JwtPayload } from '../types';
+import { enviarEmailResetPassword } from '../services/email/emailService';
 import { IUser } from '../models/User';
 import { IRefreshToken } from '../models/RefreshToken';
 
@@ -134,13 +135,11 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 };
 
 /** Revoca el refresh token del usuario (cierre de sesión) */
-export const logout = async (req: RequestConUsuario, res: Response, next: NextFunction): Promise<void> => {
+export const logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { refreshToken: tokenRecibido } = req.body as { refreshToken: string };
 
-    if (tokenRecibido) {
-      await RefreshToken.deleteOne({ token: tokenRecibido, usuario: req.usuario?.id });
-    }
+    await RefreshToken.deleteOne({ token: tokenRecibido });
 
     res.json({ message: 'Sesión cerrada correctamente' });
   } catch (error) {
@@ -169,6 +168,8 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
     await PasswordResetToken.create({ token, usuario: usuario._id, expiresAt });
+
+    await enviarEmailResetPassword(email, token);
 
     res.json({ message: 'Si el email existe, recibirás instrucciones para restablecer tu contraseña.' });
   } catch (error) {

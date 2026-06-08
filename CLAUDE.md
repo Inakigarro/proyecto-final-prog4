@@ -54,6 +54,7 @@ server/src/
 ├── config/
 │   ├── constants.ts       # ROL_SUPERADMIN, ROL_USUARIO
 │   ├── database.ts        # conexión MongoDB via MONGODB_URI
+│   ├── env.ts             # validación de variables de entorno requeridas
 │   └── logger.ts          # logging estructurado JSON con niveles
 ├── models/                # esquemas Mongoose + interfaces TypeScript
 │   ├── User.ts            # IUser — hashing de contraseña, validación
@@ -93,43 +94,94 @@ server/src/
 ├── middlewares/
 │   ├── auth.ts            # verificarToken — valida JWT
 │   ├── verificarSuperAdmin.ts  # verifica rol superadmin
+│   ├── validar.ts         # middleware de validación Zod (envuelve schemas)
 │   └── errorHandler.ts    # manejo global: Mongoose, JWT, duplicados
+├── schemas/               # schemas Zod para validación de entrada
+│   ├── auth.schemas.ts
+│   ├── cart.schemas.ts
+│   └── product.schemas.ts
 ├── types/
 │   ├── index.ts           # JwtPayload, LoginInput, RegisterInput, AuthResponse…
 │   ├── item.dtos.ts
 │   ├── categories.dto.ts
 │   └── rbac/              # DTOs de carrito e interfaces de servicios
+├── utils/
+│   └── descuentos.ts      # cálculo de descuentos en cascada (ítem + orden)
 ├── seeders/
 │   ├── seed.ts            # SuperAdmin + roles/permisos iniciales
 │   └── seedProducts.ts    # catálogo inicial de productos
-└── index.ts               # entry point: app Express, middlewares, rutas
+├── __tests__/
+│   ├── unit/              # pruebas unitarias (validación de carrito, descuentos)
+│   └── integration/       # pruebas de integración (auth, checkout, productos)
+├── app.ts                 # factory de la app Express (importable en tests)
+└── index.ts               # entry point: conecta DB, arranca servidor
 ```
 
 ## Estructura del client
 
 ```
 client/front-tpi/src/
-├── app/
-│   ├── layout.tsx         # RootLayout con Navbar
-│   ├── page.tsx           # Home — lista de productos
+├── app/                             # Next.js App Router
+│   ├── layout.tsx                   # RootLayout: AuthProvider + Navbar + modales globales
+│   ├── page.tsx                     # Home — slider hero + productos destacados (SSR)
 │   ├── globals.css
-│   ├── api/
-│   │   ├── products/route.ts       # proxy GET → backend /api/products
+│   ├── api/                         # API routes Next.js (proxies al backend)
+│   │   ├── products/route.ts        # proxy GET → backend /api/products
 │   │   └── test-connection/route.ts
+│   ├── carrito/page.tsx             # Página del carrito
+│   ├── product-detail-page/[id]/    # PDP dinámica
+│   │   ├── page.tsx
+│   │   ├── _components/             # HeroProducto, PanelInfo, SelectorCantidad, Accordion, RelatedSlider, Comparador
+│   │   └── _hooks/                  # useProducto, useRelacionados
+│   ├── search-result/page.tsx       # Resultados de búsqueda (texto + categoría)
 │   └── test-connection/page.tsx
-└── component/
-    └── layout/
-        ├── navbar.tsx     # navegación principal
-        ├── navbar.css
-        └── card/
-            ├── card.tsx   # CardProduct — precio, descripción, CTA
-            └── card.css
+├── component/
+│   ├── card/card.tsx                # CardProduct — tarjeta de producto para grillas
+│   ├── cart/                        # Componentes del carrito
+│   │   ├── CartIcon.tsx             # Ícono con badge en la navbar
+│   │   ├── CartDrawer.tsx           # Mini-carrito lateral
+│   │   ├── CartAddedDrawer.tsx      # Drawer de confirmación post-agregar
+│   │   ├── CartPageClient.tsx       # Página completa con validación + checkout (TODO: llamada checkout)
+│   │   ├── CartItemRow.tsx          # Fila individual de ítem
+│   │   ├── CartToast.tsx            # Toast de confirmación (auto-cierre 4s)
+│   │   ├── LoginGateModal.tsx       # Modal de login (email + contraseña)
+│   │   └── ConfirmDialog.tsx        # Diálogo de confirmación reutilizable
+│   ├── layout/                      # Componentes de navegación
+│   │   ├── navbar.tsx               # Cabecera principal
+│   │   ├── Breadcrumb.tsx
+│   │   ├── BarraBusqueda.tsx
+│   │   ├── CategoriasMenu.tsx
+│   │   └── MenuMovilDrawer.tsx      # Navegación mobile
+│   ├── slider/Slider.tsx            # Carrusel de imágenes hero
+│   ├── vitrina/VitrinaProductos.tsx # Grilla de productos con paginación
+│   └── busqueda/                    # ListaResultadosProductos + useResultadosBusqueda
+├── context/
+│   ├── AuthContext.tsx              # Adapter Redux: login, logout, tienePermiso, tieneRol, esSuperAdmin
+│   └── CartContext.tsx              # Adapter Redux: agregar, quitar, actualizarCantidad, vaciar
+├── store/
+│   ├── index.ts                     # configureStore + tipos RootState / AppDispatch
+│   ├── authSlice.ts                 # Estado auth: usuario, isAutenticado, isCargando
+│   ├── cartSlice.ts                 # Estado carrito: items, ultimoAgregado, drawerAbierto, hidratado
+│   ├── hooks.ts                     # useAppDispatch, useAppSelector tipados
+│   └── localStorageMiddleware.ts    # Persiste el carrito en localStorage tras cada acción
+└── lib/
+    ├── api.ts                       # apiFetch con header Authorization automático + clase ApiError
+    ├── cart-types.ts                # DTOs del carrito (CartItem, ValidarCarritoDto, etc.)
+    └── productos.ts                 # obtenerProductos — cliente SSR para el backend
 ```
 
-**Notas del frontend:**
-- Usa Next.js App Router (no Pages Router)
-- Las API routes de Next.js proxean al backend para evitar CORS en dev
-- Auth, carrito, checkout y páginas de usuario aún no implementados
+**Estado actual del frontend:**
+- Auth implementada: login, logout, hidratación desde localStorage, refresh automático (14 min)
+- Carrito implementado: Redux + persistencia, validación contra backend, drawer y toast
+- Checkout **pendiente**: `CartPageClient.tsx` tiene el TODO en `handleConfirmarCompra`
+- Registro de usuarios **pendiente**: no hay UI; el archivo `RegisterPage.tsx` está huérfano en `src/app/api/RegisterPage/` (ruta incorrecta)
+- Sin páginas de: perfil de usuario, historial de órdenes, confirmación de compra, reset de contraseña
+
+**Patrones del frontend:**
+- Patrón adaptador: `AuthContext` y `CartContext` exponen una API estable y por dentro usan Redux
+- Server Components para carga inicial de productos (SSR); hooks de cliente para filtrado/búsqueda
+- Todas las rutas de API de Next.js proxean al backend Express para evitar CORS en dev
+- Access token en memoria; refresh token en `localStorage` bajo la clave `techpoint:refresh_token`
 
 ## API Endpoints
 
