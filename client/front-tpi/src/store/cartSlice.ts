@@ -1,17 +1,39 @@
 /**
  * cartSlice — slice de Redux para el carrito de compras.
  *
- * Define el estado, las acciones y los reducers del carrito. Equivalente al
- * cartReducer + acciones que existían en CartContext, pero usando RTK +
- * Immer (permite escribir mutaciones que internamente son inmutables).
+ * Define el estado, las acciones y los reducers del carrito, e incluye la
+ * validación del carrito contra el backend (POST /api/cart/validate) como
+ * thunk asíncrono — así el drawer y la página completa comparten el mismo
+ * estado de validación.
  *
  * No persiste por sí mismo: la persistencia en localStorage se maneja
  * desde el middleware (localStorageMiddleware.ts) para mantener este slice
  * puro y testeable.
  */
 
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { CartItem } from '@/lib/cart-types';
+import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { apiFetch, ApiError } from '@/lib/api';
+import type {
+  CartItem,
+  ValidacionCarritoResponse,
+  ValidarCarritoDto,
+} from '@/lib/cart-types';
+
+/**
+ * Estado de la validación del carrito contra el backend.
+ * Modelado como discriminated union para que el consumidor sepa qué
+ * campos están disponibles según el estado.
+ */
+export type EstadoValidacion =
+  | { tipo: 'idle' }
+  | { tipo: 'cargando' }
+  | { tipo: 'ok'; data: ValidacionCarritoResponse }
+  | { tipo: 'error'; mensaje: string; status: number };
+
+interface ErrorValidacion {
+  mensaje: string;
+  status: number;
+}
 
 /** Estado interno del carrito. */
 export interface CartState {
@@ -19,6 +41,14 @@ export interface CartState {
   hidratado: boolean;
   ultimoAgregado: CartItem | null;
   drawerAbierto: boolean;
+  /** Resultado de la última validación del carrito. */
+  validacion: EstadoValidacion;
+  /**
+   * requestId del thunk de validación actualmente "vigente".
+   * Sirve para descartar respuestas obsoletas: cuando llega un fulfilled/rejected
+   * cuyo requestId no coincide con el vigente, se ignora.
+   */
+  requestIdValidacion: string | null;
 }
 
 const ESTADO_INICIAL: CartState = {
@@ -26,7 +56,39 @@ const ESTADO_INICIAL: CartState = {
   hidratado: false,
   ultimoAgregado: null,
   drawerAbierto: false,
+  validacion: { tipo: 'idle' },
+  requestIdValidacion: null,
 };
+
+/**
+ * Thunk que valida el carrito contra el backend.
+ * El thunkAPI provee `signal` que se pasa a `apiFetch` para que la request
+ * se aborte si el thunk se cancela (ej. al desmontar el componente).
+ */
+export const validarCarrito = createAsyncThunk<
+  ValidacionCarritoResponse,
+  ValidarCarritoDto,
+  { rejectValue: ErrorValidacion }
+>('cart/validar', async (dto, { signal, rejectWithValue }) => {
+  try {
+    return await apiFetch<ValidacionCarritoResponse>('/api/cart/validate', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+      signal,
+    });
+  } catch (err) {
+    if (err instanceof ApiError) {
+      return rejectWithValue({ mensaje: err.message, status: err.status });
+    }
+    return rejectWithValue({
+      mensaje:
+        err instanceof Error
+          ? err.message
+          : 'Error inesperado al validar el carrito.',
+      status: 0,
+    });
+  }
+});
 
 const cartSlice = createSlice({
   name: 'cart',
@@ -96,6 +158,46 @@ const cartSlice = createSlice({
     cerrarDrawer(state) {
       state.drawerAbierto = false;
     },
+
+    /**
+     * Resetea la validación al estado `idle`. Se usa cuando se vacía el carrito
+     * o cuando el componente que estaba validando se desmonta.
+     */
+    resetValidacion(state) {
+      state.validacion = { tipo: 'idle' };
+      state.requestIdValidacion = null;
+    },
+  },
+  extraReducers(builder) {
+    builder
+      .addCase(validarCarrito.pending, (state, action) => {
+        // El requestId del thunk pendiente pasa a ser el vigente
+        state.validacion = { tipo: 'cargando' };
+        state.requestIdValidacion = action.meta.requestId;
+      })
+      .addCase(validarCarrito.fulfilled, (state, action) => {
+        // Descartar si llegó una respuesta posterior antes
+        if (state.requestIdValidacion !== action.meta.requestId) return;
+        state.validacion = { tipo: 'ok', data: action.payload };
+        state.requestIdValidacion = null;
+      })
+      .addCase(validarCarrito.rejected, (state, action) => {
+        if (state.requestIdValidacion !== action.meta.requestId) return;
+        // Ignorar errores de "AbortError" (el thunk fue cancelado a propósito)
+        if (action.meta.aborted) {
+          return;
+        }
+        const error = action.payload ?? {
+          mensaje: 'Error desconocido al validar el carrito.',
+          status: 0,
+        };
+        state.validacion = {
+          tipo: 'error',
+          mensaje: error.mensaje,
+          status: error.status,
+        };
+        state.requestIdValidacion = null;
+      });
   },
 });
 
@@ -108,6 +210,7 @@ export const {
   cerrarConfirmacion,
   abrirDrawer,
   cerrarDrawer,
+  resetValidacion,
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

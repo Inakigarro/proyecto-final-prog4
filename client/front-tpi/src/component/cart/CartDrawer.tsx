@@ -4,8 +4,12 @@
  * CartDrawer — mini-cart lateral.
  *
  * Se abre cuando state.drawerAbierto === true (disparado desde CartIcon).
+ * Mientras está abierto, valida los items contra el backend a través del
+ * hook compartido `useValidacionCarrito` (que lee/escribe en el slice de
+ * Redux). Cuando está cerrado, no dispara validaciones.
+ *
  * Al hacer click en "Finalizar compra" verifica si el usuario está autenticado;
- * si no lo está, abre el LoginGateModal.
+ * si no lo está, abre el LoginGateModal. Si lo está, navega a /carrito.
  *
  * Se cierra con: botón X, click en overlay, tecla Escape, "Seguir comprando",
  * o al abrir el LoginGateModal desde "Finalizar compra".
@@ -13,12 +17,13 @@
  * Montar una sola vez en el RootLayout.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import CartItemRow from './CartItemRow';
 import LoginGateModal from './LoginGateModal';
+import { useValidacionCarrito } from './useValidacionCarrito';
 import './CartDrawer.css';
 
 const CartDrawer = () => {
@@ -31,6 +36,10 @@ const CartDrawer = () => {
   const items = state.items;
 
   const [loginAbierto, setLoginAbierto] = useState(false);
+
+  // Solo validar mientras el drawer esté abierto: evita requests innecesarias
+  // cuando el mini-cart no está visible.
+  const validacion = useValidacionCarrito({ habilitado: abierto });
 
   // Cerrar con Escape + bloquear scroll del body mientras está abierto.
   useEffect(() => {
@@ -49,6 +58,22 @@ const CartDrawer = () => {
       document.body.style.overflow = scrollPrevio;
     };
   }, [abierto, cerrarDrawer]);
+
+  // Mapa itemId -> ItemValidado para enriquecer cada row con datos del backend
+  const validadosPorId = useMemo(() => {
+    if (validacion.tipo !== 'ok') return null;
+    return new Map(validacion.data.items.map((v) => [v.itemId, v]));
+  }, [validacion]);
+
+  // Totales: prioridad al backend (con promos aplicadas), fallback al local
+  const totalAMostrar =
+    validacion.tipo === 'ok' ? validacion.data.total : subtotalEstimado;
+  const ahorroTotal =
+    validacion.tipo === 'ok' ? validacion.data.ahorroTotal : 0;
+  const hayAhorro = ahorroTotal > 0;
+  const validando = validacion.tipo === 'cargando';
+  const errorValidacion =
+    validacion.tipo === 'error' ? validacion.mensaje : null;
 
   const hayItems = items.length > 0;
 
@@ -112,15 +137,26 @@ const CartDrawer = () => {
               )}
 
               {hayItems && (
-                <div className="cart-drawer-items">
-                  {items.map((item) => (
-                    <CartItemRow
-                      key={item.itemId}
-                      item={item}
-                      validado={null}
-                    />
-                  ))}
-                </div>
+                <>
+                  {validando && (
+                    <p className="cart-drawer-status">Verificando stock...</p>
+                  )}
+                  {errorValidacion && (
+                    <p className="cart-drawer-status cart-drawer-status-error">
+                      No pudimos verificar el stock: {errorValidacion}
+                    </p>
+                  )}
+
+                  <div className="cart-drawer-items">
+                    {items.map((item) => (
+                      <CartItemRow
+                        key={item.itemId}
+                        item={item}
+                        validado={validadosPorId?.get(item.itemId) ?? null}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
@@ -135,13 +171,16 @@ const CartDrawer = () => {
                 <div className="cart-drawer-total">
                   <span>Total</span>
                   <span className="cart-drawer-total-monto">
-                    ${subtotalEstimado.toLocaleString('es-AR')}
+                    ${totalAMostrar.toLocaleString('es-AR')}
                   </span>
                 </div>
                 <button
                   type="button"
                   className="cart-drawer-cta-primario"
                   onClick={handleFinalizar}
+                  disabled={
+                    validacion.tipo === 'ok' && !validacion.data.carritoValido
+                  }
                 >
                   Finalizar compra
                 </button>
