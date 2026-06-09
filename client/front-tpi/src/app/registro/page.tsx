@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, type RegistrarInput } from "@/context/AuthContext";
 import styles from "./page.module.css";
@@ -239,6 +240,11 @@ export default function RegistroPage() {
           {cargando ? "Registrando..." : "Crear cuenta"}
         </button>
       </form>
+
+      <p className={styles.piePagina}>
+        ¿Ya tenés cuenta?{" "}
+        <Link href="/login">Iniciá sesión</Link>
+      </p>
     </div>
   );
 }

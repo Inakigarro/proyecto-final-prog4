@@ -84,3 +84,10 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.piePagina {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+}
