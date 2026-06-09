@@ -169,3 +169,12 @@
     font-size: 1.7rem;
   }
 }
+.login-gate-error {
+  padding: 10px 12px;
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #fca5a5;
+  line-height: 1.4;
+}
