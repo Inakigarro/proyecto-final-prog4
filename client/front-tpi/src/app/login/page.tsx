@@ -12,13 +12,15 @@ interface FormErrors {
 }
 
 export default function LoginPage() {
-    const {login}= useAuth();
-    const router = useRouter();
-    const [email, setEmail] = useState('');
+  const { login } = useAuth();
+  const router = useRouter();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<FormErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
-  const validate = () => {
+
+  const validate = (): boolean => {
     const newErrors: FormErrors = {};
 
     if (!email.trim()) {
@@ -31,20 +33,20 @@ export default function LoginPage() {
       newErrors.password = "La contraseña es obligatoria";
     }
 
+    setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  function onSuccess(){
-    router.push('/')
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setCargando(true);
 
+    if (!validate()) return;
+
+    setCargando(true);
     try {
       await login(email.trim(), password);
-      onSuccess();
+      router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
     } finally {
@@ -65,7 +67,6 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
             <label htmlFor="email">Email</label>
-
             <input
               id="email"
               type="email"
@@ -73,11 +74,13 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+            {errors.email && (
+              <span className={styles.error}>{errors.email}</span>
+            )}
           </div>
 
           <div className={styles.field}>
             <label htmlFor="password">Contraseña</label>
-
             <input
               id="password"
               type="password"
@@ -85,17 +88,23 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            {errors.password && (
+              <span className={styles.error}>{errors.password}</span>
+            )}
           </div>
-        {error && (
+
+          {error && (
             <div className="login-gate-error" role="alert">
               {error}
             </div>
           )}
+
           <button
             type="submit"
             className={styles.button}
+            disabled={cargando}
           >
-            Iniciar sesión
+            {cargando ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </button>
         </form>
 
