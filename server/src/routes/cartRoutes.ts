@@ -18,9 +18,10 @@ const controller = crearCartController(new CartService());
  * /checkout sí requiere usuario autenticado, ya que confirma la compra
  * y crea la orden asociada al usuario.
  */
-router.use(verificarToken);
-
+// /validate: público — solo lectura de precios y stock, sin persistir
 router.post('/validate', validar(ValidarCarritoSchema), controller.validar);
-router.post('/checkout', validar(CheckoutSchema),       controller.checkout);
+
+// /checkout: requiere usuario autenticado, persiste la orden
+router.post('/checkout', verificarToken, validar(CheckoutSchema), controller.checkout);
 
 export default router;

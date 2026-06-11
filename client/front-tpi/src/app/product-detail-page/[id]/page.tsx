@@ -28,6 +28,8 @@ import PanelInfo from "./_components/PanelInfo";
 import RelatedSlider from "./_components/RelatedSlider";
 import Comparador from "./_components/Comparador";
 import Breadcrumb from "@/component/layout/Breadcrumb";
+import { usePromociones } from "@/component/promociones/usePromociones";
+import { buscarPromocionAplicable, describirPromocion } from "@/lib/promociones";
 import styles from "./page.module.css";
 
 /** Cantidad máxima de productos que se pueden comparar con el actual. */
@@ -44,6 +46,7 @@ export default function PaginaProducto() {
 
   const { producto, loading, error } = useProducto(id);
   const relacionados = useRelacionados(producto);
+  const { promociones } = usePromociones();
 
   const [cantidad, setCantidad] = useState(1);
   const [productosComparados, setProductosComparados] = useState<Producto[]>([]);
@@ -120,6 +123,12 @@ export default function PaginaProducto() {
   // ── Layout ───────────────────────────────────────────────
 
   const idsComparados = productosComparados.map((p) => p.id);
+  // Promo de mayor descuento que incluye al producto principal: se usa para
+  // cucarda del hero, precio tachado del panel y header de comparador.
+  const promocionAplicable = buscarPromocionAplicable(producto.id, promociones);
+  const cucardaPromocional = promocionAplicable
+    ? describirPromocion(promocionAplicable)
+    : undefined;
 
   return (
     <div className={styles.pagina}>
@@ -131,7 +140,7 @@ export default function PaginaProducto() {
         <HeroProducto
           nombre={producto.nombre}
           imageSrc={producto.imageSrc}
-          cucarda={producto.cucarda}
+          cucarda={cucardaPromocional ?? producto.cucarda}
         />
         <PanelInfo
           producto={producto}
@@ -139,6 +148,7 @@ export default function PaginaProducto() {
           onCantidadChange={setCantidad}
           onAgregarAlCarrito={handleAgregarAlCarrito}
           onComprarAhora={handleComprarAhora}
+          promocion={promocionAplicable}
         />
       </section>
 
@@ -168,6 +178,7 @@ export default function PaginaProducto() {
             productosComparados={idsComparados}
             maxComparados={MAX_COMPARADOS}
             onToggleComparar={toggleComparar}
+            promociones={promociones}
           />
         </section>
       )}

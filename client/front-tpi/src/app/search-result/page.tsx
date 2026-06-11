@@ -6,7 +6,7 @@ import ListaResultadosProductos from "@/component/busqueda/ListaResultadosProduc
 import { useResultadosBusqueda } from "@/component/busqueda/useResultadosBusqueda";
 
 const PaginaResultadosBusqueda = () => {
-  const { productos, cargando, mensajeError, tipoBusqueda, termino } =
+  const { productos, promociones, cargando, mensajeError, tipoBusqueda, termino } =
     useResultadosBusqueda();
 
   // Etiqueta de breadcrumb y título según el tipo de búsqueda
@@ -50,7 +50,7 @@ const PaginaResultadosBusqueda = () => {
         <div className={styles.containerPrincipal}>
           <Breadcrumb segmentos={[{ etiqueta: etiquetaBreadcrumb }]} />
           <h2>{tituloPagina}</h2>
-          <ListaResultadosProductos productos={productos} />
+          <ListaResultadosProductos productos={productos} promociones={promociones} />
         </div>
       </main>
     </div>

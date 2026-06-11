@@ -1,100 +1,33 @@
 'use client';
 
 /**
- * Validación:
- *  - Se llama POST /api/cart/validate al montar y cuando cambia el carrito.
- *  - Debounce de 500ms para no spamear si el usuario edita rápido.
- *  - Si la validación falla (red, 401, etc.), se muestra el carrito local
- *    con un banner de error y el botón Confirmar deshabilitado.
+ * Página completa del carrito.
+ *
+ * La validación contra POST /api/cart/validate vive en el slice de Redux
+ * (`store/cartSlice`). Este componente solo consume el resultado vía el
+ * hook compartido `useValidacionCarrito`, que dispara la validación con
+ * debounce y comparte el estado con el mini-cart drawer.
+ *
+ * El botón "Confirmar compra" requiere usuario autenticado. Si no lo está,
+ * abre el LoginGateModal.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { apiFetch, ApiError } from '@/lib/api';
-import type {
-  ValidacionCarritoResponse,
-  ValidarCarritoDto,
-} from '@/lib/cart-types';
 import CartItemRow from './CartItemRow';
 import ConfirmDialog from './ConfirmDialog';
 import LoginGateModal from './LoginGateModal';
+import { useValidacionCarrito } from './useValidacionCarrito';
 import './CartPageClient.css';
-
-/** Tiempo de espera tras el último cambio antes de pegar al backend. */
-const DEBOUNCE_MS = 500;
-
-type EstadoValidacion =
-  | { tipo: 'idle' }
-  | { tipo: 'cargando' }
-  | { tipo: 'ok'; data: ValidacionCarritoResponse }
-  | { tipo: 'error'; mensaje: string; status: number };
 
 const CartPageClient = () => {
   const { state, subtotalEstimado, vaciar } = useCart();
   const { state: authState } = useAuth();
-  const [validacion, setValidacion] = useState<EstadoValidacion>({ tipo: 'idle' });
+  const validacion = useValidacionCarrito();
   const [confirmacionVaciarAbierta, setConfirmacionVaciarAbierta] = useState(false);
   const [loginAbierto, setLoginAbierto] = useState(false);
-
-  // Refs para debounce y para descartar respuestas obsoletas.
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ultimoFetchIdRef = useRef(0);
-
-  useEffect(() => {
-    // No validar si: aún no hidratamos, o no hay items.
-    if (!state.hidratado) return;
-    if (state.items.length === 0) {
-      setValidacion({ tipo: 'idle' });
-      return;
-    }
-
-    // Limpiar timer anterior: solo el último cambio dispara fetch.
-    if (timerRef.current) clearTimeout(timerRef.current);
-
-    timerRef.current = setTimeout(() => {
-      const fetchId = ++ultimoFetchIdRef.current;
-      setValidacion({ tipo: 'cargando' });
-
-      const body: ValidarCarritoDto = {
-        items: state.items.map((i) => ({
-          itemId: i.itemId,
-          cantidad: i.cantidad,
-        })),
-      };
-
-      apiFetch<ValidacionCarritoResponse>('/api/cart/validate', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      })
-        .then((data) => {
-          // Descartar respuesta si hubo otro fetch posterior.
-          if (fetchId !== ultimoFetchIdRef.current) return;
-          setValidacion({ tipo: 'ok', data });
-        })
-        .catch((err: unknown) => {
-          if (fetchId !== ultimoFetchIdRef.current) return;
-          if (err instanceof ApiError) {
-            setValidacion({
-              tipo: 'error',
-              mensaje: err.message,
-              status: err.status,
-            });
-          } else {
-            setValidacion({
-              tipo: 'error',
-              mensaje: 'Error inesperado al validar el carrito.',
-              status: 0,
-            });
-          }
-        });
-    }, DEBOUNCE_MS);
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [state.hidratado, state.items]);
 
   if (!state.hidratado) {
     return (
@@ -118,19 +51,28 @@ const CartPageClient = () => {
     );
   }
 
-  // Mapa itemId -> ItemValidado para enriquecer cada fila.
+  // Mapa itemId -> ItemValidado para enriquecer cada fila
   const validadosPorId =
     validacion.tipo === 'ok'
       ? new Map(validacion.data.items.map((v) => [v.itemId, v]))
       : null;
 
-  // Total a mostrar: el del backend si está validado, sino el local.
+  // Totales del backend (con promos aplicadas) o fallback al estimado local
   const totalAMostrar =
     validacion.tipo === 'ok' ? validacion.data.total : subtotalEstimado;
+  const subtotalSinDescuentos =
+    validacion.tipo === 'ok'
+      ? validacion.data.subtotalSinDescuentos
+      : subtotalEstimado;
+  const ahorroTotal =
+    validacion.tipo === 'ok' ? validacion.data.ahorroTotal : 0;
+  const hayAhorro = ahorroTotal > 0;
 
-  // Botón "Confirmar compra" habilitado solo si el carrito es válido y hay sesión activa.
+  // Botón Confirmar compra habilitado solo con sesión activa + carrito válido
   const puedeConfirmar =
-    validacion.tipo === 'ok' && validacion.data.carritoValido && authState.isAutenticado;
+    validacion.tipo === 'ok' &&
+    validacion.data.carritoValido &&
+    authState.isAutenticado;
 
   const handleConfirmarCompra = () => {
     if (!authState.isAutenticado) {
@@ -201,6 +143,20 @@ const CartPageClient = () => {
         <aside className="cart-page-resumen" aria-label="Resumen de la compra">
           <h2>Resumen</h2>
 
+          {/* Desglose: subtotal sin descuentos, ahorro y total final */}
+          {hayAhorro && (
+            <>
+              <div className="cart-page-resumen-fila cart-page-resumen-fila-secundaria">
+                <span>Subtotal</span>
+                <span>${subtotalSinDescuentos.toLocaleString('es-AR')}</span>
+              </div>
+              <div className="cart-page-resumen-fila cart-page-resumen-fila-ahorro">
+                <span>Descuentos por promociones</span>
+                <span>−${ahorroTotal.toLocaleString('es-AR')}</span>
+              </div>
+            </>
+          )}
+
           <div className="cart-page-resumen-fila">
             <span>{validacion.tipo === 'ok' ? 'Total' : 'Subtotal'}</span>
             <strong>${totalAMostrar.toLocaleString('es-AR')}</strong>
@@ -231,11 +187,13 @@ const CartPageClient = () => {
               !authState.isAutenticado
                 ? 'Iniciá sesión para confirmar la compra'
                 : puedeConfirmar
-                ? 'Confirmar compra (próximo paso)'
-                : 'Hay items con problemas o el carrito no fue validado'
+                  ? 'Confirmar compra (próximo paso)'
+                  : 'Hay items con problemas o el carrito no fue validado'
             }
           >
-            {authState.isAutenticado ? 'Confirmar compra' : 'Iniciar sesión para comprar'}
+            {authState.isAutenticado
+              ? 'Confirmar compra'
+              : 'Iniciar sesión para comprar'}
           </button>
 
           <Link href="/" className="cart-page-cta-secondary">

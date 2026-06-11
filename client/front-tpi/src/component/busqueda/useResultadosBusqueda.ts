@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { Producto } from "@/lib/productos";
+import type { Promocion } from "@/lib/promociones";
 
 /**
  * Tipo de búsqueda que dispara el listado:
@@ -14,6 +15,8 @@ export type TipoBusqueda = "texto" | "categoria" | "todos";
 
 export interface ResultadosBusqueda {
   productos: Producto[];
+  /** Promociones activas vigentes — se usan para pintar cucardas en las cards. */
+  promociones: Promocion[];
   cargando: boolean;
   mensajeError: string | null;
   tipoBusqueda: TipoBusqueda;
@@ -39,6 +42,7 @@ export const useResultadosBusqueda = (): ResultadosBusqueda => {
   const termino = categoriaSeleccionada || textoBuscado;
 
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [promociones, setPromociones] = useState<Promocion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [mensajeError, setMensajeError] = useState<string | null>(null);
 
@@ -47,18 +51,36 @@ export const useResultadosBusqueda = (): ResultadosBusqueda => {
       setCargando(true);
       setMensajeError(null);
       try {
-        const url = termino
+        const urlProductos = termino
           ? `/api/products?query=${encodeURIComponent(termino)}`
           : "/api/products";
-        const respuesta = await fetch(url);
-        if (!respuesta.ok) throw new Error("Error al obtener productos");
-        const datos = await respuesta.json();
-        setProductos(datos?.products?.datos ?? []);
+
+        // Productos y promociones se piden en paralelo: son independientes
+        const [respuestaProductos, respuestaPromociones] = await Promise.all([
+          fetch(urlProductos),
+          fetch("/api/promotions"),
+        ]);
+
+        if (!respuestaProductos.ok) {
+          throw new Error("Error al obtener productos");
+        }
+
+        const datosProductos = await respuestaProductos.json();
+        setProductos(datosProductos?.products?.datos ?? []);
+
+        // La falla de promociones no rompe la búsqueda: solo se pierden las cucardas
+        if (respuestaPromociones.ok) {
+          const datosPromociones = await respuestaPromociones.json();
+          setPromociones((datosPromociones?.promociones as Promocion[]) ?? []);
+        } else {
+          setPromociones([]);
+        }
       } catch (error) {
         setMensajeError(
           error instanceof Error ? error.message : "Error desconocido",
         );
         setProductos([]);
+        setPromociones([]);
       } finally {
         setCargando(false);
       }
@@ -66,5 +88,5 @@ export const useResultadosBusqueda = (): ResultadosBusqueda => {
     cargarResultados();
   }, [termino]);
 
-  return { productos, cargando, mensajeError, tipoBusqueda, termino };
+  return { productos, promociones, cargando, mensajeError, tipoBusqueda, termino };
 };
