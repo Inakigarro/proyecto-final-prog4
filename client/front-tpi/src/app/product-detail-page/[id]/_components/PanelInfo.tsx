@@ -1,5 +1,6 @@
 import type { Producto } from "../types";
 import SelectorCantidad from "./SelectorCantidad";
+import { calcularDescuentoItem, type Promocion } from "@/lib/promociones";
 import styles from "../page.module.css";
 
 interface PanelInfoProps {
@@ -13,6 +14,11 @@ interface PanelInfoProps {
   onAgregarAlCarrito: () => void;
   /** Callback para el botón "Comprar ahora". */
   onComprarAhora: () => void;
+  /**
+   * Promoción aplicable al producto. Si es DESCUENTO_PORCENTUAL,
+   * el precio se renderiza tachado + precio con descuento debajo.
+   */
+  promocion?: Promocion;
 }
 
 /**
@@ -20,8 +26,7 @@ interface PanelInfoProps {
  *
  * Muestra la información comercial del producto:
  * categoría, nombre, precio, selector de cantidad y CTAs principales.
- * Es un componente presentacional que recibe todos sus datos y callbacks
- * desde la página padre.
+ * Si recibe una promoción de tipo PORCENTUAL, pinta precio tachado + nuevo.
  */
 export default function PanelInfo({
   producto,
@@ -29,7 +34,15 @@ export default function PanelInfo({
   onCantidadChange,
   onAgregarAlCarrito,
   onComprarAhora,
+  promocion,
 }: PanelInfoProps) {
+  // Para PORCENTUAL devuelve precioUnitarioConDescuento; para NXM/2da no
+  const calculoDescuento = promocion
+    ? calcularDescuentoItem(producto.precioUnitario, 1, promocion)
+    : undefined;
+  const precioConDescuento = calculoDescuento?.precioUnitarioConDescuento;
+  const hayPrecioTachado = precioConDescuento !== undefined;
+
   return (
     <div className={styles.infoPanel}>
       {/* Etiqueta de categoría principal */}
@@ -41,9 +54,20 @@ export default function PanelInfo({
 
       <h1 className={styles.titulo}>{producto.nombre}</h1>
 
-      <p className={styles.precio}>
-        ${producto.precioUnitario.toLocaleString("es-AR")}
-      </p>
+      {hayPrecioTachado ? (
+        <div className={styles.bloquePrecio}>
+          <span className={styles.precioTachado}>
+            ${producto.precioUnitario.toLocaleString("es-AR")}
+          </span>
+          <span className={`${styles.precio} ${styles.precioDescuento}`}>
+            ${precioConDescuento.toLocaleString("es-AR")}
+          </span>
+        </div>
+      ) : (
+        <p className={styles.precio}>
+          ${producto.precioUnitario.toLocaleString("es-AR")}
+        </p>
+      )}
 
       <SelectorCantidad cantidad={cantidad} onChange={onCantidadChange} />
 

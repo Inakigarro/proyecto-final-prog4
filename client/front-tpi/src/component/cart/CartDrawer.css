@@ -125,6 +125,16 @@
   background-color: var(--color-dark-subtle);
 }
 
+.cart-drawer-ahorro {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  color: var(--color-success);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
 .cart-drawer-total {
   display: flex;
   justify-content: space-between;

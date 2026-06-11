@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 import Item, { IItem } from '../../models/Item';
+import Promotion, { IPromotion } from '../../models/Promotion';
 import PaymentMethod from '../../models/paymentMethod';
 import PurchaseOrder from '../../models/purchaseOrder';
 import PurchaseOrderDetail, {
@@ -17,6 +18,12 @@ import {
 } from '../../types/rbac/cart.dtos';
 import { ICartService } from '../../types/rbac/cart.service.interface';
 import { aplicarDescuentos } from '../../utils/descuentos';
+import {
+  calcularDescuentoItem,
+  describirPromocionAplicada,
+  elegirMejorPromocion,
+  type PromocionAplicable,
+} from '../../utils/calculadoraPromocion';
 
 /**
  * Valida que un id sea un ObjectId de Mongo bien formado.
@@ -42,6 +49,41 @@ function validarDescuentos(descuentos: number[]): void {
 }
 
 type PurchaseOrderDetailPopulado = Omit<IPurchaseOrderDetail, 'item'> & { item: IItem };
+
+/**
+ * Convierte un documento de Promotion a la forma plana que consume la calculadora.
+ */
+function aPromocionAplicable(promotion: IPromotion): PromocionAplicable {
+  return {
+    idPromocion: promotion._id.toString(),
+    nombrePromocion: promotion.nombre,
+    tipoPromocion: promotion.tipo,
+    parametros: promotion.parametros ?? {},
+  };
+}
+
+/**
+ * Indexa promociones por idProducto. Una promo aparece en cada producto
+ * que tenga asociado, permitiendo lookup O(1) por producto.
+ */
+function agruparPromocionesPorProducto(
+  promociones: IPromotion[],
+): Map<string, PromocionAplicable[]> {
+  const mapa = new Map<string, PromocionAplicable[]>();
+  for (const promotion of promociones) {
+    const aplicable = aPromocionAplicable(promotion);
+    for (const idProducto of promotion.productos) {
+      const clave = idProducto.toString();
+      const lista = mapa.get(clave);
+      if (lista) {
+        lista.push(aplicable);
+      } else {
+        mapa.set(clave, [aplicable]);
+      }
+    }
+  }
+  return mapa;
+}
 
 /**
  * Mapea un PurchaseOrderDetail (con item populado) a su DTO de respuesta.
@@ -70,7 +112,8 @@ export class CartService implements ICartService {
 
   /**
    * Valida los items del carrito contra la base.
-   * No persiste nada: solo lee precios y stock actuales y arma la respuesta.
+   * No persiste nada: lee precios, stock y promociones activas que apliquen
+   * a los items pedidos, y arma la respuesta con el descuento ya calculado.
    */
   async validateCart(
     dto: ValidarCarritoDto
@@ -89,11 +132,23 @@ export class CartService implements ICartService {
       }
     }
 
-    // Traemos todos los items en una sola query para evitar N+1
+    // Items y promociones en paralelo: queries independientes
     const ids = dto.items.map((i) => i.itemId);
-    const itemsEnBd = await Item.find({ _id: { $in: ids } });
+    const [itemsEnBd, promocionesActivas] = await Promise.all([
+      Item.find({ _id: { $in: ids } }),
+      Promotion.find({
+        activo: { $ne: false },
+        productos: { $in: ids },
+      }).lean(),
+    ]);
+
     const itemsPorId = new Map<string, IItem>(
       itemsEnBd.map((it) => [it._id.toString(), it])
+    );
+
+    // Mapa idProducto -> promociones que lo incluyen
+    const promocionesPorProducto = agruparPromocionesPorProducto(
+      promocionesActivas as unknown as IPromotion[],
     );
 
     const itemsValidados: ItemValidadoResponse[] = dto.items.map((pedido) => {
@@ -107,13 +162,20 @@ export class CartService implements ICartService {
           stockDisponible: 0,
           precioUnitario: 0,
           subtotal: 0,
+          ahorroTotal: 0,
           disponible: false,
           motivo: 'Item inexistente',
         };
       }
 
-      const subtotal = parseFloat(
-        (itemBd.precioUnitario * pedido.cantidad).toFixed(2)
+      // Elegir mejor promoción aplicable a este item
+      const aplicables = promocionesPorProducto.get(pedido.itemId) ?? [];
+      const mejorPromocion = elegirMejorPromocion(aplicables);
+
+      const resultado = calcularDescuentoItem(
+        itemBd.precioUnitario,
+        pedido.cantidad,
+        mejorPromocion,
       );
       const hayStock = itemBd.stock >= pedido.cantidad;
 
@@ -123,18 +185,42 @@ export class CartService implements ICartService {
         cantidadSolicitada: pedido.cantidad,
         stockDisponible: itemBd.stock,
         precioUnitario: itemBd.precioUnitario,
-        subtotal,
+        precioUnitarioConDescuento: resultado.precioUnitarioConDescuento,
+        subtotal: resultado.subtotalConDescuento,
+        ahorroTotal: resultado.ahorroTotal,
+        promocionAplicada: mejorPromocion
+          ? {
+              idPromocion: mejorPromocion.idPromocion,
+              nombrePromocion: mejorPromocion.nombrePromocion,
+              tipoPromocion: mejorPromocion.tipoPromocion,
+              etiqueta: describirPromocionAplicada(mejorPromocion),
+            }
+          : undefined,
         disponible: hayStock,
         motivo: hayStock ? undefined : 'Stock insuficiente',
       };
     });
 
     const total = parseFloat(
-      itemsValidados.reduce((acc, it) => acc + it.subtotal, 0).toFixed(2)
+      itemsValidados.reduce((acc, it) => acc + it.subtotal, 0).toFixed(2),
+    );
+    const subtotalSinDescuentos = parseFloat(
+      itemsValidados
+        .reduce((acc, it) => acc + it.precioUnitario * it.cantidadSolicitada, 0)
+        .toFixed(2),
+    );
+    const ahorroTotal = parseFloat(
+      (subtotalSinDescuentos - total).toFixed(2),
     );
     const carritoValido = itemsValidados.every((it) => it.disponible);
 
-    return { items: itemsValidados, total, carritoValido };
+    return {
+      items: itemsValidados,
+      subtotalSinDescuentos,
+      ahorroTotal,
+      total,
+      carritoValido,
+    };
   }
 
   /**
