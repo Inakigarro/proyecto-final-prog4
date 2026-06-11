@@ -130,10 +130,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 // ── Tipos de contexto públicos ────────────────────────────────────────────────
 
+export interface RegistrarInput {
+  nombre: string;
+  apellido: string;
+  email: string;
+  password: string;
+  /** Fecha en formato dd/MM/YYYY */
+  fechaNacimiento: string;
+}
+
 export interface AuthContextValue {
   state: AuthState;
   login: (email: string, password: string) => Promise<void>;
+  registrar: (datos: RegistrarInput) => Promise<void>;
   logout: () => Promise<void>;
+  solicitarReset: (email: string) => Promise<void>;
+  resetearPassword: (token: string, nuevaPassword: string) => Promise<void>;
   tienePermiso: (recurso: string, accion: AccionPermiso) => boolean;
   tieneRol: (nombre: string) => boolean;
   esSuperAdmin: () => boolean;
@@ -180,6 +192,24 @@ export function useAuth(): AuthContextValue {
   );
 
   /**
+   * Crea una nueva cuenta de usuario. No inicia sesión automáticamente;
+   * llama a login() después si querés autenticar al usuario de inmediato.
+   * Lanza un Error con el mensaje del backend si el registro falla.
+   */
+  const registrar = useCallback(async (datos: RegistrarInput): Promise<void> => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({})) as { message?: string };
+      throw new Error(data.message ?? 'Error al registrar el usuario');
+    }
+  }, []);
+
+  /**
    * Cierra la sesión. Intenta revocar el refresh token en el backend (best effort)
    * y siempre limpia el estado local.
    */
@@ -203,6 +233,37 @@ export function useAuth(): AuthContextValue {
     if (refreshTimer) clearTimeout(refreshTimer);
     dispatch(logoutAction());
   }, [dispatch]);
+
+  /** Solicita el envío del email de recuperación de contraseña. */
+  const solicitarReset = useCallback(async (email: string): Promise<void> => {
+    const res = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({})) as { message?: string };
+      throw new Error(data.message ?? 'Error al solicitar el restablecimiento de contraseña');
+    }
+  }, []);
+
+  /** Restablece la contraseña usando el token recibido por email. */
+  const resetearPassword = useCallback(
+    async (token: string, nuevaPassword: string): Promise<void> => {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, nuevaPassword }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { message?: string };
+        throw new Error(data.message ?? 'Error al restablecer la contraseña');
+      }
+    },
+    []
+  );
 
   /** Verifica si el usuario tiene un permiso específico sobre un recurso */
   const tienePermiso = useCallback(
@@ -229,5 +290,5 @@ export function useAuth(): AuthContextValue {
     [tieneRol]
   );
 
-  return { state, login, logout, tienePermiso, tieneRol, esSuperAdmin };
+  return { state, login, registrar, logout, solicitarReset, resetearPassword, tienePermiso, tieneRol, esSuperAdmin };
 }
