@@ -1,0 +1,167 @@
+/* Overlay oscuro del modal */
+.login-gate-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 1100;
+  animation: login-gate-overlay-in 180ms ease-out;
+}
+
+/* Modal centrado */
+.login-gate-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 32px);
+  max-width: 420px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  background-color: var(--color-dark-bg);
+  color: var(--color-dark-text);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  z-index: 1101;
+  display: flex;
+  flex-direction: column;
+  animation: login-gate-modal-in 220ms ease-out;
+}
+
+/* Header */
+.login-gate-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-dark-border);
+}
+
+.login-gate-titulo {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.login-gate-cerrar {
+  background: transparent;
+  border: none;
+  color: var(--color-dark-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.login-gate-cerrar:hover {
+  color: var(--color-dark-text);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Body (form) */
+.login-gate-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+}
+
+.login-gate-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-dark-text-2);
+  font-weight: 500;
+}
+
+.login-gate-input {
+  padding: 10px 12px;
+  background-color: var(--color-dark-surface);
+  border: 1px solid var(--color-dark-border);
+  border-radius: 8px;
+  color: var(--color-dark-text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.login-gate-input:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-dark-bg);
+}
+
+.login-gate-input::placeholder {
+  color: var(--color-dark-muted);
+}
+
+.login-gate-cta {
+  margin-top: 6px;
+  padding: 12px;
+  background-color: var(--color-highlight);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.login-gate-cta:hover {
+  background-color: var(--color-accent-hover);
+}
+
+/* Mensaje de error de credenciales */
+.login-gate-error {
+  padding: 10px 12px;
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #fca5a5;
+  line-height: 1.4;
+}
+
+.login-gate-cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Enlace de recuperación de contraseña */
+.login-gate-olvidaste {
+  text-align: center;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-dark-muted);
+}
+
+.login-gate-olvidaste a {
+  color: var(--color-highlight);
+  text-decoration: none;
+  transition: opacity 120ms ease;
+}
+
+.login-gate-olvidaste a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Animaciones */
+@keyframes login-gate-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes login-gate-modal-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}

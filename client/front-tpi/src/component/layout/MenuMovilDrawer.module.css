@@ -1,0 +1,113 @@
+.botonHamburguesa {
+  display: none;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: #ffffff;
+  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+  flex-shrink: 0;
+}
+
+.botonHamburguesa:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.icono {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  animation: fadeIn 0.16s ease;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 82%;
+  max-width: 320px;
+  background: var(--color-dark-bg);
+  color: var(--color-dark-text);
+  z-index: 999;
+  padding: 24px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.32);
+  animation: slideIn 0.22s ease;
+}
+
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titulo {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-dark-muted);
+  margin-bottom: 4px;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.enlace {
+  display: block;
+  padding: 10px 12px;
+  color: var(--color-dark-text);
+  font-size: 15px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.16s ease;
+}
+
+.enlace:hover,
+.enlace.activo {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.vacio {
+  color: var(--color-dark-muted);
+  font-size: 13px;
+  padding: 0 12px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@media (max-width: 768px) {
+  .botonHamburguesa {
+    display: inline-flex;
+  }
+}

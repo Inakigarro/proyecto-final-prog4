@@ -1,49 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import styles from "./page.module.css";
-import CardProduct from "@/component/layout/card/card";
+import Breadcrumb from "@/component/layout/Breadcrumb";
+import ListaResultadosProductos from "@/component/busqueda/ListaResultadosProductos";
+import { useResultadosBusqueda } from "@/component/busqueda/useResultadosBusqueda";
 
-type Product = {
-  id: string;
-  nombre: string;
-  precioUnitario: number;
-  category: Array<{
-    id: string;
-    nombre: string;
-    items: string[];
-  }>;
-};
+const PaginaResultadosBusqueda = () => {
+  const { productos, promociones, cargando, mensajeError, tipoBusqueda, termino } =
+    useResultadosBusqueda();
 
-export default function PageListProduct() {
-  const searchParams = useSearchParams();
-  const query = searchParams.get("query") ?? "";
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Etiqueta de breadcrumb y título según el tipo de búsqueda
+  const etiquetaBreadcrumb =
+    tipoBusqueda === "categoria"
+      ? `Categoría: ${termino}`
+      : tipoBusqueda === "texto"
+        ? `"${termino}"`
+        : "Todos los productos";
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const url = query ? `/api/products?query=${encodeURIComponent(query)}` : "/api/products";
-        const res = await fetch(url);
-        if (!res.ok) {
-          throw new Error("Error al obtener productos");
-        }
-        const data = await res.json();
-        setProducts(data.products || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const tituloPagina =
+    tipoBusqueda === "categoria"
+      ? `Categoría: ${termino}`
+      : tipoBusqueda === "texto"
+        ? `Resultados para: "${termino}"`
+        : "Todos los productos";
 
-    fetchProducts();
-  }, [query]);
-
-  if (loading) {
+  if (cargando) {
     return (
       <div className={styles.page}>
         <main className={styles.main}>
@@ -53,11 +34,11 @@ export default function PageListProduct() {
     );
   }
 
-  if (error) {
+  if (mensajeError) {
     return (
       <div className={styles.page}>
         <main className={styles.main}>
-          <h1>Error: {error}</h1>
+          <h1>Error: {mensajeError}</h1>
         </main>
       </div>
     );
@@ -67,22 +48,13 @@ export default function PageListProduct() {
     <div className={styles.page}>
       <main className={styles.main}>
         <div className={styles.containerPrincipal}>
-          <h2>{query ? `Resultados para: "${query}"` : "Todos los productos"}</h2>
-          <div className={styles.productList}>
-            {products.map((product) => (
-              <CardProduct
-                key={product.id}
-                title={product.nombre}
-                price={`$${product.precioUnitario}`}
-                description={`Categoría: ${product.category.map((cat) => cat.nombre).join(", ")}`}
-                onAddToCart={() =>
-                  alert(`Agregado al carrito: ${product.nombre}`)
-                }
-              />
-            ))}
-          </div>
+          <Breadcrumb segmentos={[{ etiqueta: etiquetaBreadcrumb }]} />
+          <h2>{tituloPagina}</h2>
+          <ListaResultadosProductos productos={productos} promociones={promociones} />
         </div>
       </main>
     </div>
   );
-}
+};
+
+export default PaginaResultadosBusqueda;

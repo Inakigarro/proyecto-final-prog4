@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 
+const URL_BACKEND = process.env.BACKEND_URL ?? "http://localhost:4000";
+
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
+    // El backend espera el filtro de texto como "q" (no "query").
     const query = url.searchParams.get("query");
-    const backendUrl = new URL("http://localhost:4001/api/products");
+    const backendUrl = new URL(`${URL_BACKEND}/api/products`);
 
     if (query) {
-      backendUrl.searchParams.set("query", query);
+      backendUrl.searchParams.set("q", query);
     }
 
     const res = await fetch(backendUrl.toString(), {

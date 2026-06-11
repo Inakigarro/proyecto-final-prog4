@@ -1,5 +1,8 @@
 import styles from "./page.module.css";
 import Slider, { Slide } from "@/component/slider/Slider";
+import VitrinaProductos from "@/component/vitrina/VitrinaProductos";
+import { obtenerProductos } from "@/lib/productos";
+import { obtenerPromociones } from "@/lib/promociones";
 
 const slides: Slide[] = [
   {
@@ -37,7 +40,13 @@ const infoCards = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  // Fetch en paralelo: los productos y las promociones son independientes
+  const [productosDestacados, promociones] = await Promise.all([
+    obtenerProductos({ limite: 8 }),
+    obtenerPromociones(),
+  ]);
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
@@ -53,6 +62,13 @@ export default function Home() {
               </article>
             ))}
           </section>
+
+          <VitrinaProductos
+            titulo="Productos destacados"
+            productos={productosDestacados}
+            promociones={promociones}
+            mensajeVacio="No pudimos cargar los productos en este momento."
+          />
         </div>
       </main>
     </div>

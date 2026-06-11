@@ -1,0 +1,102 @@
+.container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 24px;
+}
+
+.card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field label {
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+.field input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.error {
+  margin-top: 4px;
+  color: red;
+  font-size: 0.85rem;
+}
+
+.button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  background: #0070f3;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: #005bb5;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.footer {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.footer a {
+  color: #0070f3;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+
+:global(.login-gate-error) {
+  padding: 8px;
+  background-color: #fff0f0;
+  border: 1px solid #ffcccc;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: red;
+}

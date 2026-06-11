@@ -1,4 +1,4 @@
-import { CrearItemDto, ItemResponse } from "../item.dtos";
+import { CrearItemDto, FiltrosProducto, ItemResponse, ProductosPageResponse } from "../item.dtos";
 
 export interface IProductService {
   createProduct(product: CrearItemDto): Promise<ItemResponse>;
@@ -8,7 +8,7 @@ export interface IProductService {
   /** Borrado lógico: devuelve true si el item existía y fue desactivado. */
   deleteProduct(id: string): Promise<boolean>;
 
-  getAllProducts(): Promise<ItemResponse[]>;
+  listarProductos(filtros: FiltrosProducto): Promise<ProductosPageResponse>;
 
   getProductById(id: string): Promise<ItemResponse | null>;
 }

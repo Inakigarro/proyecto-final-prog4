@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(Get-ChildItem -Path \"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\" -Force)",
+      "Bash(Remove-Item -Recurse -Force \"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\\\\client\\\\front-tpi\\\\src\\\\app\\\\api\\\\RegisterPage\")"
+    ]
+  }
+}

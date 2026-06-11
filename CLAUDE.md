@@ -2,82 +2,256 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project
+## Proyecto
 
-Aplicación web completa desarrollada como proyecto del curso Programacion 4 (Tecnicatura en Programación).
+Aplicación web e-commerce completa desarrollada como proyecto del curso Programacion 4 (Tecnicatura en Programación). Plataforma tipo TechPoint con catálogo de productos, carrito, órdenes de compra y RBAC.
+
+**Equipo:** Iñaki Garro, Franco Armando, Rocío Medina, Natalia Medina, Juan Pedro Caffa.
 
 ## Stack
 
-- **MongoDB** + **Mongoose** — base de datos, enfoque code-first (los modelos definen el esquema)
-- **Express** — API REST en el servidor
-- **React 18** + **Vite** — frontend, enfoque mobile-first
-- **Material UI (MUI v5)** — librería de componentes
-- **Node.js** — runtime del servidor
-- **TypeScript** — usado en `server/` y `client/`
+**Backend (`server/`):**
+- **MongoDB Atlas** + **Mongoose 8** — base de datos, enfoque code-first
+- **Express 4** — API REST
+- **Node.js** + **TypeScript 5** — runtime y lenguaje
+- **JWT** — autenticación stateless (access 15m + refresh 30d)
+- **bcryptjs**, **Helmet**, **CORS**, **rate-limiting**
+
+**Frontend (`client/front-tpi/`):**
+- **Next.js** — framework React con App Router
+- **React** + **TypeScript 5** — UI
+- CSS Modules — estilos por componente
 
 ## Convenciones de código
 
 - Comentarios en funciones y clases: **cortos, descriptivos y directos**
-- Tipar siempre parámetros, retornos e interfaces — ayuda a compañeros sin experiencia en apps completas
+- Tipar siempre parámetros, retornos e interfaces
 - Código y comentarios en **español**
 
 ## Arquitectura
 
-**Estructura:** Monorepo con `/server` (backend) y `/client` (frontend) como subproyectos independientes.
+**Estructura:** Monorepo con `/server` (backend Express) y `/client/front-tpi` (frontend Next.js) como subproyectos independientes.
 
 **Package manager:** npm
 
-**Autenticación:** JWT stateless — el servidor no guarda estado de sesión.
+**Autenticación JWT:**
+- `register` crea el usuario con rol `usuario` en una transacción
+- `login` genera access token (15m) + refresh token (30d almacenado en BD)
+- Refresh token rotation: cada renovación invalida el anterior
+- `logout` revoca el refresh token de la BD
+- Flujo de reset de contraseña con token de 1h (modelo `PasswordResetToken`)
 
-**Roles y permisos (RBAC dinámico):**
-- `User` → tiene muchos `Role` (ObjectId[])
-- `Role` → tiene muchos `Permission` (ObjectId[])
+**RBAC dinámico:**
+- `User` → muchos `Role` (ObjectId[])
+- `Role` → muchos `Permission` (ObjectId[])
 - `Permission` → `{ nombre, recurso, accion }` (entidad en BD, no hardcodeada)
+- Middleware `verificarSuperAdmin` verifica que el usuario tenga el rol `superadmin`
 
 ## Estructura del server
 
 ```
 server/src/
-├── config/        # conexión a MongoDB
-├── models/        # modelos Mongoose + interfaces TypeScript
-├── controllers/   # lógica de cada endpoint
-├── routes/        # definición de rutas Express
-├── middlewares/   # verificarToken (JWT), errorHandler
-├── seeders/       # seed.ts — carga datos iniciales
-├── types/         # interfaces compartidas del backend
-└── index.ts       # entry point
+├── config/
+│   ├── constants.ts       # ROL_SUPERADMIN, ROL_USUARIO
+│   ├── database.ts        # conexión MongoDB via MONGODB_URI
+│   ├── env.ts             # validación de variables de entorno requeridas
+│   └── logger.ts          # logging estructurado JSON con niveles
+├── models/                # esquemas Mongoose + interfaces TypeScript
+│   ├── User.ts            # IUser — hashing de contraseña, validación
+│   ├── Role.ts            # IRole — agrupa permisos
+│   ├── Permission.ts      # IPermission — {nombre, recurso, accion}
+│   ├── Item.ts            # IItem — productos con precio, stock, categorías
+│   ├── Category.ts        # ICategory — agrupa ítems
+│   ├── PurchaseOrder.ts   # IPurchaseOrder — cabecera de orden
+│   ├── PurchaseOrderDetail.ts  # IPurchaseOrderDetail — línea de orden (monto auto)
+│   ├── PaymentMethod.ts   # IPaymentMethod — métodos de pago
+│   ├── RefreshToken.ts    # IRefreshToken — tokens con TTL
+│   └── PasswordResetToken.ts   # IPasswordResetToken — reset con TTL 1h
+├── controllers/           # handlers HTTP
+│   ├── authController.ts  # register, login, refresh, logout, forgot/reset password
+│   ├── userController.ts  # perfil, listar, obtener, crear, actualizar, eliminar
+│   ├── roleController.ts  # listar, obtener (solo lectura)
+│   ├── permissionController.ts # listar, obtener (solo lectura)
+│   ├── productController.ts    # CRUD de ítems
+│   ├── categoryController.ts   # CRUD de categorías
+│   └── cartController.ts  # validar carrito, checkout
+├── services/rbac/         # capa de lógica de negocio
+│   ├── user.service.ts
+│   ├── product.service.ts
+│   ├── category.service.ts
+│   ├── cart.service.ts    # validateCart (sin persistir), checkout atómico
+│   ├── role.service.ts
+│   ├── permission.service.ts
+│   └── *.interface.ts     # contratos de servicio
+├── routes/                # routers Express
+│   ├── authRoutes.ts      # rate-limit: 10 intentos / 15min
+│   ├── userRoutes.ts      # auth + superadmin
+│   ├── roleRoutes.ts      # auth + superadmin, solo lectura
+│   ├── permissionRoutes.ts # auth + superadmin, solo lectura
+│   ├── productRoutes.ts   # GET público, mutaciones auth
+│   ├── categoryRoutes.ts  # GET público, mutaciones superadmin
+│   └── cartRoutes.ts      # auth requerido
+├── middlewares/
+│   ├── auth.ts            # verificarToken — valida JWT
+│   ├── verificarSuperAdmin.ts  # verifica rol superadmin
+│   ├── validar.ts         # middleware de validación Zod (envuelve schemas)
+│   └── errorHandler.ts    # manejo global: Mongoose, JWT, duplicados
+├── schemas/               # schemas Zod para validación de entrada
+│   ├── auth.schemas.ts
+│   ├── cart.schemas.ts
+│   └── product.schemas.ts
+├── types/
+│   ├── index.ts           # JwtPayload, LoginInput, RegisterInput, AuthResponse…
+│   ├── item.dtos.ts
+│   ├── categories.dto.ts
+│   └── rbac/              # DTOs de carrito e interfaces de servicios
+├── utils/
+│   └── descuentos.ts      # cálculo de descuentos en cascada (ítem + orden)
+├── seeders/
+│   ├── seed.ts            # SuperAdmin + roles/permisos iniciales
+│   └── seedProducts.ts    # catálogo inicial de productos
+├── __tests__/
+│   ├── unit/              # pruebas unitarias (validación de carrito, descuentos)
+│   └── integration/       # pruebas de integración (auth, checkout, productos)
+├── app.ts                 # factory de la app Express (importable en tests)
+└── index.ts               # entry point: conecta DB, arranca servidor
 ```
 
 ## Estructura del client
 
 ```
-client/src/
-├── api/           # axios.ts — instancia con interceptores JWT (access token en memoria)
-├── components/
-│   └── layout/    # AppLayout.tsx — navbar + drawer responsive
-├── context/       # AuthContext.tsx — usuario, login, logout, register
-├── pages/         # una carpeta/archivo por vista
-├── router/        # AppRouter.tsx — RutaProtegida y RutaPublica
-└── types/         # interfaces del frontend
+client/front-tpi/src/
+├── app/                             # Next.js App Router
+│   ├── layout.tsx                   # RootLayout: AuthProvider + Navbar + modales globales
+│   ├── page.tsx                     # Home — slider hero + productos destacados (SSR)
+│   ├── globals.css
+│   ├── api/                         # API routes Next.js (proxies al backend)
+│   │   ├── products/route.ts        # proxy GET → backend /api/products
+│   │   └── test-connection/route.ts
+│   ├── carrito/page.tsx             # Página del carrito
+│   ├── product-detail-page/[id]/    # PDP dinámica
+│   │   ├── page.tsx
+│   │   ├── _components/             # HeroProducto, PanelInfo, SelectorCantidad, Accordion, RelatedSlider, Comparador
+│   │   └── _hooks/                  # useProducto, useRelacionados
+│   ├── search-result/page.tsx       # Resultados de búsqueda (texto + categoría)
+│   └── test-connection/page.tsx
+├── component/
+│   ├── card/card.tsx                # CardProduct — tarjeta de producto para grillas
+│   ├── cart/                        # Componentes del carrito
+│   │   ├── CartIcon.tsx             # Ícono con badge en la navbar
+│   │   ├── CartDrawer.tsx           # Mini-carrito lateral
+│   │   ├── CartAddedDrawer.tsx      # Drawer de confirmación post-agregar
+│   │   ├── CartPageClient.tsx       # Página completa con validación + checkout (TODO: llamada checkout)
+│   │   ├── CartItemRow.tsx          # Fila individual de ítem
+│   │   ├── CartToast.tsx            # Toast de confirmación (auto-cierre 4s)
+│   │   ├── LoginGateModal.tsx       # Modal de login (email + contraseña)
+│   │   └── ConfirmDialog.tsx        # Diálogo de confirmación reutilizable
+│   ├── layout/                      # Componentes de navegación
+│   │   ├── navbar.tsx               # Cabecera principal
+│   │   ├── Breadcrumb.tsx
+│   │   ├── BarraBusqueda.tsx
+│   │   ├── CategoriasMenu.tsx
+│   │   └── MenuMovilDrawer.tsx      # Navegación mobile
+│   ├── slider/Slider.tsx            # Carrusel de imágenes hero
+│   ├── vitrina/VitrinaProductos.tsx # Grilla de productos con paginación
+│   └── busqueda/                    # ListaResultadosProductos + useResultadosBusqueda
+├── context/
+│   ├── AuthContext.tsx              # Adapter Redux: login, logout, tienePermiso, tieneRol, esSuperAdmin
+│   └── CartContext.tsx              # Adapter Redux: agregar, quitar, actualizarCantidad, vaciar
+├── store/
+│   ├── index.ts                     # configureStore + tipos RootState / AppDispatch
+│   ├── authSlice.ts                 # Estado auth: usuario, isAutenticado, isCargando
+│   ├── cartSlice.ts                 # Estado carrito: items, ultimoAgregado, drawerAbierto, hidratado
+│   ├── hooks.ts                     # useAppDispatch, useAppSelector tipados
+│   └── localStorageMiddleware.ts    # Persiste el carrito en localStorage tras cada acción
+└── lib/
+    ├── api.ts                       # apiFetch con header Authorization automático + clase ApiError
+    ├── cart-types.ts                # DTOs del carrito (CartItem, ValidarCarritoDto, etc.)
+    └── productos.ts                 # obtenerProductos — cliente SSR para el backend
 ```
 
-**Gestión de tokens en el client:**
-- `accessToken` se guarda en memoria (variable en `axios.ts`), nunca en localStorage
-- `refreshToken` se guarda en `localStorage` para persistir la sesión entre recargas
-- El interceptor de Axios renueva el `accessToken` automáticamente ante un 401
+**Estado actual del frontend:**
+- Auth implementada: login, logout, hidratación desde localStorage, refresh automático (14 min)
+- Carrito implementado: Redux + persistencia, validación contra backend, drawer y toast
+- Checkout **pendiente**: `CartPageClient.tsx` tiene el TODO en `handleConfirmarCompra`
+- Registro de usuarios **pendiente**: no hay UI; el archivo `RegisterPage.tsx` está huérfano en `src/app/api/RegisterPage/` (ruta incorrecta)
+- Sin páginas de: perfil de usuario, historial de órdenes, confirmación de compra, reset de contraseña
+
+**Patrones del frontend:**
+- Patrón adaptador: `AuthContext` y `CartContext` exponen una API estable y por dentro usan Redux
+- Server Components para carga inicial de productos (SSR); hooks de cliente para filtrado/búsqueda
+- Todas las rutas de API de Next.js proxean al backend Express para evitar CORS en dev
+- Access token en memoria; refresh token en `localStorage` bajo la clave `techpoint:refresh_token`
+
+## API Endpoints
+
+```
+POST   /api/auth/register
+POST   /api/auth/login
+POST   /api/auth/refresh
+POST   /api/auth/logout
+POST   /api/auth/forgot-password
+POST   /api/auth/reset-password
+
+GET    /api/users/me          (auth)
+GET    /api/users             (superadmin)
+GET    /api/users/:id         (superadmin)
+POST   /api/users             (superadmin)
+PUT    /api/users/:id         (superadmin)
+DELETE /api/users/:id         (superadmin — soft delete activo=false)
+
+GET    /api/roles             (superadmin)
+GET    /api/roles/:id
+GET    /api/permissions       (superadmin)
+GET    /api/permissions/:id
+
+GET    /api/products          (público)
+GET    /api/products/:id      (público)
+POST   /api/products          (auth)
+PUT    /api/products/:id      (auth)
+DELETE /api/products/:id      (auth — soft delete)
+
+GET    /api/categories        (público)
+GET    /api/categories/:id    (público)
+POST   /api/categories        (superadmin)
+PUT    /api/categories/:id    (superadmin)
+DELETE /api/categories/:id    (superadmin — soft delete)
+
+POST   /api/cart/validate     (auth) — verifica stock sin persistir
+POST   /api/cart/checkout     (auth) — decremento atómico de stock + crea orden
+```
+
+## Flujo de carrito y órdenes
+
+1. `CartService.validateCart()` valida precios y stock sin persistir
+2. `CartService.checkout()` decrementa stock atómicamente con rollback ante fallo
+3. `PurchaseOrderDetail.monto` y `PurchaseOrder.montoTotal` se calculan en hooks `pre-save`
+4. Descuentos en cascada a nivel ítem y orden (0–100%)
+
+## Variables de entorno (server/.env)
+
+```
+PORT=4000
+MONGODB_URI=mongodb://localhost:27017/programacion4
+JWT_SECRET=cambiar_por_clave_secreta_segura
+SUPERADMIN_PASSWORD=contraseña_superadmin_segura
+```
 
 ## Comandos
 
 ```bash
 # Server
 cd server && npm install
-npm run dev      # recarga con ts-node + nodemon
-npm run build    # compila a /dist
-npm start        # producción desde /dist
-npm run seed     # carga SuperAdmin y permisos iniciales
+npm run dev           # ts-node + nodemon (watch mode)
+npm run build         # compila TypeScript a /dist
+npm start             # producción desde /dist
+npm run seed          # carga SuperAdmin y permisos iniciales
+npm run seed:products # carga catálogo inicial de productos
 
 # Client
-cd client && npm install
-npm run dev      # Vite dev server en http://localhost:5173
-npm run build    # build de producción
+cd client/front-tpi && npm install
+npm run dev           # Next.js dev server en http://localhost:3000
+npm run build         # build de producción
+npm start             # sirve el build de producción
+npm run lint          # ESLint
 ```

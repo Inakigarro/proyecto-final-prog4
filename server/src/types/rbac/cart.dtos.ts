@@ -4,6 +4,8 @@
  * para validar el estado actual y para confirmar la compra (checkout).
  */
 
+import type { TipoPromocion } from '../promotion.dtos';
+
 /**
  * Item individual que el frontend envía dentro del carrito.
  */
@@ -30,25 +32,54 @@ export interface CheckoutDto {
 }
 
 /**
+ * Resumen de la promoción aplicada a un item validado.
+ * Sirve para que el frontend pinte la cucarda y el ahorro sin tener que
+ * volver a derivar la promo.
+ */
+export interface PromocionAplicadaResponse {
+  idPromocion: string;
+  nombrePromocion: string;
+  tipoPromocion: TipoPromocion;
+  /** Texto corto para mostrar al usuario (ej. "15% OFF", "3x2"). */
+  etiqueta: string;
+}
+
+/**
  * Resultado de validar un único item del carrito.
+ *
+ * `subtotal` es el monto FINAL a pagar por este item (post-promoción).
+ * Para reconstruir el precio sin descuento, usar `precioUnitario * cantidadSolicitada`.
  */
 export interface ItemValidadoResponse {
   itemId: string;
   nombre: string;
   cantidadSolicitada: number;
   stockDisponible: number;
+  /** Precio unitario base (sin descuento). */
   precioUnitario: number;
+  /** Precio unitario tras aplicar DESCUENTO_PORCENTUAL. No se llena para NXM/SEGUNDA_UNIDAD. */
+  precioUnitarioConDescuento?: number;
+  /** Subtotal final a pagar por este item (incluye descuento si lo hay). */
   subtotal: number;
+  /** subtotalSinDescuento - subtotal. 0 si no hay promoción aplicada. */
+  ahorroTotal: number;
+  /** Promoción usada para calcular el descuento. Indefinido si no hay. */
+  promocionAplicada?: PromocionAplicadaResponse;
   disponible: boolean;
   motivo?: string;
 }
 
 /**
  * Respuesta del endpoint POST /api/cart/validate.
- * `total` es la suma de subtotales sin aplicar descuentos.
+ *
+ * `total` es el monto FINAL a pagar (suma de subtotales post-promoción).
+ * `subtotalSinDescuentos` es la suma de los precios sin promoción aplicada.
+ * `ahorroTotal` = `subtotalSinDescuentos - total`.
  */
 export interface ValidacionCarritoResponse {
   items: ItemValidadoResponse[];
+  subtotalSinDescuentos: number;
+  ahorroTotal: number;
   total: number;
   carritoValido: boolean;
 }

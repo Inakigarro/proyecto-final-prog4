@@ -1,0 +1,616 @@
+/* ──────────────────────────────────────────────────────────
+   PDP — Product Detail Page
+   ────────────────────────────────────────────────────────── */
+
+.pagina {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+/* ── Estado (loading / error) ───────────────────────────── */
+
+.estado {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--color-muted);
+  font-size: 1rem;
+}
+
+.volverBtn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 20px;
+  cursor: pointer;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+.volverBtn:hover {
+  background: var(--color-border);
+}
+
+/* ── Hero ───────────────────────────────────────────────── */
+
+.hero {
+  display: grid;
+  grid-template-columns: 55% 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+/* Imagen */
+
+.imagenWrapper {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.cucarda {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  background: var(--color-highlight);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+/* Panel de info */
+
+.infoPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.categoriaLabel {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-primary);
+}
+
+.titulo {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.precio {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* Bloque precio cuando hay DESCUENTO_PORCENTUAL: tachado arriba + descuento abajo */
+.bloquePrecio {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.precioTachado {
+  font-size: 1.1rem;
+  color: var(--color-muted);
+  text-decoration: line-through;
+  line-height: 1.1;
+}
+
+.precioDescuento {
+  color: var(--color-accent-hover);
+}
+
+/* Selector de cantidad */
+
+.cantidadBloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cantidadLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+}
+
+.selectorCantidad {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: fit-content;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.cantidadBtn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cantidadBtn:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+.cantidadBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cantidadValor {
+  min-width: 44px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  line-height: 44px;
+}
+
+/* Botones de acción */
+
+.ctaBloque {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ctaPrimario {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--color-primary-dark);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.ctaPrimario:hover {
+  background: var(--color-primary);
+}
+
+.ctaSecundario {
+  width: 100%;
+  padding: 14px;
+  border: 2px solid var(--color-primary-dark);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-primary-dark);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.ctaSecundario:hover {
+  background: var(--color-primary-dark);
+  color: #ffffff;
+}
+
+/* ── Sección genérica ───────────────────────────────────── */
+
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.seccionTitulo {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* ── Acordeón ───────────────────────────────────────────── */
+
+.accordion {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.accordionTrigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.accordionTrigger:hover {
+  background: var(--color-bg);
+}
+
+.accordionIcon {
+  font-size: 1.4rem;
+  color: var(--color-muted);
+  transition: transform 0.25s ease;
+  line-height: 1;
+  display: inline-block;
+  transform: rotate(90deg);
+}
+
+.accordionIconAbierto {
+  transform: rotate(270deg);
+}
+
+.accordionBody {
+  padding: 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.descripcionTexto {
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Slider de relacionados ─────────────────────────────── */
+
+.sliderContainer {
+  position: relative;
+}
+
+.sliderTrack {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+  /* Ocultar scrollbar visual */
+  scrollbar-width: none;
+}
+
+.sliderTrack::-webkit-scrollbar {
+  display: none;
+}
+
+.sliderItem {
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sliderArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-60%);
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.sliderArrow:hover {
+  background: var(--color-bg);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.13);
+}
+
+.sliderArrowIzq {
+  left: -20px;
+}
+
+.sliderArrowDer {
+  right: -20px;
+}
+
+/* Encabezado de sección + contador */
+
+.seccionEncabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.comparadosContador {
+  font-size: 0.8rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Botón comparar bajo cada card relacionada */
+
+.compararBtn {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.compararBtn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.compararBtnActivo {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  color: #ffffff;
+}
+
+.compararBtnActivo:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #ffffff;
+}
+
+.compararBtnDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Comparador ─────────────────────────────────────────── */
+
+.comparadorWrapper {
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+.comparadorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  min-width: max-content;
+}
+
+.comparadorTitulo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.comparadorLimpiar {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.comparadorLimpiar:hover {
+  border-color: var(--color-accent-hover);
+  color: var(--color-accent-hover);
+}
+
+/* Tabla */
+
+.comparadorTabla {
+  display: flex;
+  flex-direction: column;
+  min-width: max-content;
+  width: 100%;
+}
+
+.comparadorFila {
+  display: grid;
+  /* Primera columna fija de atributos + columnas iguales por producto */
+  grid-template-columns: 180px repeat(var(--col-count, 2), minmax(160px, 1fr));
+  border-bottom: 1px solid var(--color-border);
+}
+
+.comparadorFila:last-child {
+  border-bottom: none;
+}
+
+.comparadorFilaPar {
+  background: var(--color-bg);
+}
+
+.comparadorFila > * {
+  padding: 16px 20px;
+  border-right: 1px solid var(--color-border);
+}
+
+.comparadorFila > *:last-child {
+  border-right: none;
+}
+
+/* Celda de atributo (primera columna) */
+.comparadorCeldaAtributo {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  background: var(--color-bg);
+}
+
+/* Celda de producto (primera fila — tarjetas) */
+.comparadorCeldaProducto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.comparadorTagActual {
+  display: inline-block;
+  background: var(--color-highlight);
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.comparadorImagenWrapper {
+  width: 100px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.comparadorImagen {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.comparadorNombre {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.3;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.comparadorPrecio {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.comparadorQuitar {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.comparadorQuitar:hover {
+  color: var(--color-accent-hover);
+}
+
+/* Celda de valor */
+.comparadorCeldaValor {
+  font-size: 0.9rem;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .titulo {
+    font-size: 1.35rem;
+  }
+
+  .precio {
+    font-size: 1.6rem;
+  }
+
+  .sliderArrowIzq,
+  .sliderArrowDer {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagina {
+    padding: 16px 12px 48px;
+    gap: 32px;
+  }
+}

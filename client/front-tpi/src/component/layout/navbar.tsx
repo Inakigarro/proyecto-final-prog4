@@ -1,74 +1,97 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import "./navbar.css";
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-interface EnlacesNav {
-  etiqueta: string;
-  ruta: string;
-}
+import CartIcon from "../cart/CartIcon";
+import LoginGateModal from "../cart/LoginGateModal";
+import { useAuth } from "@/context/AuthContext";
+import BarraBusqueda from "./BarraBusqueda";
+import CategoriasMenu from "./CategoriasMenu";
+import MenuMovilDrawer, { type EnlacePrincipal } from "./MenuMovilDrawer";
+import { useCategorias } from "./useCategorias";
 
-const enlacesNav: EnlacesNav[] = [
-  { etiqueta: "Inicio", ruta: "/" },
+const enlacesPrincipales: EnlacePrincipal[] = [
   { etiqueta: "Promociones", ruta: "/promociones" },
   { etiqueta: "Quiénes somos", ruta: "/test-connection" },
 ];
 
 const Navbar = () => {
   const rutaActual = usePathname();
-  const router = useRouter();
-  const [query, setQuery] = useState("");
+  const [loginAbierto, setLoginAbierto] = useState(false);
+
+  const { state, logout } = useAuth();
+  const { isAutenticado, isCargando, usuario } = state;
+
+  const { categorias } = useCategorias();
 
   return (
-    <header className="app-navbar">
-      <div className="navbar-logo">TechPoint</div>
+    <>
+      <header className="app-navbar">
+        <MenuMovilDrawer categorias={categorias} enlaces={enlacesPrincipales} />
 
-      <form
-        className="navbar-search"
-        role="search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const trimmed = query.trim();
-          if (!trimmed) return;
-          router.push(`/search-result?query=${encodeURIComponent(trimmed)}`);
-        }}
-      >
-        <input
-          type="search"
-          placeholder="Buscar..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Buscar productos"
-        />
-      </form>
+        <Link href="/" className="navbar-logo">TechPoint</Link>
 
-      <div className="navbar-actions">
-        <ul className="navbar-list">
-          {enlacesNav.map(({ etiqueta, ruta }) => {
-            const estaActivo = rutaActual === ruta;
-            return (
-              <li key={ruta} className="navbar-item">
-                <Link
-                  href={ruta}
-                  className={`navbar-link${estaActivo ? " activo" : ""}`}
-                  aria-current={estaActivo ? "page" : undefined}
+        <CategoriasMenu categorias={categorias} />
+
+        <BarraBusqueda />
+
+        <div className="navbar-actions">
+          <ul className="navbar-list">
+            {enlacesPrincipales.map(({ etiqueta, ruta }) => {
+              const estaActivo = rutaActual === ruta;
+              return (
+                <li key={ruta} className="navbar-item">
+                  <Link
+                    href={ruta}
+                    className={`navbar-link${estaActivo ? " activo" : ""}`}
+                    aria-current={estaActivo ? "page" : undefined}
+                  >
+                    {etiqueta}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Área de sesión: vacía durante carga, login o usuario según estado */}
+          {!isCargando && (
+            isAutenticado && usuario ? (
+              <div className="navbar-usuario">
+                <span className="navbar-usuario-nombre">
+                  {usuario.nombre}
+                </span>
+                <button
+                  type="button"
+                  className="navbar-logout"
+                  onClick={logout}
+                  aria-label="Cerrar sesión"
                 >
-                  {etiqueta}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                  Salir
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Iniciar sesión"
+                onClick={() => setLoginAbierto(true)}
+              >
+                <span className="login-icon">🔒</span>
+              </button>
+            )
+          )}
 
-        <button type="button" className="icon-button" aria-label="Login">
-          <span className="login-icon">🔒</span>
-        </button>
-        <button type="button" className="icon-button" aria-label="Carrito">
-          <span className="login-icon">🛒</span>
-        </button>
-      </div>
-    </header>
+          <CartIcon />
+        </div>
+      </header>
+
+      <LoginGateModal
+        abierto={loginAbierto}
+        onCerrar={() => setLoginAbierto(false)}
+      />
+    </>
   );
 };
 
