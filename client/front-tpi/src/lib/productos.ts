@@ -24,7 +24,7 @@ interface RespuestaPaginadaProductos {
 }
 
 /** URL base del backend. Se puede sobrescribir con la env BACKEND_URL. */
-const URL_BACKEND = process.env.BACKEND_URL ?? "http://localhost:4001";
+const URL_BACKEND = process.env.BACKEND_URL ?? "http://localhost:4000";
 
 interface OpcionesObtenerProductos {
   /** Cantidad máxima de productos a traer (mapea al `limite` del backend). */

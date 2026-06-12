@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import "./navbar.css";
 import CartIcon from "../cart/CartIcon";
-import LoginGateModal from "../cart/LoginGateModal";
 import { useAuth } from "@/context/AuthContext";
 import BarraBusqueda from "./BarraBusqueda";
 import CategoriasMenu from "./CategoriasMenu";
@@ -19,79 +18,104 @@ const enlacesPrincipales: EnlacePrincipal[] = [
 
 const Navbar = () => {
   const rutaActual = usePathname();
-  const [loginAbierto, setLoginAbierto] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const { state, logout } = useAuth();
   const { isAutenticado, isCargando, usuario } = state;
 
   const { categorias } = useCategorias();
 
+  // Cerrar el menú al hacer click fuera
+  useEffect(() => {
+    if (!menuAbierto) return;
+    const handleClickFuera = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuAbierto(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, [menuAbierto]);
+
   return (
-    <>
-      <header className="app-navbar">
-        <MenuMovilDrawer categorias={categorias} enlaces={enlacesPrincipales} />
+    <header className="app-navbar">
+      <MenuMovilDrawer categorias={categorias} enlaces={enlacesPrincipales} />
 
-        <Link href="/" className="navbar-logo">TechPoint</Link>
+      <Link href="/" className="navbar-logo">TechPoint</Link>
 
-        <CategoriasMenu categorias={categorias} />
+      <CategoriasMenu categorias={categorias} />
 
-        <BarraBusqueda />
+      <BarraBusqueda />
 
-        <div className="navbar-actions">
-          <ul className="navbar-list">
-            {enlacesPrincipales.map(({ etiqueta, ruta }) => {
-              const estaActivo = rutaActual === ruta;
-              return (
-                <li key={ruta} className="navbar-item">
-                  <Link
-                    href={ruta}
-                    className={`navbar-link${estaActivo ? " activo" : ""}`}
-                    aria-current={estaActivo ? "page" : undefined}
-                  >
-                    {etiqueta}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-
-          {/* Área de sesión: vacía durante carga, login o usuario según estado */}
-          {!isCargando && (
-            isAutenticado && usuario ? (
-              <div className="navbar-usuario">
-                <span className="navbar-usuario-nombre">
-                  {usuario.nombre}
-                </span>
-                <button
-                  type="button"
-                  className="navbar-logout"
-                  onClick={logout}
-                  aria-label="Cerrar sesión"
+      <div className="navbar-actions">
+        <ul className="navbar-list">
+          {enlacesPrincipales.map(({ etiqueta, ruta }) => {
+            const estaActivo = rutaActual === ruta;
+            return (
+              <li key={ruta} className="navbar-item">
+                <Link
+                  href={ruta}
+                  className={`navbar-link${estaActivo ? " activo" : ""}`}
+                  aria-current={estaActivo ? "page" : undefined}
                 >
-                  Salir
-                </button>
-              </div>
-            ) : (
+                  {etiqueta}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Área de sesión: vacía durante carga, login o menú de usuario según estado */}
+        {!isCargando && (
+          isAutenticado && usuario ? (
+            <div className="navbar-usuario" ref={menuRef}>
               <button
                 type="button"
-                className="icon-button"
-                aria-label="Iniciar sesión"
-                onClick={() => setLoginAbierto(true)}
+                className="navbar-usuario-boton"
+                onClick={() => setMenuAbierto((v) => !v)}
+                aria-expanded={menuAbierto}
+                aria-haspopup="menu"
               >
-                <span className="login-icon">🔒</span>
+                <span className="navbar-usuario-nombre">{usuario.nombre}</span>
+                <span className="navbar-usuario-chevron" aria-hidden="true">▾</span>
               </button>
-            )
-          )}
 
-          <CartIcon />
-        </div>
-      </header>
+              {menuAbierto && (
+                <div className="navbar-usuario-menu" role="menu">
+                  <Link
+                    href="/perfil"
+                    className="navbar-menu-item"
+                    role="menuitem"
+                    onClick={() => setMenuAbierto(false)}
+                  >
+                    Mi perfil
+                  </Link>
+                  <button
+                    type="button"
+                    className="navbar-menu-item navbar-menu-item--peligro"
+                    role="menuitem"
+                    onClick={() => { setMenuAbierto(false); logout(); }}
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="icon-button"
+              aria-label="Iniciar sesión"
+            >
+              <span className="login-icon">🔒</span>
+            </Link>
+          )
+        )}
 
-      <LoginGateModal
-        abierto={loginAbierto}
-        onCerrar={() => setLoginAbierto(false)}
-      />
-    </>
+        <CartIcon />
+      </div>
+    </header>
   );
 };
 

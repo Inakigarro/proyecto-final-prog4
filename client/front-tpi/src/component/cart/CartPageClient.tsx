@@ -9,16 +9,16 @@
  * debounce y comparte el estado con el mini-cart drawer.
  *
  * El botón "Confirmar compra" requiere usuario autenticado. Si no lo está,
- * abre el LoginGateModal.
+ * redirige a /login?redirect=/carrito para volver después del login.
  */
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import CartItemRow from './CartItemRow';
 import ConfirmDialog from './ConfirmDialog';
-import LoginGateModal from './LoginGateModal';
 import { useValidacionCarrito } from './useValidacionCarrito';
 import './CartPageClient.css';
 
@@ -26,8 +26,8 @@ const CartPageClient = () => {
   const { state, subtotalEstimado, vaciar } = useCart();
   const { state: authState } = useAuth();
   const validacion = useValidacionCarrito();
+  const router = useRouter();
   const [confirmacionVaciarAbierta, setConfirmacionVaciarAbierta] = useState(false);
-  const [loginAbierto, setLoginAbierto] = useState(false);
 
   if (!state.hidratado) {
     return (
@@ -76,7 +76,7 @@ const CartPageClient = () => {
 
   const handleConfirmarCompra = () => {
     if (!authState.isAutenticado) {
-      setLoginAbierto(true);
+      router.push('/login?redirect=/carrito');
       return;
     }
     // TODO: implementar llamada a POST /api/cart/checkout
@@ -110,7 +110,7 @@ const CartPageClient = () => {
               <button
                 type="button"
                 className="cart-page-error-login"
-                onClick={() => setLoginAbierto(true)}
+                onClick={() => router.push('/login?redirect=/carrito')}
               >
                 Iniciar sesión
               </button>
@@ -213,10 +213,6 @@ const CartPageClient = () => {
         onCancelar={() => setConfirmacionVaciarAbierta(false)}
       />
 
-      <LoginGateModal
-        abierto={loginAbierto}
-        onCerrar={() => setLoginAbierto(false)}
-      />
     </div>
   );
 };
