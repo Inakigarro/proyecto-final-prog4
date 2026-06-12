@@ -12,8 +12,9 @@ import { verificarSuperAdmin } from '../middlewares/verificarSuperAdmin';
 const router = Router();
 const controller = crearUserController(new UserService());
 
-// Ruta del perfil propio — solo requiere estar autenticado
-router.get('/me', verificarToken, controller.perfil);
+// Rutas del perfil propio — solo requieren estar autenticado
+router.get('/me',  verificarToken, controller.perfil);
+router.put('/me',  verificarToken, controller.actualizarPerfil);
 
 // Resto de rutas requieren autenticación y rol superadmin
 router.use(verificarToken);

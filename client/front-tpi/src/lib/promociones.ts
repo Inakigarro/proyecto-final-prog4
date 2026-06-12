@@ -22,7 +22,7 @@ export interface Promocion {
   idsProductos: string[];
 }
 
-const URL_BACKEND = process.env.BACKEND_URL ?? "http://localhost:4001";
+const URL_BACKEND = process.env.BACKEND_URL ?? "http://localhost:4000";
 
 /** Trae todas las promociones activas. Devuelve `[]` ante cualquier falla. */
 export const obtenerPromociones = async (): Promise<Promocion[]> => {

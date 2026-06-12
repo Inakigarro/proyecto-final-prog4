@@ -3,7 +3,15 @@
     "allow": [
       "Bash(npx tsc *)",
       "Bash(Get-ChildItem -Path \"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\" -Force)",
-      "Bash(Remove-Item -Recurse -Force \"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\\\\client\\\\front-tpi\\\\src\\\\app\\\\api\\\\RegisterPage\")"
+      "Bash(Remove-Item -Recurse -Force \"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\\\\client\\\\front-tpi\\\\src\\\\app\\\\api\\\\RegisterPage\")",
+      "Bash(Get-ChildItem -Path \"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\" -Directory)",
+      "Bash(Select-Object Name)",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\\\\server\\\\src\" -Recurse -File | ForEach-Object { $_.FullName -replace [regex]::Escape\\(\"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\\\\\"\\), \"\" })",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\\\\client\\\\front-tpi\\\\src\" -Recurse -File | ForEach-Object { $_.FullName -replace [regex]::Escape\\(\"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\\\\\"\\), \"\" })",
+      "Bash(Remove-Item -Path \"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\\\\client\\\\front-tpi\\\\src\\\\app\\\\api\\\\editar-perfil\\\\editar-perfil-page.tsx\" -Force)",
+      "PowerShell(netstat -ano | Select-String \":3000|:4000\" | Where-Object { $_ -match \"LISTENING\" })",
+      "Bash(Get-ChildItem -Path \"d:\\\\TecnicaturaEnProgramacion\\\\Programacion 4\\\\server\\\\src\\\\routes\" -Filter \"*.ts\")",
+      "Bash(Select-Object -ExpandProperty Name)"
     ]
   }
 }

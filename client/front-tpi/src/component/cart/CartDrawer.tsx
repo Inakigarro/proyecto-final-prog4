@@ -9,20 +9,18 @@
  * Redux). Cuando está cerrado, no dispara validaciones.
  *
  * Al hacer click en "Finalizar compra" verifica si el usuario está autenticado;
- * si no lo está, abre el LoginGateModal. Si lo está, navega a /carrito.
+ * si no lo está, redirige a /login?redirect=/carrito. Si lo está, navega a /carrito.
  *
- * Se cierra con: botón X, click en overlay, tecla Escape, "Seguir comprando",
- * o al abrir el LoginGateModal desde "Finalizar compra".
+ * Se cierra con: botón X, click en overlay, tecla Escape o "Seguir comprando".
  *
  * Montar una sola vez en el RootLayout.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import CartItemRow from './CartItemRow';
-import LoginGateModal from './LoginGateModal';
 import { useValidacionCarrito } from './useValidacionCarrito';
 import './CartDrawer.css';
 
@@ -34,8 +32,6 @@ const CartDrawer = () => {
 
   const abierto = state.drawerAbierto;
   const items = state.items;
-
-  const [loginAbierto, setLoginAbierto] = useState(false);
 
   // Solo validar mientras el drawer esté abierto: evita requests innecesarias
   // cuando el mini-cart no está visible.
@@ -82,7 +78,7 @@ const CartDrawer = () => {
     if (authState.isAutenticado) {
       router.push('/carrito');
     } else {
-      setLoginAbierto(true);
+      router.push('/login?redirect=/carrito');
     }
   };
 
@@ -197,11 +193,6 @@ const CartDrawer = () => {
         </>
       )}
 
-      <LoginGateModal
-        abierto={loginAbierto}
-        onCerrar={() => setLoginAbierto(false)}
-        onLoginExitoso={() => router.push('/carrito')}
-      />
     </>
   );
 };
