@@ -1,111 +1,47 @@
 .contenedor {
-  max-width: 480px;
-  margin: 50px auto;
-  padding: 24px;
-}
-
-.tarjeta {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 32px;
+  max-width: 880px;
+  width: 100%;
+  margin: 40px auto;
+  padding: 0 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .encabezado {
-  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .titulo {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  margin-bottom: 4px;
+  color: var(--color-primary-dark);
+  margin: 0;
 }
 
 .subtitulo {
-  color: #555;
-  font-size: 0.95rem;
-}
-
-.formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.fila {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 16px;
-}
-
-.campo {
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-}
-
-.campo label {
-  margin-bottom: 4px;
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-.campo input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  color: var(--color-muted);
   font-size: 1rem;
-  box-sizing: border-box;
+  margin: 0;
 }
 
-.campo input:focus {
-  outline: none;
-  border-color: #0070f3;
+.contenidoTab {
+  min-height: 200px;
 }
 
-.error {
-  color: red;
-  font-size: 0.85rem;
-  margin-top: 4px;
-}
+@media (max-width: 600px) {
+  .contenedor {
+    margin: 24px auto;
+    padding: 0 16px 48px;
+  }
 
-.errorGeneral {
-  color: red;
-  margin-bottom: 16px;
-  padding: 10px;
-  background-color: #fff0f0;
-  border: 1px solid #fcc;
-  border-radius: 4px;
-  font-size: 0.85rem;
-}
+  .titulo {
+    font-size: 1.5rem;
+  }
 
-.mensajeExito {
-  color: #2a7a2a;
-  margin-bottom: 16px;
-  padding: 10px;
-  background-color: #f0fff0;
-  border: 1px solid #a3d9a3;
-  border-radius: 4px;
-  font-size: 0.85rem;
-}
-
-.botonSubmit {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  border: none;
-  border-radius: 4px;
-  background: #0070f3;
-  color: white;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.botonSubmit:hover {
-  background: #005bb5;
-}
-
-.botonSubmit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  .subtitulo {
+    font-size: 0.9rem;
+  }
 }

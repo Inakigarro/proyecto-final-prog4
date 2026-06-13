@@ -10,6 +10,7 @@
     "seed": "ts-node src/seeders/seed.ts",
     "seed:products": "ts-node src/seeders/seedProducts.ts",
     "seed:promotions": "ts-node src/seeders/seedPromotions.ts",
+    "seed:addresses": "ts-node src/seeders/seedAddresses.ts",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:unit": "jest --testPathPatterns=unit",
