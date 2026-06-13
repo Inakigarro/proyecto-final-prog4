@@ -55,6 +55,25 @@
   color: var(--color-error);
 }
 
+/* ── Botón volver (pasos de checkout) ──────────────────────────────────── */
+
+.cart-page-volver {
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: inherit;
+  transition: color 0.15s ease;
+}
+
+.cart-page-volver:hover {
+  color: var(--color-text);
+}
+
+/* ── Grid principal ────────────────────────────────────────────────────── */
+
 .cart-page-grid {
   display: grid;
   grid-template-columns: 1fr 320px;

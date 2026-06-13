@@ -1,33 +1,125 @@
 'use client';
 
 /**
- * Página completa del carrito.
+ * Página completa del carrito + flujo de checkout.
  *
- * La validación contra POST /api/cart/validate vive en el slice de Redux
- * (`store/cartSlice`). Este componente solo consume el resultado vía el
- * hook compartido `useValidacionCarrito`, que dispara la validación con
- * debounce y comparte el estado con el mini-cart drawer.
+ * Maneja 3 pasos dentro de la misma pantalla:
+ *  1. `carrito` — Vista del carrito con botón "Confirmar compra".
+ *  2. `envio`   — Formulario de datos de envío; botón pasa a "Ir a pagar".
+ *  3. `pago`    — Formulario de tarjeta de crédito (Etapa 3, próximamente).
  *
- * El botón "Confirmar compra" requiere usuario autenticado. Si no lo está,
- * redirige a /login?redirect=/carrito para volver después del login.
+ * La validación contra POST /api/cart/validate vive en el slice de Redux.
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import CartItemRow from './CartItemRow';
 import ConfirmDialog from './ConfirmDialog';
+import CheckoutEnvioForm from './CheckoutEnvioForm';
 import { useValidacionCarrito } from './useValidacionCarrito';
+import type { DatosEnvioDto } from '@/lib/cart-types';
 import './CartPageClient.css';
+
+/** Pasos del flujo de checkout. */
+type PasoCheckout = 'carrito' | 'envio' | 'pago' | 'confirmacion';
 
 const CartPageClient = () => {
   const { state, subtotalEstimado, vaciar } = useCart();
   const { state: authState } = useAuth();
   const validacion = useValidacionCarrito();
   const router = useRouter();
+
   const [confirmacionVaciarAbierta, setConfirmacionVaciarAbierta] = useState(false);
+  const [paso, setPaso] = useState<PasoCheckout>('carrito');
+  const [datosEnvio, setDatosEnvio] = useState<DatosEnvioDto | null>(null);
+  const [envioValido, setEnvioValido] = useState(false);
+
+  // ── Callbacks ────────────────────────────────────────────────────────────
+
+  /** Recibe cambios del formulario de envío. */
+  const handleEnvioChange = useCallback(
+    (datos: DatosEnvioDto, esValido: boolean) => {
+      setDatosEnvio(datos);
+      setEnvioValido(esValido);
+    },
+    []
+  );
+
+  const handleConfirmarVaciar = () => {
+    vaciar();
+    setConfirmacionVaciarAbierta(false);
+    setPaso('carrito');
+  };
+
+  // ── Lógica del botón principal ───────────────────────────────────────────
+
+  const handleBotonPrincipal = () => {
+    if (!authState.isAutenticado) {
+      router.push('/login?redirect=/carrito');
+      return;
+    }
+
+    switch (paso) {
+      case 'carrito':
+        setPaso('envio');
+        break;
+      case 'envio':
+        if (envioValido && datosEnvio) {
+          setPaso('pago');
+        }
+        break;
+      case 'pago':
+        // TODO: Etapa 3 — procesar pago
+        break;
+    }
+  };
+
+  /** Texto del botón según el paso actual. */
+  const textoBotonPrincipal = (): string => {
+    if (!authState.isAutenticado) return 'Iniciar sesión para comprar';
+    switch (paso) {
+      case 'carrito':
+        return 'Confirmar compra';
+      case 'envio':
+        return 'Ir a pagar';
+      case 'pago':
+        return 'Confirmar pago';
+      default:
+        return 'Confirmar compra';
+    }
+  };
+
+  /** El botón está deshabilitado según el paso y la validación. */
+  const botonDeshabilitado = (): boolean => {
+    if (validacion.tipo === 'ok' && !validacion.data.carritoValido) return true;
+    switch (paso) {
+      case 'carrito':
+        return false;
+      case 'envio':
+        return !envioValido;
+      case 'pago':
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  /** Volver al paso anterior. */
+  const handleVolver = () => {
+    switch (paso) {
+      case 'envio':
+        setPaso('carrito');
+        break;
+      case 'pago':
+        setPaso('envio');
+        break;
+    }
+  };
+
+  // ── Renders condicionales tempranos ──────────────────────────────────────
 
   if (!state.hidratado) {
     return (
@@ -51,13 +143,13 @@ const CartPageClient = () => {
     );
   }
 
-  // Mapa itemId -> ItemValidado para enriquecer cada fila
+  // ── Datos derivados ──────────────────────────────────────────────────────
+
   const validadosPorId =
     validacion.tipo === 'ok'
       ? new Map(validacion.data.items.map((v) => [v.itemId, v]))
       : null;
 
-  // Totales del backend (con promos aplicadas) o fallback al estimado local
   const totalAMostrar =
     validacion.tipo === 'ok' ? validacion.data.total : subtotalEstimado;
   const subtotalSinDescuentos =
@@ -68,39 +160,42 @@ const CartPageClient = () => {
     validacion.tipo === 'ok' ? validacion.data.ahorroTotal : 0;
   const hayAhorro = ahorroTotal > 0;
 
-  // Botón Confirmar compra habilitado solo con sesión activa + carrito válido
-  const puedeConfirmar =
-    validacion.tipo === 'ok' &&
-    validacion.data.carritoValido &&
-    authState.isAutenticado;
+  const valoresInicialesEnvio = authState.usuario
+    ? {
+        nombre: authState.usuario.nombre,
+        apellido: authState.usuario.apellido,
+        direccion: authState.usuario.direccion ?? '',
+        telefono: authState.usuario.telefono ?? '',
+      }
+    : undefined;
 
-  const handleConfirmarCompra = () => {
-    if (!authState.isAutenticado) {
-      router.push('/login?redirect=/carrito');
-      return;
-    }
-    // TODO: implementar llamada a POST /api/cart/checkout
-  };
-
-  const handleConfirmarVaciar = () => {
-    vaciar();
-    setConfirmacionVaciarAbierta(false);
-  };
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="cart-page">
       <header className="cart-page-header">
         <h1>Mi carrito</h1>
-        <button
-          type="button"
-          className="cart-page-vaciar"
-          onClick={() => setConfirmacionVaciarAbierta(true)}
-        >
-          Vaciar carrito
-        </button>
+        {paso === 'carrito' && (
+          <button
+            type="button"
+            className="cart-page-vaciar"
+            onClick={() => setConfirmacionVaciarAbierta(true)}
+          >
+            Vaciar carrito
+          </button>
+        )}
+        {paso !== 'carrito' && (
+          <button
+            type="button"
+            className="cart-page-volver"
+            onClick={handleVolver}
+          >
+            ← Volver
+          </button>
+        )}
       </header>
 
-      {/* Banner de error de validación, sin bloquear la edición. */}
+      {/* Banners de validación */}
       {validacion.tipo === 'error' && (
         <div className="cart-page-error" role="alert">
           <strong>No se pudo validar el carrito.</strong>{' '}
@@ -121,7 +216,6 @@ const CartPageClient = () => {
         </div>
       )}
 
-      {/* Banner de validación con items inválidos. */}
       {validacion.tipo === 'ok' && !validacion.data.carritoValido && (
         <div className="cart-page-warning" role="alert">
           Hay items con problemas (sin stock o no disponibles). Revisalos antes
@@ -130,6 +224,7 @@ const CartPageClient = () => {
       )}
 
       <div className="cart-page-grid">
+        {/* ── Columna izquierda: items + formularios ───────────────────── */}
         <section className="cart-page-items" aria-label="Items del carrito">
           {state.items.map((item) => (
             <CartItemRow
@@ -138,12 +233,20 @@ const CartPageClient = () => {
               validado={validadosPorId?.get(item.itemId) ?? null}
             />
           ))}
+
+          {/* Formulario de envío debajo de los items */}
+          {paso === 'envio' && (
+            <CheckoutEnvioForm
+              valoresIniciales={valoresInicialesEnvio}
+              onChange={handleEnvioChange}
+            />
+          )}
         </section>
 
+        {/* ── Columna derecha: resumen (sticky) ────────────────────────── */}
         <aside className="cart-page-resumen" aria-label="Resumen de la compra">
           <h2>Resumen</h2>
 
-          {/* Desglose: subtotal sin descuentos, ahorro y total final */}
           {hayAhorro && (
             <>
               <div className="cart-page-resumen-fila cart-page-resumen-fila-secundaria">
@@ -181,24 +284,17 @@ const CartPageClient = () => {
           <button
             type="button"
             className="cart-page-cta-primary"
-            disabled={validacion.tipo === 'ok' && !validacion.data.carritoValido}
-            onClick={handleConfirmarCompra}
-            title={
-              !authState.isAutenticado
-                ? 'Iniciá sesión para confirmar la compra'
-                : puedeConfirmar
-                  ? 'Confirmar compra (próximo paso)'
-                  : 'Hay items con problemas o el carrito no fue validado'
-            }
+            disabled={botonDeshabilitado()}
+            onClick={handleBotonPrincipal}
           >
-            {authState.isAutenticado
-              ? 'Confirmar compra'
-              : 'Iniciar sesión para comprar'}
+            {textoBotonPrincipal()}
           </button>
 
-          <Link href="/" className="cart-page-cta-secondary">
-            Seguir comprando
-          </Link>
+          {paso === 'carrito' && (
+            <Link href="/" className="cart-page-cta-secondary">
+              Seguir comprando
+            </Link>
+          )}
         </aside>
       </div>
 
@@ -212,7 +308,6 @@ const CartPageClient = () => {
         onConfirmar={handleConfirmarVaciar}
         onCancelar={() => setConfirmacionVaciarAbierta(false)}
       />
-
     </div>
   );
 };
