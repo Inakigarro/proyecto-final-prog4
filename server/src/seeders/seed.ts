@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Permission, { IPermission } from '../models/Permission';
 import Role from '../models/Role';
 import User from '../models/User';
+import PaymentMethod from '../models/paymentMethod';
 import { logger } from '../config/logger';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -26,6 +27,14 @@ const PERMISOS_INICIALES: { nombre: string; recurso: string; accion: string; des
   { nombre: 'leer_permiso',     recurso: 'permissions', accion: 'read',   descripcion: 'Ver permisos' },
   { nombre: 'editar_permiso',   recurso: 'permissions', accion: 'update', descripcion: 'Modificar permisos existentes' },
   { nombre: 'eliminar_permiso', recurso: 'permissions', accion: 'delete', descripcion: 'Eliminar permisos' },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MÉTODOS DE PAGO INICIALES
+// ─────────────────────────────────────────────────────────────────────────────
+const METODOS_PAGO_INICIALES = [
+  { nombre: 'Tarjeta de crédito', descripcion: 'Pago con tarjeta de crédito (Visa, Mastercard, Amex)' },
+  { nombre: 'Tarjeta de débito',  descripcion: 'Pago con tarjeta de débito' },
 ];
 
 const SUPERADMIN_EMAIL    = 'superadmin@app.com';
@@ -90,6 +99,16 @@ async function seed(): Promise<void> {
       logger.info(`✓ Usuario SuperAdmin ya existe`, { email: SUPERADMIN_EMAIL });
     }
   }
+
+  // 5. Crear o actualizar los métodos de pago
+  for (const datos of METODOS_PAGO_INICIALES) {
+    await PaymentMethod.findOneAndUpdate(
+      { nombre: datos.nombre },
+      { ...datos, activo: true },
+      { upsert: true, new: true }
+    );
+  }
+  logger.info(`✓ ${METODOS_PAGO_INICIALES.length} métodos de pago sincronizados`);
 
   await mongoose.disconnect();
   logger.info('Seeder finalizado');

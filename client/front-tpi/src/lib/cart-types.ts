@@ -18,12 +18,33 @@ export interface ValidarCarritoDto {
   items: CartItemDto[];
 }
 
+/** Datos de envío para el checkout. */
+export interface DatosEnvioDto {
+  nombre: string;
+  apellido: string;
+  direccion: string;
+  /** 10 dígitos: código de área + número */
+  telefono: string;
+}
+
+/** Datos de la tarjeta para el checkout (solo marca + últimos 4). */
+export interface DatosTarjetaDto {
+  /** Marca detectada por BIN (Visa, Mastercard, etc.) */
+  marca: string;
+  /** Últimos 4 dígitos del número de tarjeta */
+  ultimos4: string;
+}
+
 /** Body de POST /api/cart/checkout. */
 export interface CheckoutDto {
   items: CartItemDto[];
   metodoPagoId: string;
   /** Porcentajes 0-100, opcional. */
   descuentos?: number[];
+  envio: DatosEnvioDto;
+  tarjeta: DatosTarjetaDto;
+  /** Si true, guarda dirección y teléfono en el perfil del usuario. Default: true. */
+  guardarDatosEnPerfil?: boolean;
 }
 
 /** Resumen de la promoción aplicada a un item validado por el backend. */
@@ -85,6 +106,13 @@ export interface DetalleOrdenResponse {
   monto: number;
 }
 
+/** Método de pago devuelto por GET /api/cart/payment-methods. */
+export interface MetodoPagoResponse {
+  id: string;
+  nombre: string;
+  descripcion: string;
+}
+
 /** Respuesta de POST /api/cart/checkout. */
 export interface CheckoutResponse {
   ordenId: string;
@@ -94,4 +122,6 @@ export interface CheckoutResponse {
   descuentos: number[];
   montoTotal: number;
   fechaCreacion: string;
+  envio: DatosEnvioDto;
+  tarjeta: DatosTarjetaDto;
 }

@@ -98,6 +98,8 @@ export interface UsuarioResponseDto {
   fechaNacimiento: Date;
   activo: boolean;
   roles: RolResponseDto[];
+  direccion?: string;
+  telefono?: string;
 }
 
 // DTO para crear un usuario
@@ -119,4 +121,6 @@ export interface ActualizarUsuarioDto {
   fechaNacimiento?: Date;
   activo?: boolean;
   roles?: Types.ObjectId[];
+  direccion?: string;
+  telefono?: string;
 }

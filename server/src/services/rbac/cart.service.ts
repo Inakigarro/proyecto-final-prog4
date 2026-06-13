@@ -231,7 +231,8 @@ export class CartService implements ICartService {
    *     filtrando por stock >= cantidad. Si el update no encuentra documento,
    *     el stock era insuficiente y se cancela el checkout (rollback manual).
    *  3. Crea los PurchaseOrderDetail (su monto se autocalcula en pre-save).
-   *  4. Crea la PurchaseOrder con el montoTotal calculado.
+   *  4. Crea la PurchaseOrder con el montoTotal calculado + datos de envío/tarjeta.
+   *  5. Opcionalmente actualiza dirección y teléfono en el perfil del usuario.
    */
   async checkout(usuarioId: string, dto: CheckoutDto): Promise<CheckoutResponse> {
     // Validaciones del DTO antes de abrir la sesión
@@ -296,14 +297,42 @@ export class CartService implements ICartService {
         detalles.push(detalle);
       }
 
-      // Calcular el monto total y crear la orden
+      // Calcular el monto total y crear la orden con datos de envío y tarjeta
       const montoBase = detalles.reduce((acc, d) => acc + d.monto, 0);
       const montoTotal = aplicarDescuentos(montoBase, descuentos);
 
       const [orden] = await PurchaseOrder.create(
-        [{ usuario: usuario._id, detalles: detalles.map((d) => d._id), metodoPago: metodoPago._id, descuentos, montoTotal }],
+        [{
+          usuario: usuario._id,
+          detalles: detalles.map((d) => d._id),
+          metodoPago: metodoPago._id,
+          descuentos,
+          montoTotal,
+          envio: {
+            nombre: dto.envio.nombre,
+            apellido: dto.envio.apellido,
+            direccion: dto.envio.direccion,
+            telefono: dto.envio.telefono,
+          },
+          tarjeta: {
+            marca: dto.tarjeta.marca,
+            ultimos4: dto.tarjeta.ultimos4,
+          },
+        }],
         { session }
       );
+
+      // Guardar dirección y teléfono en el perfil si el usuario lo pidió (default: true)
+      if (dto.guardarDatosEnPerfil !== false) {
+        await User.findByIdAndUpdate(
+          usuarioId,
+          {
+            direccion: dto.envio.direccion,
+            telefono: dto.envio.telefono,
+          },
+          { session }
+        );
+      }
 
       await session.commitTransaction();
 
@@ -320,6 +349,16 @@ export class CartService implements ICartService {
         descuentos: orden.descuentos,
         montoTotal: orden.montoTotal,
         fechaCreacion: orden.createdAt,
+        envio: {
+          nombre: dto.envio.nombre,
+          apellido: dto.envio.apellido,
+          direccion: dto.envio.direccion,
+          telefono: dto.envio.telefono,
+        },
+        tarjeta: {
+          marca: dto.tarjeta.marca,
+          ultimos4: dto.tarjeta.ultimos4,
+        },
       };
     } catch (error) {
       await session.abortTransaction();
