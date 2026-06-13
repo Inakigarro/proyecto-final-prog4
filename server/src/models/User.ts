@@ -9,11 +9,20 @@ export interface IUser extends Document {
   email: string;
   password: string;
   fechaNacimiento: Date;
+  telefono?: string;
   activo: boolean;
   roles: Types.ObjectId[];
   // Método de instancia para verificar la contraseña
   compararPassword(passwordPlano: string): Promise<boolean>;
 }
+
+/**
+ * Regex para teléfonos de Argentina con código de país.
+ * Acepta formatos como: "+54 9 11 1234 5678", "+54 11 12345678", "+5491112345678".
+ * Empieza con +54, opcionalmente seguido de un 9 (móvil), luego entre 10 y 11
+ * dígitos en total separados por espacios o guiones.
+ */
+export const TELEFONO_AR_REGEX = /^\+54[\s-]?9?[\s-]?\d{2,4}[\s-]?\d{3,4}[\s-]?\d{4}$/;
 
 /**
  * Valida que la contraseña cumpla los requisitos de complejidad:
@@ -70,6 +79,15 @@ const usuarioSchema = new Schema<IUser>(
     fechaNacimiento: {
       type: Date,
       required: [true, 'La fecha de nacimiento es obligatoria'],
+    },
+    // Teléfono argentino opcional. Si se provee, debe respetar el formato +54 9 ...
+    telefono: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: (valor: string) => !valor || TELEFONO_AR_REGEX.test(valor),
+        message: 'El teléfono debe tener formato argentino, p.ej. +54 9 11 1234 5678',
+      },
     },
     activo: { type: Boolean, default: true },
     // Lista de roles — un usuario debe tener al menos 1

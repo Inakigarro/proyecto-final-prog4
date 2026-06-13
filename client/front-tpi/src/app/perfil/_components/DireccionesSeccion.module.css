@@ -1,0 +1,59 @@
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tituloSeccion {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  margin: 0;
+}
+
+.subtitulo {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.itemLista {
+  list-style: none;
+}
+
+.mensajeNeutro {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.errorGeneral {
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.estadoVacio {
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.estadoVacio p {
+  margin: 0;
+}

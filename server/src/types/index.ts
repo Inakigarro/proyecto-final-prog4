@@ -96,6 +96,7 @@ export interface UsuarioResponseDto {
   apellido: string;
   email: string;
   fechaNacimiento: Date;
+  telefono?: string;
   activo: boolean;
   roles: RolResponseDto[];
 }
@@ -117,6 +118,7 @@ export interface ActualizarUsuarioDto {
   email?: string;
   password?: string;
   fechaNacimiento?: Date;
+  telefono?: string;
   activo?: boolean;
   roles?: Types.ObjectId[];
 }
