@@ -1,0 +1,259 @@
+/* ── Formulario de pago (checkout paso 2) ───────────────────────────────── */
+
+.checkout-pago {
+  background: var(--color-dark-bg);
+  border: 1px solid var(--color-dark-border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: var(--color-dark-text);
+  animation: checkout-pago-entrada 0.3s ease;
+}
+
+@keyframes checkout-pago-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.checkout-pago-titulo {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  color: var(--color-dark-text);
+}
+
+.checkout-pago-subtitulo {
+  margin: 0 0 20px 0;
+  font-size: 13px;
+  color: var(--color-dark-muted);
+  line-height: 1.4;
+}
+
+/* ── Indicador de marca detectada ──────────────────────────────────────── */
+
+.checkout-pago-marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border: 1px solid;
+  border-radius: 20px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-dark-text);
+  animation: checkout-pago-marca-entrada 0.25s ease;
+}
+
+@keyframes checkout-pago-marca-entrada {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.checkout-pago-marca-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.checkout-pago-marca-nombre {
+  letter-spacing: 0.5px;
+}
+
+/* ── Fila de 2 campos lado a lado ──────────────────────────────────────── */
+
+.checkout-pago-fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── Campo individual ──────────────────────────────────────────────────── */
+
+.checkout-pago-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.checkout-pago-campo:last-child {
+  margin-bottom: 0;
+}
+
+.checkout-pago-campo label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-dark-text-2);
+}
+
+.checkout-pago-campo input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-dark-border);
+  border-radius: 8px;
+  background: var(--color-dark-surface);
+  color: var(--color-dark-text);
+  font-size: 15px;
+  font-family: inherit;
+  letter-spacing: 0.5px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+
+.checkout-pago-campo input::placeholder {
+  color: var(--color-dark-muted);
+  letter-spacing: normal;
+}
+
+.checkout-pago-campo input:focus {
+  border-color: var(--color-highlight);
+  box-shadow: 0 0 0 2px rgba(204, 148, 118, 0.25);
+}
+
+/* ── Mensajes de error ─────────────────────────────────────────────────── */
+
+.checkout-pago-error {
+  font-size: 12px;
+  color: var(--color-error);
+  line-height: 1.3;
+}
+
+/* ── Header con botón de tarjetas de prueba ────────────────────────────── */
+
+.checkout-pago-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.checkout-pago-header .checkout-pago-titulo {
+  margin-bottom: 4px;
+}
+
+.checkout-pago-header .checkout-pago-subtitulo {
+  margin-bottom: 0;
+}
+
+.checkout-pago-btn-pruebas {
+  background: transparent;
+  border: 1px solid var(--color-dark-border);
+  color: var(--color-dark-muted);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: border-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checkout-pago-btn-pruebas:hover {
+  border-color: var(--color-highlight);
+  color: var(--color-dark-text);
+}
+
+/* ── Selector de tarjetas de prueba ────────────────────────────────────── */
+
+.checkout-pago-pruebas {
+  background: var(--color-dark-surface);
+  border: 1px solid var(--color-dark-border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+  animation: checkout-pago-entrada 0.2s ease;
+}
+
+.checkout-pago-pruebas-titulo {
+  font-size: 12px;
+  color: var(--color-dark-muted);
+  margin: 0 0 8px 0;
+}
+
+.checkout-pago-prueba-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--color-dark-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--color-dark-text-2);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 6px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.checkout-pago-prueba-card:last-child {
+  margin-bottom: 0;
+}
+
+.checkout-pago-prueba-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--color-highlight);
+}
+
+.checkout-pago-prueba-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.checkout-pago-prueba-marca {
+  font-weight: 600;
+  min-width: 80px;
+}
+
+.checkout-pago-prueba-numero {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--color-dark-muted);
+}
+
+.checkout-pago-prueba-titular {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-dark-muted);
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .checkout-pago-prueba-titular {
+    display: none;
+  }
+}
+
+@media (max-width: 800px) {
+  .checkout-pago-fila {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.checkout-pago-campo input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.checkout-pago-fila > .checkout-pago-campo {
+  min-width: 0;
+}
