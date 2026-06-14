@@ -3,11 +3,8 @@
 /**
  * Formulario de pago con tarjeta de crédito (paso 2 del checkout).
  *
- * Detecta la marca de la tarjeta por BIN (primeros dígitos),
- * valida el número con el algoritmo de Luhn, y notifica al padre
- * cuando los datos son válidos.
- *
- * Incluye tarjetas de prueba con datos dummy para facilitar el testing.
+ * Detecta la marca por BIN, valida con Luhn, y verifica que la tarjeta
+ * coincida con una de las tarjetas de prueba registradas.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -15,7 +12,6 @@ import type { DatosTarjetaDto } from '@/lib/cart-types';
 import './CheckoutPagoForm.css';
 
 interface CheckoutPagoFormProps {
-  /** Se llama cada vez que cambian los datos o la validez del formulario. */
   onChange: (datos: DatosTarjetaDto, esValido: boolean) => void;
 }
 
@@ -73,6 +69,32 @@ const TARJETAS_PRUEBA: TarjetaPrueba[] = [
   },
 ];
 
+/**
+ * Verifica que el número, vencimiento y CVV coincidan con una tarjeta dummy.
+ */
+function buscarTarjetaDummy(
+  numero: string,
+  vencimiento: string,
+  cvv: string
+): TarjetaPrueba | null {
+  const soloDigitos = numero.replace(/\D/g, '');
+  const vencLimpio = vencimiento.replace(/\D/g, '');
+  // Normalizar vencimiento a MM/AA
+  const vencFormateado =
+    vencLimpio.length === 4
+      ? vencLimpio.slice(0, 2) + '/' + vencLimpio.slice(2)
+      : '';
+
+  return (
+    TARJETAS_PRUEBA.find(
+      (t) =>
+        t.numero === soloDigitos &&
+        t.vencimiento === vencFormateado &&
+        t.cvv === cvv
+    ) ?? null
+  );
+}
+
 // ── Detección de marca por BIN ────────────────────────────────────────────
 
 interface MarcaTarjeta {
@@ -84,34 +106,10 @@ interface MarcaTarjeta {
 }
 
 const MARCAS: MarcaTarjeta[] = [
-  {
-    nombre: 'Visa',
-    patron: /^4/,
-    longitudes: [16],
-    cvvLength: 3,
-    color: '#1a1f71',
-  },
-  {
-    nombre: 'Mastercard',
-    patron: /^(5[1-5]|2[2-7])/,
-    longitudes: [16],
-    cvvLength: 3,
-    color: '#eb001b',
-  },
-  {
-    nombre: 'Amex',
-    patron: /^3[47]/,
-    longitudes: [15],
-    cvvLength: 4,
-    color: '#006fcf',
-  },
-  {
-    nombre: 'Diners',
-    patron: /^(30[0-5]|36|38)/,
-    longitudes: [14],
-    cvvLength: 3,
-    color: '#004a97',
-  },
+  { nombre: 'Visa', patron: /^4/, longitudes: [16], cvvLength: 3, color: '#1a1f71' },
+  { nombre: 'Mastercard', patron: /^(5[1-5]|2[2-7])/, longitudes: [16], cvvLength: 3, color: '#eb001b' },
+  { nombre: 'Amex', patron: /^3[47]/, longitudes: [15], cvvLength: 4, color: '#006fcf' },
+  { nombre: 'Diners', patron: /^(30[0-5]|36|38)/, longitudes: [14], cvvLength: 3, color: '#004a97' },
 ];
 
 function detectarMarca(numero: string): MarcaTarjeta | null {
@@ -125,20 +123,14 @@ function detectarMarca(numero: string): MarcaTarjeta | null {
 function validarLuhn(numero: string): boolean {
   const digitos = numero.replace(/\D/g, '');
   if (digitos.length < 13) return false;
-
   let suma = 0;
   let alternar = false;
-
   for (let i = digitos.length - 1; i >= 0; i--) {
     let n = parseInt(digitos[i], 10);
-    if (alternar) {
-      n *= 2;
-      if (n > 9) n -= 9;
-    }
+    if (alternar) { n *= 2; if (n > 9) n -= 9; }
     suma += n;
     alternar = !alternar;
   }
-
   return suma % 10 === 0;
 }
 
@@ -148,12 +140,10 @@ function formatearNumero(valor: string, marca: MarcaTarjeta | null): string {
   const digitos = valor.replace(/\D/g, '');
   const maxLen = marca?.longitudes[0] ?? 16;
   const limitado = digitos.slice(0, maxLen);
-
   if (marca?.nombre === 'Amex') {
     const partes = [limitado.slice(0, 4), limitado.slice(4, 10), limitado.slice(10, 15)];
     return partes.filter(Boolean).join(' ');
   }
-
   const partes: string[] = [];
   for (let i = 0; i < limitado.length; i += 4) {
     partes.push(limitado.slice(i, i + 4));
@@ -181,6 +171,7 @@ interface ErroresPago {
   titular?: string;
   vencimiento?: string;
   cvv?: string;
+  tarjeta?: string;
 }
 
 const CheckoutPagoForm = ({ onChange }: CheckoutPagoFormProps) => {
@@ -205,6 +196,7 @@ const CheckoutPagoForm = ({ onChange }: CheckoutPagoFormProps) => {
 
       const nuevosErrores: ErroresPago = {};
 
+      // Validaciones de formato
       if (!soloDigitos) {
         nuevosErrores.numero = 'El número de tarjeta es obligatorio';
       } else if (soloDigitos.length < longitudEsperada) {
@@ -228,12 +220,9 @@ const CheckoutPagoForm = ({ onChange }: CheckoutPagoFormProps) => {
         const mes = parseInt(vencDigitos.slice(0, 2), 10);
         const anio = parseInt('20' + vencDigitos.slice(2, 4), 10);
         const ahora = new Date();
-        const anioActual = ahora.getFullYear();
-        const mesActual = ahora.getMonth() + 1;
-
         if (mes < 1 || mes > 12) {
           nuevosErrores.vencimiento = 'Mes inválido';
-        } else if (anio < anioActual || (anio === anioActual && mes < mesActual)) {
+        } else if (anio < ahora.getFullYear() || (anio === ahora.getFullYear() && mes < ahora.getMonth() + 1)) {
           nuevosErrores.vencimiento = 'Tarjeta vencida';
         }
       }
@@ -242,6 +231,16 @@ const CheckoutPagoForm = ({ onChange }: CheckoutPagoFormProps) => {
         nuevosErrores.cvv = 'Obligatorio';
       } else if (datos.cvv.length !== cvvMaxActual) {
         nuevosErrores.cvv = `${cvvMaxActual} dígitos`;
+      }
+
+      // Validación contra tarjetas dummy (solo si los campos de formato están OK)
+      const formatoOk = !nuevosErrores.numero && !nuevosErrores.titular && !nuevosErrores.vencimiento && !nuevosErrores.cvv;
+
+      if (formatoOk) {
+        const tarjetaEncontrada = buscarTarjetaDummy(datos.numero, datos.vencimiento, datos.cvv);
+        if (!tarjetaEncontrada) {
+          nuevosErrores.tarjeta = 'Tarjeta no reconocida. Usá una de las tarjetas de prueba.';
+        }
       }
 
       setErrores(nuevosErrores);
@@ -267,7 +266,6 @@ const CheckoutPagoForm = ({ onChange }: CheckoutPagoFormProps) => {
 
   const handleChange = (campo: keyof FormPago, valor: string) => {
     let valorFinal = valor;
-
     switch (campo) {
       case 'numero':
         valorFinal = formatearNumero(valor, detectarMarca(valor));
@@ -282,10 +280,8 @@ const CheckoutPagoForm = ({ onChange }: CheckoutPagoFormProps) => {
         valorFinal = valor.toUpperCase();
         break;
     }
-
     const nuevoForm = { ...form, [campo]: valorFinal };
     setForm(nuevoForm);
-
     const nuevaMarca = campo === 'numero' ? detectarMarca(valorFinal) : marca;
     notificarCambio(nuevoForm, nuevaMarca);
   };
@@ -298,7 +294,6 @@ const CheckoutPagoForm = ({ onChange }: CheckoutPagoFormProps) => {
     return tocados[campo] ? errores[campo] : undefined;
   };
 
-  /** Auto-completa el formulario con una tarjeta de prueba. */
   const usarTarjetaPrueba = (tarjeta: TarjetaPrueba) => {
     const marcaDetectada = detectarMarca(tarjeta.numero);
     const nuevoForm: FormPago = {
@@ -331,7 +326,6 @@ const CheckoutPagoForm = ({ onChange }: CheckoutPagoFormProps) => {
         </button>
       </div>
 
-      {/* ── Selector de tarjetas de prueba ─────────────────────────────── */}
       {mostrarPruebas && (
         <div className="checkout-pago-pruebas">
           <p className="checkout-pago-pruebas-titulo">
@@ -344,32 +338,29 @@ const CheckoutPagoForm = ({ onChange }: CheckoutPagoFormProps) => {
               className="checkout-pago-prueba-card"
               onClick={() => usarTarjetaPrueba(t)}
             >
-              <span
-                className="checkout-pago-prueba-dot"
-                style={{ background: t.color }}
-              />
+              <span className="checkout-pago-prueba-dot" style={{ background: t.color }} />
               <span className="checkout-pago-prueba-marca">{t.marca}</span>
-              <span className="checkout-pago-prueba-numero">
-                •••• {t.numero.slice(-4)}
-              </span>
+              <span className="checkout-pago-prueba-numero">•••• {t.numero.slice(-4)}</span>
               <span className="checkout-pago-prueba-titular">{t.titular}</span>
             </button>
           ))}
         </div>
       )}
 
-      {/* ── Indicador de marca detectada ────────────────────────────────── */}
       {marca && (
         <div className="checkout-pago-marca" style={{ borderColor: marca.color }}>
-          <span
-            className="checkout-pago-marca-dot"
-            style={{ background: marca.color }}
-          />
+          <span className="checkout-pago-marca-dot" style={{ background: marca.color }} />
           <span className="checkout-pago-marca-nombre">{marca.nombre}</span>
         </div>
       )}
 
-      {/* ── Número de tarjeta ──────────────────────────────────────────── */}
+      {/* Error global de tarjeta no reconocida */}
+      {errores.tarjeta && tocados.numero && tocados.cvv && (
+        <div className="checkout-pago-error-global">
+          {errores.tarjeta}
+        </div>
+      )}
+
       <div className="checkout-pago-campo">
         <label htmlFor="pago-numero">Número de tarjeta</label>
         <input
@@ -388,7 +379,6 @@ const CheckoutPagoForm = ({ onChange }: CheckoutPagoFormProps) => {
         )}
       </div>
 
-      {/* ── Titular ────────────────────────────────────────────────────── */}
       <div className="checkout-pago-campo">
         <label htmlFor="pago-titular">Titular de la tarjeta</label>
         <input
@@ -405,7 +395,6 @@ const CheckoutPagoForm = ({ onChange }: CheckoutPagoFormProps) => {
         )}
       </div>
 
-      {/* ── Vencimiento + CVV ──────────────────────────────────────────── */}
       <div className="checkout-pago-fila">
         <div className="checkout-pago-campo">
           <label htmlFor="pago-vencimiento">Vencimiento</label>

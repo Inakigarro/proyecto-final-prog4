@@ -217,6 +217,9 @@ const CartPageClient = () => {
           <p className="checkout-confirmacion-orden">
             Orden #{ordenConfirmada.ordenId.slice(-8).toUpperCase()}
           </p>
+          <p className="checkout-confirmacion-email">
+            Te enviamos un email con el detalle de tu compra a tu casilla registrada.
+          </p>
 
           <div className="checkout-confirmacion-card">
             <h2>Resumen del pedido</h2>
@@ -249,9 +252,13 @@ const CartPageClient = () => {
             </div>
           </div>
 
-          <Link href="/" className="checkout-btn-principal">
+          <button
+            type="button"
+            className="checkout-btn-principal"
+            onClick={() => router.push('/')}
+          >
             Volver a la tienda
-          </Link>
+          </button>
         </div>
       </div>
     );

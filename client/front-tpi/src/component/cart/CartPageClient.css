@@ -354,8 +354,15 @@
 .checkout-confirmacion-orden {
   font-size: 14px;
   color: var(--color-muted);
-  margin: 0 0 32px 0;
+  margin: 0 0 8px 0;
   font-family: ui-monospace, monospace;
+}
+
+.checkout-confirmacion-email {
+  font-size: 14px;
+  color: var(--color-success);
+  margin: 0 0 32px 0;
+  line-height: 1.4;
 }
 
 .checkout-confirmacion-card {
