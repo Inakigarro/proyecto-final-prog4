@@ -16,7 +16,7 @@ Aplicación web e-commerce completa desarrollada como proyecto del curso Program
 - **Node.js** + **TypeScript 5** — runtime y lenguaje
 - **JWT** — autenticación stateless (access 15m + refresh 30d)
 - **bcryptjs**, **Helmet**, **CORS**, **rate-limiting**, **Zod**
-- **Resend** — envío de emails transaccionales (reset de contraseña)
+- **nodemailer** — envío de emails transaccionales via SMTP (reset de contraseña)
 
 **Frontend (`client/front-tpi/`):**
 - **Next.js 16** (App Router) + **React 19** + **TypeScript 5**
@@ -40,20 +40,22 @@ Aplicación web e-commerce completa desarrollada como proyecto del curso Program
 - `login` genera access token (15m) + refresh token (30d almacenado en BD)
 - Refresh token rotation: cada renovación invalida el anterior
 - `logout` revoca el refresh token de la BD
-- Flujo de reset de contraseña con token de 1h (modelo `PasswordResetToken`); email enviado via Resend
+- Flujo de reset de contraseña con token de 1h (modelo `PasswordResetToken`); email enviado via nodemailer/SMTP
 
 **RBAC dinámico:**
 - `User` → muchos `Role` (ObjectId[])
 - `Role` → muchos `Permission` (ObjectId[])
 - `Permission` → `{ nombre, recurso, accion }` (entidad en BD, no hardcodeada)
-- Middleware `verificarSuperAdmin` verifica que el usuario tenga el rol `superadmin`
+- Tres roles estándar: `superadmin` (acceso total), `dueno` (gestión de catálogo y promociones), `usuario` (compras)
+- `verificarSuperAdmin` — middleware para rutas exclusivas de superadmin (users, roles, permisos)
+- `verificarRoles(...roles)` — factory genérico para rutas accesibles por varios roles
 
 ## Estructura del server
 
 ```
 server/src/
 ├── config/
-│   ├── constants.ts       # ROL_SUPERADMIN, ROL_USUARIO
+│   ├── constants.ts       # ROL_SUPERADMIN, ROL_DUENO, ROL_USUARIO
 │   ├── database.ts        # conexión MongoDB via MONGODB_URI
 │   ├── env.ts             # validación de variables de entorno requeridas (lanza error si faltan)
 │   └── logger.ts          # logging estructurado JSON con niveles
@@ -89,21 +91,22 @@ server/src/
 │   │   ├── permission.service.ts
 │   │   └── *.interface.ts     # contratos de servicio
 │   └── email/
-│       └── emailService.ts    # envío de emails via Resend
+│       └── emailService.ts    # envío de emails via nodemailer/SMTP
 ├── routes/                # routers Express
 │   ├── authRoutes.ts      # rate-limit: 10 intentos / 15min
 │   ├── userRoutes.ts      # auth + superadmin
 │   ├── roleRoutes.ts      # auth + superadmin, solo lectura
 │   ├── permissionRoutes.ts # auth + superadmin, solo lectura
-│   ├── productRoutes.ts   # GET público, mutaciones auth
-│   ├── categoryRoutes.ts  # GET público, mutaciones superadmin
-│   ├── promotionRoutes.ts # GET público, mutaciones superadmin
+│   ├── productRoutes.ts   # GET público, mutaciones superadmin o dueño
+│   ├── categoryRoutes.ts  # GET público, mutaciones superadmin o dueño
+│   ├── promotionRoutes.ts # GET público, mutaciones superadmin o dueño
 │   └── cartRoutes.ts      # auth requerido
 ├── middlewares/
-│   ├── auth.ts            # verificarToken — valida JWT
-│   ├── verificarSuperAdmin.ts  # verifica rol superadmin
-│   ├── validar.ts         # middleware de validación Zod (envuelve schemas)
-│   └── errorHandler.ts    # manejo global: Mongoose, JWT, duplicados
+│   ├── auth.ts                 # verificarToken — valida JWT
+│   ├── verificarSuperAdmin.ts  # verifica rol superadmin (users, roles, permisos)
+│   ├── verificarRoles.ts       # factory verificarRoles(...roles) — productos, categorías, promociones
+│   ├── validar.ts              # middleware de validación Zod (envuelve schemas)
+│   └── errorHandler.ts         # manejo global: Mongoose, JWT, duplicados
 ├── schemas/               # schemas Zod para validación de entrada
 │   ├── auth.schemas.ts
 │   ├── cart.schemas.ts
@@ -137,13 +140,17 @@ client/front-tpi/src/
 │   ├── page.tsx                     # Home — slider hero + productos destacados (SSR)
 │   ├── globals.css
 │   ├── api/                         # API routes Next.js (proxies al backend)
-│   │   ├── products/route.ts        # proxy GET → backend /api/products
-│   │   ├── promotions/route.ts      # proxy GET → backend /api/promotions
+│   │   ├── products/route.ts        # proxy GET → backend /api/products (usado por SSR)
+│   │   ├── promotions/route.ts      # proxy GET → backend /api/promotions (usado por SSR)
+│   │   ├── dashboard/products/route.ts  # proxy transparente → /api/products (GET paginado + POST)
+│   │   ├── dashboard/categories/route.ts # proxy → /api/categories (GET + POST)
+│   │   ├── dashboard/promotions/route.ts # proxy → /api/promotions (GET + POST)
 │   │   └── test-connection/route.ts
 │   ├── carrito/page.tsx             # Página del carrito
 │   ├── login/page.tsx               # Página de inicio de sesión
 │   ├── registro/page.tsx            # Página de registro de usuario
 │   ├── recuperar-contrasena/page.tsx # Solicitud de reset de contraseña
+│   ├── perfil/page.tsx              # Perfil de usuario (requiere auth)
 │   ├── product-detail-page/[id]/    # PDP dinámica
 │   │   ├── page.tsx
 │   │   ├── _components/             # HeroProducto, PanelInfo, SelectorCantidad, Accordion, RelatedSlider, Comparador
@@ -151,7 +158,13 @@ client/front-tpi/src/
 │   ├── promociones/
 │   │   ├── page.tsx                 # Listado de promociones activas
 │   │   └── [id]/page.tsx            # Detalle de promoción
-│   └── search-result/page.tsx       # Resultados de búsqueda (texto + categoría)
+│   ├── search-result/page.tsx       # Resultados de búsqueda (texto + categoría)
+│   └── dashboard/                   # Panel de gestión exclusivo del rol `dueno`
+│       ├── layout.tsx               # Auth guard + DashboardSidebar
+│       ├── page.tsx                 # Redirect → /dashboard/productos
+│       ├── productos/               # Lista paginada + formulario create/edit
+│       ├── categorias/              # Lista + formulario create/edit
+│       └── promociones/             # Lista + formulario create/edit (parámetros dinámicos)
 ├── component/
 │   ├── card/card.tsx                # CardProduct — tarjeta de producto para grillas
 │   ├── cart/                        # Componentes del carrito
@@ -177,7 +190,13 @@ client/front-tpi/src/
 │   │   └── usePromociones.ts        # Hook cliente para cargar promociones
 │   ├── slider/Slider.tsx            # Carrusel de imágenes hero
 │   ├── vitrina/VitrinaProductos.tsx # Grilla de productos con paginación
-│   └── busqueda/                    # ListaResultadosProductos + useResultadosBusqueda
+│   ├── busqueda/                    # ListaResultadosProductos + useResultadosBusqueda
+│   └── dashboard/
+│       ├── DashboardSidebar.tsx         # Sidebar con links a las 3 entidades gestionables
+│       ├── TablaEntidad.tsx             # Tabla genérica: cabecera + grilla paginada + acciones
+│       ├── FormularioProducto.tsx       # Formulario create/edit de productos (multi-select categorías)
+│       ├── FormularioCategoria.tsx      # Formulario create/edit de categorías
+│       └── FormularioPromocion.tsx      # Formulario create/edit de promociones (parámetros según tipo)
 ├── context/
 │   ├── AuthContext.tsx              # Adapter Redux: login, logout, registrar, solicitarReset, resetearPassword, tienePermiso, tieneRol, esSuperAdmin
 │   └── CartContext.tsx              # Adapter Redux: agregar, quitar, actualizarCantidad, vaciar, abrirDrawer, cerrarDrawer
@@ -198,14 +217,16 @@ client/front-tpi/src/
 - Auth implementada: login, logout, registro, hidratación desde localStorage, refresh automático (14 min)
 - Carrito implementado: Redux + persistencia, validación contra backend, drawer y toast
 - Promociones implementadas: listado y detalle (SSR)
-- Reset de contraseña implementado: página de solicitud conectada al backend via Resend
+- Perfil implementado: ver y editar datos personales (`/perfil`)
+- Reset de contraseña implementado: página de solicitud conectada al backend via nodemailer/SMTP
+- Dashboard dueño implementado: CRUD de productos, categorías y promociones (`/dashboard`)
 - Checkout **pendiente**: `CartPageClient.tsx` tiene el TODO en `handleConfirmarCompra`
-- Sin páginas de: perfil de usuario, historial de órdenes, confirmación de compra
+- Sin páginas de: historial de órdenes (`/mis-ordenes`), confirmación de compra
 
 **Patrones del frontend:**
 - Patrón adaptador: `AuthContext` y `CartContext` exponen una API estable y por dentro usan Redux
 - Server Components para carga inicial de productos y promociones (SSR); hooks de cliente para filtrado/búsqueda
-- Todas las rutas de API de Next.js proxean al backend Express para evitar CORS en dev
+- `next.config.ts` tiene un rewrite catch-all `/api/:path*` → Express. Las API routes en `app/api/` toman precedencia para sus paths exactos. Para el dashboard se usan rutas en `app/api/dashboard/` como proxies transparentes (evitan la interferencia de las rutas existentes de `products` y `promotions` que envuelven la respuesta)
 - Access token en memoria; refresh token en `localStorage` bajo la clave `techpoint:refresh_token`
 
 ## API Endpoints
@@ -233,21 +254,21 @@ GET    /api/permissions/:id
 
 GET    /api/products          (público)
 GET    /api/products/:id      (público)
-POST   /api/products          (auth)
-PUT    /api/products/:id      (auth)
-DELETE /api/products/:id      (auth — soft delete)
+POST   /api/products          (superadmin o dueño)
+PUT    /api/products/:id      (superadmin o dueño)
+DELETE /api/products/:id      (superadmin o dueño — soft delete)
 
 GET    /api/categories        (público)
 GET    /api/categories/:id    (público)
-POST   /api/categories        (superadmin)
-PUT    /api/categories/:id    (superadmin)
-DELETE /api/categories/:id    (superadmin — soft delete)
+POST   /api/categories        (superadmin o dueño)
+PUT    /api/categories/:id    (superadmin o dueño)
+DELETE /api/categories/:id    (superadmin o dueño — soft delete)
 
 GET    /api/promotions        (público)
 GET    /api/promotions/:id    (público)
-POST   /api/promotions        (superadmin)
-PUT    /api/promotions/:id    (superadmin)
-DELETE /api/promotions/:id    (superadmin — soft delete)
+POST   /api/promotions        (superadmin o dueño)
+PUT    /api/promotions/:id    (superadmin o dueño)
+DELETE /api/promotions/:id    (superadmin o dueño — soft delete)
 
 POST   /api/cart/validate     (auth) — verifica stock sin persistir
 POST   /api/cart/checkout     (auth) — decremento atómico de stock + crea orden
@@ -268,9 +289,13 @@ PORT=4000
 MONGODB_URI=mongodb://localhost:27017/programacion4
 JWT_SECRET=cambiar_por_clave_secreta_segura
 SUPERADMIN_PASSWORD=contraseña_superadmin_segura
-RESEND_API_KEY=re_xxxxxxxxxxxx
 FRONTEND_URL=http://localhost:3000
 ALLOWED_ORIGIN=http://localhost:3000
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu-gmail@gmail.com
+SMTP_PASSWORD=la-app-password-de-16-chars-sin-espacios
+EMAIL_FROM=TechPoint <tu-gmail@gmail.com>
 ```
 
 ## Comandos

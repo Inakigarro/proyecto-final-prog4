@@ -4,6 +4,7 @@ import Permission, { IPermission } from '../models/Permission';
 import Role from '../models/Role';
 import User from '../models/User';
 import { logger } from '../config/logger';
+import { ROL_DUENO } from '../config/constants';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PERMISOS INICIALES
@@ -26,6 +27,21 @@ const PERMISOS_INICIALES: { nombre: string; recurso: string; accion: string; des
   { nombre: 'leer_permiso',     recurso: 'permissions', accion: 'read',   descripcion: 'Ver permisos' },
   { nombre: 'editar_permiso',   recurso: 'permissions', accion: 'update', descripcion: 'Modificar permisos existentes' },
   { nombre: 'eliminar_permiso', recurso: 'permissions', accion: 'delete', descripcion: 'Eliminar permisos' },
+  // Productos
+  { nombre: 'crear_producto',    recurso: 'products', accion: 'create', descripcion: 'Crear nuevos productos' },
+  { nombre: 'leer_producto',     recurso: 'products', accion: 'read',   descripcion: 'Ver productos' },
+  { nombre: 'editar_producto',   recurso: 'products', accion: 'update', descripcion: 'Modificar productos existentes (precio, stock, datos)' },
+  { nombre: 'eliminar_producto', recurso: 'products', accion: 'delete', descripcion: 'Eliminar productos' },
+  // Categorías
+  { nombre: 'crear_categoria',    recurso: 'categories', accion: 'create', descripcion: 'Crear nuevas categorías' },
+  { nombre: 'leer_categoria',     recurso: 'categories', accion: 'read',   descripcion: 'Ver categorías' },
+  { nombre: 'editar_categoria',   recurso: 'categories', accion: 'update', descripcion: 'Modificar categorías existentes' },
+  { nombre: 'eliminar_categoria', recurso: 'categories', accion: 'delete', descripcion: 'Eliminar categorías' },
+  // Promociones
+  { nombre: 'crear_promocion',    recurso: 'promotions', accion: 'create', descripcion: 'Crear nuevas promociones' },
+  { nombre: 'leer_promocion',     recurso: 'promotions', accion: 'read',   descripcion: 'Ver promociones' },
+  { nombre: 'editar_promocion',   recurso: 'promotions', accion: 'update', descripcion: 'Modificar promociones existentes' },
+  { nombre: 'eliminar_promocion', recurso: 'promotions', accion: 'delete', descripcion: 'Eliminar promociones' },
 ];
 
 const SUPERADMIN_EMAIL    = 'superadmin@app.com';
@@ -58,7 +74,17 @@ async function seed(): Promise<void> {
   );
   logger.info(`✓ Rol '${SUPERADMIN_ROL}' sincronizado`, { permisos: idsTodosLosPermisos.length });
 
-  // 3. Crear o actualizar el rol Usuario con permisos básicos de lectura
+  // 3. Crear o actualizar el rol Dueño con permisos de gestión del negocio
+  const recursosDueno = ['products', 'categories', 'promotions'];
+  const permisosDueno = permisosGuardados.filter((p) => recursosDueno.includes(p.recurso));
+  await Role.findOneAndUpdate(
+    { nombre: ROL_DUENO },
+    { nombre: ROL_DUENO, descripcion: 'Gestión del catálogo, precios, stock y promociones', permisos: permisosDueno.map((p) => p._id) },
+    { upsert: true, new: true }
+  );
+  logger.info(`✓ Rol '${ROL_DUENO}' sincronizado`, { permisos: permisosDueno.length });
+
+  // 4. Crear o actualizar el rol Usuario con permisos básicos de lectura
   const permisosUsuario = permisosGuardados.filter((p) => p.nombre === 'leer_usuario');
   const rolUsuario = await Role.findOneAndUpdate(
     { nombre: ROL_USUARIO },
@@ -67,7 +93,7 @@ async function seed(): Promise<void> {
   );
   logger.info(`✓ Rol '${ROL_USUARIO}' sincronizado`);
 
-  // 4. Crear el usuario SuperAdmin si no existe
+  // 5. Crear el usuario SuperAdmin si no existe
   const usuarioExistente = await User.findOne({ email: SUPERADMIN_EMAIL });
   if (!usuarioExistente) {
     await User.create({

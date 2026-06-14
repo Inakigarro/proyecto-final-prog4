@@ -1,6 +1,14 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT) || 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD,
+  },
+});
 
 /**
  * Envía el email de recuperación de contraseña con el enlace que contiene el token.
@@ -12,8 +20,8 @@ export async function enviarEmailResetPassword(
 ): Promise<void> {
   const enlace = `${process.env.FRONTEND_URL}/recuperar-contrasena?token=${token}`;
 
-  const { error } = await resend.emails.send({
-    from: 'TechPoint <onboarding@resend.dev>',
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM ?? 'TechPoint <noreply@techpoint.com>',
     to: destinatario,
     subject: 'Recuperación de contraseña — TechPoint',
     html: `
@@ -44,8 +52,4 @@ export async function enviarEmailResetPassword(
       </div>
     `,
   });
-
-  if (error) {
-    throw new Error(`Error al enviar el email de recuperación: ${error.message}`);
-  }
 }

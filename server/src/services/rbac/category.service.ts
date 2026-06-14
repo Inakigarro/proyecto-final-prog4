@@ -1,5 +1,5 @@
 import Category, { ICategory } from "../../models/Category";
-import { IItem } from "../../models/Item";
+import Item, { IItem } from "../../models/Item";
 import { CrearCategoryDto, ActualizarCategoryDto, CategoryResumenDto, CategoryDetalleDto } from "../../types/categories.dto";
 import { ICategoryService } from "../../types/rbac/category.service.interface";
 import { Types } from "mongoose";
@@ -62,7 +62,7 @@ export class CategoryService implements ICategoryService {
   }
 
   /**
-   * Desactiva una categoría por su ID (borrado lógico).
+   * Desactiva una categoría por su ID (borrado lógico) y la desvincula de todos los items.
    * @returns true si fue desactivada, false si no se encontró o ya estaba inactiva.
    */
   async eliminar(id: string): Promise<boolean> {
@@ -70,7 +70,11 @@ export class CategoryService implements ICategoryService {
       { _id: id, activo: { $ne: false } },
       { activo: false }
     );
-    return !!resultado;
+    if (!resultado) return false;
+
+    const objectId = new Types.ObjectId(id);
+    await Item.updateMany({ category: objectId }, { $pull: { category: objectId } });
+    return true;
   }
 
   /**
