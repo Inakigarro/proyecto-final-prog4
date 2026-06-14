@@ -30,6 +30,10 @@ export interface UsuarioPerfil {
   nombre: string;
   apellido: string;
   email: string;
+  /** Fecha de nacimiento como string ISO (Mongoose serializa Date a ISO en JSON). */
+  fechaNacimiento?: string;
+  /** Teléfono en formato AR. Opcional — puede no estar cargado todavía. */
+  telefono?: string;
   activo: boolean;
   roles: Rol[];
   direccion?: string;
@@ -71,9 +75,20 @@ const authSlice = createSlice({
       state.isAutenticado = false;
       state.isCargando = false;
     },
+
+    /**
+     * Reemplaza el perfil del usuario autenticado. Se usa después de PUT
+     * /api/users/me para reflejar cambios (por ejemplo, el teléfono) sin
+     * obligar a un nuevo refresh de sesión.
+     */
+    perfilActualizado(state, action: PayloadAction<UsuarioPerfil>) {
+      if (state.isAutenticado) {
+        state.usuario = action.payload;
+      }
+    },
   },
 });
 
-export const { hidratado, cargaCompleta, logout } = authSlice.actions;
+export const { hidratado, cargaCompleta, logout, perfilActualizado } = authSlice.actions;
 
 export default authSlice.reducer;

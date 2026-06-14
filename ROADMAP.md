@@ -16,8 +16,9 @@
 - ✅ Autenticación mediante JWT (access 15 min + refresh 30 días)
 - ✅ Middleware de autenticación (`verificarToken`)
 - ✅ Middleware de autorización por roles (`verificarSuperAdmin`)
-- ✅ Recuperación de contraseña por email (Resend) — solicitud, token temporal, restablecimiento
-- ✅ Roles implementados: `usuario` (cliente) y `superadmin` (administrador)
+- ✅ Middleware de autorización por roles múltiples (`verificarRoles(...roles)`)
+- ✅ Recuperación de contraseña por email (nodemailer/SMTP) — solicitud, token temporal, restablecimiento
+- ✅ Roles implementados: `usuario` (cliente), `superadmin` (administrador) y `dueno` (gestión de catálogo)
 
 ### Gestión de productos
 - ✅ Obtener productos (`GET /api/products`)
@@ -79,10 +80,14 @@
 - ❌ **Ver órdenes del usuario** — falta página `/mis-ordenes`
 - ❌ **Ver detalle de una orden** — falta página `/mis-ordenes/:id`
 
-### Panel administrador
-- ❌ **Crear producto** — no hay UI (el endpoint existe)
-- ❌ **Editar producto** — no hay UI (el endpoint existe)
-- ❌ **Baja lógica de producto** — no hay UI (el endpoint existe)
+### Panel de gestión (dueño)
+- ✅ Link "Panel de gestión" en navbar — visible solo para el rol `dueno`
+- ✅ Auth guard: redirige a `/login` si no autenticado, a `/` si no tiene rol `dueno`
+- ✅ **Crear / editar / eliminar productos** — `/dashboard/productos`
+- ✅ **Crear / editar / eliminar categorías** — `/dashboard/categorias`
+- ✅ **Crear / editar / eliminar promociones** — `/dashboard/promociones`
+
+### Panel administrador (superadmin)
 - ❌ **Ver usuarios** — no hay UI (el endpoint existe)
 - ❌ **Editar usuarios** — no hay UI (el endpoint existe)
 - ❌ **Baja lógica de usuario** — no hay UI (el endpoint existe)
@@ -112,6 +117,6 @@
 | Frontend | Conectar checkout a `POST /api/cart/checkout` + página de confirmación | `CartPageClient.tsx` |
 | Frontend | Mostrar stock en catálogo y PDP | `card.tsx`, `PanelInfo.tsx`, tipos |
 | Frontend | Historial de órdenes del cliente | nueva ruta `/mis-ordenes` |
-| Frontend | Panel administrador completo | nueva ruta `/admin` |
+| Frontend | Panel superadmin — ver/editar/baja de usuarios, ver órdenes del sistema | nueva ruta `/admin` |
 | Docs | README en el root | `README.md` |
 | Docs | Documentación de endpoints + PDF | a coordinar |

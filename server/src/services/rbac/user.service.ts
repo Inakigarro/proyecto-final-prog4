@@ -18,6 +18,7 @@ const mapearAResponseDto = (usuario: IUser): UsuarioResponseDto => ({
   apellido: usuario.apellido,
   email: usuario.email,
   fechaNacimiento: usuario.fechaNacimiento,
+  telefono: usuario.telefono,
   activo: usuario.activo,
   direccion: usuario.direccion,
   telefono: usuario.telefono,
