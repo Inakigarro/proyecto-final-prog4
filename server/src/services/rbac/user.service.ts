@@ -21,7 +21,6 @@ const mapearAResponseDto = (usuario: IUser): UsuarioResponseDto => ({
   telefono: usuario.telefono,
   activo: usuario.activo,
   direccion: usuario.direccion,
-  telefono: usuario.telefono,
   roles: (usuario.roles as unknown as IRole[]).map((rol) => ({
     id: rol._id.toString(),
     nombre: rol.nombre,

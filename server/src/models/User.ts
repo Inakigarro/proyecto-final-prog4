@@ -14,8 +14,6 @@ export interface IUser extends Document {
   roles: Types.ObjectId[];
   /** Dirección de envío guardada (opcional, se actualiza en cada checkout). */
   direccion?: string;
-  /** Teléfono de contacto guardado (opcional, 10 dígitos: cód. área + número). */
-  telefono?: string;
   // Método de instancia para verificar la contraseña
   compararPassword(passwordPlano: string): Promise<boolean>;
 }
@@ -106,15 +104,6 @@ const usuarioSchema = new Schema<IUser>(
       type: String,
       trim: true,
       default: undefined,
-    },
-    telefono: {
-      type: String,
-      trim: true,
-      default: undefined,
-      validate: {
-        validator: (v: string | undefined) => !v || /^\d{10}$/.test(v),
-        message: 'El teléfono debe tener exactamente 10 dígitos numéricos (código de área + número)',
-      },
     },
   },
   { timestamps: true }
