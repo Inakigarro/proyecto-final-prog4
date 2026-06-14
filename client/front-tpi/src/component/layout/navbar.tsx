@@ -21,7 +21,7 @@ const Navbar = () => {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const { state, logout } = useAuth();
+  const { state, logout, tieneRol } = useAuth();
   const { isAutenticado, isCargando, usuario } = state;
 
   const { categorias } = useCategorias();
@@ -91,6 +91,16 @@ const Navbar = () => {
                   >
                     Mi perfil
                   </Link>
+                  {tieneRol('dueno') && (
+                    <Link
+                      href="/dashboard"
+                      className="navbar-menu-item"
+                      role="menuitem"
+                      onClick={() => setMenuAbierto(false)}
+                    >
+                      Panel de gestión
+                    </Link>
+                  )}
                   <button
                     type="button"
                     className="navbar-menu-item navbar-menu-item--peligro"
