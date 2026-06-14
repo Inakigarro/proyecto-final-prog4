@@ -259,3 +259,12 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.checkout-pago-campo input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.checkout-pago-fila > .checkout-pago-campo {
+  min-width: 0;
+}
