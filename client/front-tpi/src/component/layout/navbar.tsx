@@ -101,6 +101,14 @@ const Navbar = () => {
                       Panel de gestión
                     </Link>
                   )}
+                  <Link
+                    href="/mis-ordenes"
+                    className="navbar-menu-item"
+                    role="menuitem"
+                    onClick={() => setMenuAbierto(false)}
+                  >
+                    Mis compras
+                  </Link>
                   <button
                     type="button"
                     className="navbar-menu-item navbar-menu-item--peligro"

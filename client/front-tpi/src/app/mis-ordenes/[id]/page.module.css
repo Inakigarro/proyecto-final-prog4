@@ -1,0 +1,144 @@
+.contenedor {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+.estado {
+  text-align: center;
+  color: var(--color-muted);
+  padding: 48px 0;
+}
+
+.error {
+  background: var(--color-error-bg);
+  border-left: 4px solid var(--color-error);
+  color: var(--color-error-text);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.volver {
+  display: inline-block;
+  color: var(--color-muted);
+  font-size: 14px;
+  text-decoration: none;
+  margin-bottom: 24px;
+  transition: color 0.15s ease;
+}
+
+.volver:hover {
+  color: var(--color-text);
+}
+
+/* ── Encabezado ────────────────────────────────────────────────────────── */
+
+.encabezado {
+  margin-bottom: 32px;
+}
+
+.titulo {
+  margin: 0 0 4px 0;
+  font-size: 24px;
+  color: var(--color-text);
+  font-family: ui-monospace, monospace;
+}
+
+.fecha {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+/* ── Secciones ─────────────────────────────────────────────────────────── */
+
+.seccion {
+  background: var(--color-dark-bg);
+  border: 1px solid var(--color-dark-border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  color: var(--color-dark-text);
+}
+
+.seccionTitulo {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-dark-muted);
+  margin: 0 0 16px 0;
+  font-weight: 600;
+}
+
+/* ── Productos ─────────────────────────────────────────────────────────── */
+
+.productos {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.productoFila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-dark-border);
+}
+
+.productoFila:last-child {
+  border-bottom: none;
+}
+
+.productoInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.productoNombre {
+  font-size: 14px;
+  color: var(--color-dark-text);
+}
+
+.productoCantidad {
+  font-size: 12px;
+  color: var(--color-dark-muted);
+}
+
+.productoMonto {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-dark-text);
+}
+
+.totalFila {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 16px;
+  margin-top: 8px;
+  border-top: 1px solid var(--color-dark-border);
+  font-size: 16px;
+  color: var(--color-dark-text);
+}
+
+.totalFila strong {
+  font-size: 22px;
+}
+
+/* ── Datos ─────────────────────────────────────────────────────────────── */
+
+.datos p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-dark-text-2);
+}
+
+.datoSecundario {
+  color: var(--color-dark-muted) !important;
+  font-size: 12px !important;
+}
