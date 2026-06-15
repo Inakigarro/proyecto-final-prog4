@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import * as authController from '../controllers/authController';
-import { verificarToken } from '../middlewares/auth';
 import { validar } from '../middlewares/validar';
 import {
   RegisterSchema,
@@ -41,7 +40,7 @@ const limiterPassword = rateLimit({
 router.post('/register',        limiterRegistro,  validar(RegisterSchema),       authController.register);
 router.post('/login',           limiterLogin,     validar(LoginSchema),          authController.login);
 router.post('/refresh',                           validar(RefreshTokenSchema),   authController.refreshToken);
-router.post('/logout',          verificarToken,                                  authController.logout);
+router.post('/logout',                            validar(RefreshTokenSchema),   authController.logout);
 router.post('/forgot-password', limiterPassword,  validar(ForgotPasswordSchema), authController.forgotPassword);
 router.post('/reset-password',  limiterPassword,  validar(ResetPasswordSchema),  authController.resetPassword);
 

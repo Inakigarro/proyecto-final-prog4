@@ -2,7 +2,8 @@ import { Router } from "express";
 import { CategoryService } from "../services/rbac/category.service";
 import { crearCategoryController } from "../controllers/categoryController";
 import { verificarToken } from "../middlewares/auth";
-import { verificarSuperAdmin } from "../middlewares/verificarSuperAdmin";
+import { verificarRoles } from "../middlewares/verificarRoles";
+import { ROL_SUPERADMIN, ROL_DUENO } from "../config/constants";
 
 const router = Router();
 const controller = crearCategoryController(new CategoryService());
@@ -11,9 +12,9 @@ const controller = crearCategoryController(new CategoryService());
 router.get("/",    controller.listar);
 router.get("/:id", controller.obtenerPorId);
 
-// Escritura: solo superadmin
-router.post("/",    verificarToken, verificarSuperAdmin, controller.crear);
-router.put("/:id",  verificarToken, verificarSuperAdmin, controller.actualizar);
-router.delete("/:id", verificarToken, verificarSuperAdmin, controller.eliminar);
+// Escritura: superadmin o dueño
+router.post("/",    verificarToken, verificarRoles(ROL_SUPERADMIN, ROL_DUENO), controller.crear);
+router.put("/:id",  verificarToken, verificarRoles(ROL_SUPERADMIN, ROL_DUENO), controller.actualizar);
+router.delete("/:id", verificarToken, verificarRoles(ROL_SUPERADMIN, ROL_DUENO), controller.eliminar);
 
 export default router;

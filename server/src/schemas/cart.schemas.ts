@@ -20,6 +20,36 @@ export const ValidarCarritoSchema = z.object({
   items: z.array(CartItemSchema).min(1, 'El carrito debe tener al menos un item'),
 });
 
+/** Datos de envío del checkout */
+const DatosEnvioSchema = z.object({
+  nombre: z
+    .string({ error: 'El nombre es obligatorio' })
+    .trim()
+    .min(2, 'El nombre debe tener al menos 2 caracteres'),
+  apellido: z
+    .string({ error: 'El apellido es obligatorio' })
+    .trim()
+    .min(2, 'El apellido debe tener al menos 2 caracteres'),
+  direccion: z
+    .string({ error: 'La dirección es obligatoria' })
+    .trim()
+    .min(5, 'La dirección debe tener al menos 5 caracteres'),
+  telefono: z
+    .string({ error: 'El teléfono es obligatorio' })
+    .regex(/^\d{10}$/, 'El teléfono debe tener exactamente 10 dígitos numéricos'),
+});
+
+/** Datos de la tarjeta del checkout (solo marca + últimos 4) */
+const DatosTarjetaSchema = z.object({
+  marca: z
+    .string({ error: 'La marca de la tarjeta es obligatoria' })
+    .trim()
+    .min(1, 'La marca de la tarjeta es obligatoria'),
+  ultimos4: z
+    .string({ error: 'Los últimos 4 dígitos son obligatorios' })
+    .regex(/^\d{4}$/, 'Deben ser exactamente 4 dígitos'),
+});
+
 /** Body del endpoint POST /api/cart/checkout */
 export const CheckoutSchema = z.object({
   items: z.array(CartItemSchema).min(1, 'El carrito debe tener al menos un item'),
@@ -33,4 +63,7 @@ export const CheckoutSchema = z.object({
     )
     .optional()
     .default([]),
+  envio: DatosEnvioSchema,
+  tarjeta: DatosTarjetaSchema,
+  guardarDatosEnPerfil: z.boolean().optional().default(true),
 });

@@ -1,0 +1,47 @@
+.contenedor {
+  max-width: 880px;
+  width: 100%;
+  margin: 40px auto;
+  padding: 0 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titulo {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin: 0;
+}
+
+.subtitulo {
+  color: var(--color-muted);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.contenidoTab {
+  min-height: 200px;
+}
+
+@media (max-width: 600px) {
+  .contenedor {
+    margin: 24px auto;
+    padding: 0 16px 48px;
+  }
+
+  .titulo {
+    font-size: 1.5rem;
+  }
+
+  .subtitulo {
+    font-size: 0.9rem;
+  }
+}

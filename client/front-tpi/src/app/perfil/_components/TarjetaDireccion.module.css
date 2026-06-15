@@ -1,0 +1,80 @@
+.tarjeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  transition: border-color 0.15s ease;
+}
+
+.tarjeta:hover {
+  border-color: var(--color-primary);
+}
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.calleNumero {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.complemento {
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.ciudadProvincia {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.codigoPostal {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.botonEliminar {
+  padding: 8px 14px;
+  border: 1px solid var(--color-error);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-error);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.botonEliminar:hover:not(:disabled) {
+  background: var(--color-error);
+  color: var(--color-surface);
+}
+
+.botonEliminar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .tarjeta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .botonEliminar {
+    align-self: flex-end;
+  }
+}

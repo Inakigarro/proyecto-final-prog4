@@ -3,6 +3,8 @@ import { UserService } from '../services/rbac/user.service';
 import { crearUserController } from '../controllers/userController';
 import { verificarToken } from '../middlewares/auth';
 import { verificarSuperAdmin } from '../middlewares/verificarSuperAdmin';
+import { validar } from '../middlewares/validar';
+import { ActualizarPerfilSchema } from '../schemas/user.schemas';
 
 /**
  * Router para el recurso Usuarios.
@@ -12,8 +14,9 @@ import { verificarSuperAdmin } from '../middlewares/verificarSuperAdmin';
 const router = Router();
 const controller = crearUserController(new UserService());
 
-// Ruta del perfil propio — solo requiere estar autenticado
-router.get('/me', verificarToken, controller.perfil);
+// Rutas del perfil propio — solo requieren estar autenticado
+router.get('/me',  verificarToken,                                  controller.perfil);
+router.put('/me',  verificarToken, validar(ActualizarPerfilSchema), controller.actualizarPerfil);
 
 // Resto de rutas requieren autenticación y rol superadmin
 router.use(verificarToken);

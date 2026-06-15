@@ -1,6 +1,7 @@
-import { FilterQuery } from "mongoose";
+import { FilterQuery, Types } from "mongoose";
 import Item, { IItem } from "../../models/Item";
 import Category, { ICategory } from "../../models/Category";
+import Promotion from "../../models/Promotion";
 import { CrearItemDto, FiltrosProducto, ItemResponse, ProductosPageResponse } from "../../types/item.dtos";
 import { IProductService } from "../../types/rbac/product.service.interface";
 
@@ -65,7 +66,7 @@ export class ProductService implements IProductService {
   }
 
   /**
-   * Desactiva un item por su ID (borrado lógico).
+   * Desactiva un item por su ID (borrado lógico) y lo desvincula de categorías y promociones.
    * @param id - ID del item a desactivar.
    * @returns true si fue desactivado, false si no se encontró o ya estaba inactivo.
    */
@@ -74,7 +75,14 @@ export class ProductService implements IProductService {
       { _id: id, activo: { $ne: false } },
       { activo: false }
     );
-    return resultado !== null;
+    if (!resultado) return false;
+
+    const objectId = new Types.ObjectId(id);
+    await Promise.all([
+      Category.updateMany({ items: objectId }, { $pull: { items: objectId } }),
+      Promotion.updateMany({ productos: objectId }, { $pull: { productos: objectId } }),
+    ]);
+    return true;
   }
 
   /**

@@ -134,6 +134,12 @@ const LoginGateModal = ({ abierto, onCerrar, onLoginExitoso }: LoginGateModalPro
           >
             {cargando ? 'Ingresando...' : 'Ingresar'}
           </button>
+
+          <p className="login-gate-olvidaste">
+            <a href="/recuperar-contrasena" onClick={onCerrar}>
+              ¿Olvidaste tu contraseña?
+            </a>
+          </p>
         </form>
       </div>
     </>

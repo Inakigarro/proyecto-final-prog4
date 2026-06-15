@@ -130,6 +130,25 @@
   cursor: not-allowed;
 }
 
+/* Enlace de recuperación de contraseña */
+.login-gate-olvidaste {
+  text-align: center;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-dark-muted);
+}
+
+.login-gate-olvidaste a {
+  color: var(--color-highlight);
+  text-decoration: none;
+  transition: opacity 120ms ease;
+}
+
+.login-gate-olvidaste a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
 /* Animaciones */
 @keyframes login-gate-overlay-in {
   from { opacity: 0; }

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from 'next/navigation';
 import styles from "./page.module.css";
-import {useAuth} from "@/context/AuthContext";
-import { useRouter } from 'next/navigation';
+import { useAuth } from "@/context/AuthContext";
 
 interface FormErrors {
   email?: string;
@@ -14,6 +14,8 @@ interface FormErrors {
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') ?? '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
@@ -46,7 +48,7 @@ export default function LoginPage() {
     setCargando(true);
     try {
       await login(email.trim(), password);
-      router.push('/');
+      router.push(redirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
     } finally {
@@ -111,7 +113,7 @@ export default function LoginPage() {
         <div className={styles.footer}>
           <p>
             ¿No tienes cuenta?{" "}
-            <Link href="/register">
+            <Link href="/registro">
               Registrarse
             </Link>
           </p>
