@@ -22,6 +22,28 @@ export interface ValidarCarritoDto {
 }
 
 /**
+ * Datos de envío enviados en el checkout.
+ */
+export interface DatosEnvioDto {
+  nombre: string;
+  apellido: string;
+  direccion: string;
+  /** 10 dígitos: código de área + número */
+  telefono: string;
+}
+
+/**
+ * Datos de la tarjeta enviados en el checkout.
+ * Solo se persisten la marca y los últimos 4 dígitos (nunca el número completo).
+ */
+export interface DatosTarjetaDto {
+  /** Marca detectada por BIN (Visa, Mastercard, etc.) */
+  marca: string;
+  /** Últimos 4 dígitos del número de tarjeta */
+  ultimos4: string;
+}
+
+/**
  * Body del endpoint POST /api/cart/checkout.
  * `descuentos` es opcional y aplica sobre el total de la orden (porcentajes 0-100).
  */
@@ -29,6 +51,10 @@ export interface CheckoutDto {
   items: CartItemDto[];
   metodoPagoId: string;
   descuentos?: number[];
+  envio: DatosEnvioDto;
+  tarjeta: DatosTarjetaDto;
+  /** Si true, guarda dirección y teléfono en el perfil del usuario. */
+  guardarDatosEnPerfil?: boolean;
 }
 
 /**
@@ -107,4 +133,6 @@ export interface CheckoutResponse {
   descuentos: number[];
   montoTotal: number;
   fechaCreacion: Date;
+  envio: DatosEnvioDto;
+  tarjeta: DatosTarjetaDto;
 }

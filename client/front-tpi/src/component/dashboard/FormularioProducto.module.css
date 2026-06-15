@@ -1,0 +1,161 @@
+.contenedor {
+  max-width: 680px;
+}
+
+.titulo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text, #1c2826);
+  margin: 0 0 24px;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text, #1c2826);
+}
+
+.hint {
+  font-weight: 400;
+  color: var(--color-muted, #888);
+  font-size: 0.8rem;
+}
+
+.campo input,
+.campo textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--color-text, #1c2826);
+  background: var(--color-surface, #fff);
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.campo input:focus,
+.campo textarea:focus {
+  outline: none;
+  border-color: var(--color-accent, #cc9476);
+}
+
+.campo textarea {
+  resize: vertical;
+}
+
+.checkboxGrilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: 8px;
+  background: var(--color-surface, #fff);
+}
+
+.checkboxItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.checkboxItem:hover {
+  background: var(--color-bg, #f8f8f6);
+}
+
+.checkboxItem input {
+  width: auto;
+  accent-color: var(--color-accent, #cc9476);
+}
+
+.sinCategorias {
+  color: var(--color-muted, #888);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.error {
+  color: #c0392b;
+  font-size: 0.875rem;
+  background: #fdf0ef;
+  border: 1px solid #e8c5c2;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 0;
+}
+
+.botones {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+.botonCancelar {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #e5e5e5);
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #1c2826);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.botonCancelar:hover {
+  background: var(--color-bg, #f8f8f6);
+}
+
+.botonGuardar {
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: none;
+  background: var(--color-accent, #cc9476);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.botonGuardar:hover:not(:disabled) {
+  background: var(--color-accent-hover, #b8825f);
+}
+
+.botonGuardar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.estado {
+  color: var(--color-muted, #888);
+}
+
+@media (max-width: 480px) {
+  .fila {
+    grid-template-columns: 1fr;
+  }
+}

@@ -36,6 +36,8 @@ export interface UsuarioPerfil {
   telefono?: string;
   activo: boolean;
   roles: Rol[];
+  direccion?: string;
+  telefono?: string;
 }
 
 export interface AuthState {
