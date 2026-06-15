@@ -28,7 +28,7 @@ import PanelInfo from "./_components/PanelInfo";
 import RelatedSlider from "./_components/RelatedSlider";
 import Comparador from "./_components/Comparador";
 import Breadcrumb from "@/component/layout/Breadcrumb";
-import { usePromociones } from "@/component/promociones/usePromociones";
+import { usePromociones } from "@/component/promociones/hooks/usePromociones";
 import { buscarPromocionAplicable, describirPromocion } from "@/lib/promociones";
 import styles from "./page.module.css";
 

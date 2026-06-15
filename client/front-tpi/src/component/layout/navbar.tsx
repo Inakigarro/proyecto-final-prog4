@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import BarraBusqueda from "./BarraBusqueda";
 import CategoriasMenu from "./CategoriasMenu";
 import MenuMovilDrawer, { type EnlacePrincipal } from "./MenuMovilDrawer";
-import { useCategorias } from "./useCategorias";
+import { useCategorias } from "./hooks/useCategorias";
 
 const enlacesPrincipales: EnlacePrincipal[] = [
   { etiqueta: "Promociones", ruta: "/promociones" },

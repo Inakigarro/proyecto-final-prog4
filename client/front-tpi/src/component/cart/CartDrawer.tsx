@@ -21,7 +21,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import CartItemRow from './CartItemRow';
-import { useValidacionCarrito } from './useValidacionCarrito';
+import { useValidacionCarrito } from './hooks/useValidacionCarrito';
 import './CartDrawer.css';
 
 const CartDrawer = () => {
