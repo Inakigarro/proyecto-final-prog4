@@ -24,6 +24,20 @@ export interface DetalleOrden {
   monto: number;
 }
 
+/** Snapshot de envío como quedó persistido en la orden. */
+export interface OrdenEnvio {
+  nombre: string;
+  apellido: string;
+  telefono: string;
+  calle: string;
+  numero: string;
+  piso?: string;
+  departamento?: string;
+  ciudad: string;
+  provincia: string;
+  codigoPostal: string;
+}
+
 /** Detalle completo de una orden. */
 export interface OrdenDetalle {
   id: string;
@@ -31,12 +45,7 @@ export interface OrdenDetalle {
   montoTotal: number;
   descuentos: number[];
   detalles: DetalleOrden[];
-  envio: {
-    nombre: string;
-    apellido: string;
-    direccion: string;
-    telefono: string;
-  };
+  envio: OrdenEnvio;
   tarjeta: {
     marca: string;
     ultimos4: string;

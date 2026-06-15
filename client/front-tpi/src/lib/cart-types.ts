@@ -18,13 +18,51 @@ export interface ValidarCarritoDto {
   items: CartItemDto[];
 }
 
-/** Datos de envío para el checkout. */
+/**
+ * Datos de envío para el checkout.
+ *
+ * Si `direccionId` está definido y pertenece al usuario autenticado, el
+ * backend reutiliza esa Address. Si no, los campos de dirección se usan
+ * para crear (o dedupear) una Address nueva contra las activas del usuario.
+ */
 export interface DatosEnvioDto {
+  /** Quien recibe el pedido (puede diferir del titular). */
   nombre: string;
   apellido: string;
-  direccion: string;
   /** 10 dígitos: código de área + número */
   telefono: string;
+
+  /** Calle de la dirección. */
+  calle: string;
+  /** Número de puerta. */
+  numero: string;
+  /** Piso del edificio (opcional). */
+  piso?: string;
+  /** Departamento (opcional). */
+  departamento?: string;
+  /** Ciudad o localidad. */
+  ciudad: string;
+  /** Provincia. */
+  provincia: string;
+  /** Código postal. */
+  codigoPostal: string;
+
+  /** Id de una dirección ya guardada del usuario; si viene, el backend la reusa. */
+  direccionId?: string;
+}
+
+/** Snapshot de envío incluido en la respuesta de POST /api/cart/checkout. */
+export interface EnvioOrdenResponse {
+  nombre: string;
+  apellido: string;
+  telefono: string;
+  calle: string;
+  numero: string;
+  piso?: string;
+  departamento?: string;
+  ciudad: string;
+  provincia: string;
+  codigoPostal: string;
 }
 
 /** Datos de la tarjeta para el checkout (solo marca + últimos 4). */
@@ -122,6 +160,6 @@ export interface CheckoutResponse {
   descuentos: number[];
   montoTotal: number;
   fechaCreacion: string;
-  envio: DatosEnvioDto;
+  envio: EnvioOrdenResponse;
   tarjeta: DatosTarjetaDto;
 }

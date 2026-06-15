@@ -119,7 +119,14 @@ export default function OrdenDetallePage() {
         <h2 className={styles.seccionTitulo}>Datos de envío</h2>
         <div className={styles.datos}>
           <p>{orden.envio.nombre} {orden.envio.apellido}</p>
-          <p>{orden.envio.direccion}</p>
+          <p>
+            {orden.envio.calle} {orden.envio.numero}
+            {orden.envio.piso ? `, Piso ${orden.envio.piso}` : ''}
+            {orden.envio.departamento ? ` Depto ${orden.envio.departamento}` : ''}
+          </p>
+          <p>
+            {orden.envio.ciudad}, {orden.envio.provincia} ({orden.envio.codigoPostal})
+          </p>
           <p>Tel: {orden.envio.telefono}</p>
         </div>
       </section>

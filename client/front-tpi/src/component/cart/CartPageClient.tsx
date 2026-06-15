@@ -167,7 +167,6 @@ const CartPageClient = () => {
     ? {
         nombre: authState.usuario.nombre,
         apellido: authState.usuario.apellido,
-        direccion: authState.usuario.direccion ?? '',
         telefono: authState.usuario.telefono ?? '',
       }
     : undefined;
@@ -237,7 +236,14 @@ const CartPageClient = () => {
             <div className="checkout-confirmacion-seccion">
               <h3>Envío</h3>
               <p>{ordenConfirmada.envio.nombre} {ordenConfirmada.envio.apellido}</p>
-              <p>{ordenConfirmada.envio.direccion}</p>
+              <p>
+                {ordenConfirmada.envio.calle} {ordenConfirmada.envio.numero}
+                {ordenConfirmada.envio.piso ? `, Piso ${ordenConfirmada.envio.piso}` : ''}
+                {ordenConfirmada.envio.departamento ? ` Depto ${ordenConfirmada.envio.departamento}` : ''}
+              </p>
+              <p>
+                {ordenConfirmada.envio.ciudad}, {ordenConfirmada.envio.provincia} ({ordenConfirmada.envio.codigoPostal})
+              </p>
               <p>Tel: {ordenConfirmada.envio.telefono}</p>
             </div>
 
@@ -385,6 +391,7 @@ const CartPageClient = () => {
               <CheckoutEnvioForm
                 valoresIniciales={valoresInicialesEnvio}
                 onChange={handleEnvioChange}
+                sesionLista={authState.isAutenticado}
               />
             </div>
 
@@ -457,7 +464,9 @@ const CartPageClient = () => {
                 <div className="checkout-paso-resumen-envio">
                   <span className="checkout-paso-resumen-label">Envío a</span>
                   <span>{datosEnvio.nombre} {datosEnvio.apellido}</span>
-                  <span>{datosEnvio.direccion}</span>
+                  <span>
+                    {datosEnvio.calle} {datosEnvio.numero}, {datosEnvio.ciudad}
+                  </span>
                 </div>
               )}
 

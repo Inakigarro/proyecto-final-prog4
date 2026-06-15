@@ -113,8 +113,14 @@ export class OrderService implements IOrderService {
       envio: {
         nombre: orden.envio.nombre,
         apellido: orden.envio.apellido,
-        direccion: orden.envio.direccion,
         telefono: orden.envio.telefono,
+        calle: orden.envio.calle,
+        numero: orden.envio.numero,
+        piso: orden.envio.piso,
+        departamento: orden.envio.departamento,
+        ciudad: orden.envio.ciudad,
+        provincia: orden.envio.provincia,
+        codigoPostal: orden.envio.codigoPostal,
       },
       tarjeta: {
         marca: orden.tarjeta.marca,
