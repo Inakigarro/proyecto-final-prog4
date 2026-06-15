@@ -1,15 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import User from '../models/User';
+import User, { validarComplejidadPassword } from '../models/User';
 import Role from '../models/Role';
 import RefreshToken from '../models/RefreshToken';
 import PasswordResetToken from '../models/PasswordResetToken';
-import { LoginInput, RegisterInput, AuthResponse, JwtPayload } from '../types';
-import { enviarEmailResetPassword } from '../services/email/emailService';
+import PasswordChangeChallenge from '../models/PasswordChangeChallenge';
+import { LoginInput, RegisterInput, AuthResponse, JwtPayload, RequestConUsuario } from '../types';
+import {
+  enviarEmailResetPassword,
+  enviarEmailCodigoCambioPassword,
+  enviarEmailBienvenida,
+  enviarEmailCambioPasswordExitoso,
+} from '../services/email/emailService';
+import { logger } from '../config/logger';
 import { IUser } from '../models/User';
 import { IRefreshToken } from '../models/RefreshToken';
+
+/** Cantidad máxima de intentos antes de invalidar el challenge */
+const MAX_INTENTOS_CODIGO = 3;
+/** Vida útil del código de verificación (5 minutos) */
+const VIDA_CODIGO_MS = 5 * 60 * 1000;
 
 type RefreshTokenPopulado = Omit<IRefreshToken, 'usuario'> & { usuario: IUser };
 
@@ -61,6 +74,11 @@ export const register = async (
     );
 
     await session.commitTransaction();
+
+    // Email de bienvenida best-effort: si Resend/SMTP falla no rompemos el alta
+    enviarEmailBienvenida(usuario.email, usuario.nombre).catch((error) => {
+      logger.error('No se pudo enviar el email de bienvenida', { email: usuario.email, error: String(error) });
+    });
 
     const { password: _, ...datos } = usuario.toObject();
     res.status(201).json(datos);
@@ -208,6 +226,154 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     ]);
 
     res.json({ message: 'Contraseña restablecida correctamente. Iniciá sesión nuevamente.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Inicia el cambio de contraseña desde el perfil del usuario autenticado.
+ *
+ * Valida la contraseña actual, hashea la nueva, genera un código de 6 dígitos,
+ * crea (o reemplaza) el challenge en BD con 5 minutos de TTL y manda el
+ * código por email vía Resend.
+ *
+ * Por seguridad nunca diferenciamos "password actual incorrecta" de cualquier
+ * otro error de validación de complejidad — devolvemos 400 con un mensaje
+ * genérico cuando la actual no matchea.
+ */
+export const solicitarCambioPassword = async (
+  req: RequestConUsuario,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { passwordActual, nuevaPassword } = req.body as {
+      passwordActual: string;
+      nuevaPassword: string;
+    };
+
+    const usuario = await User.findById(req.usuario!.id).select('+password');
+    if (!usuario || !usuario.activo) {
+      res.status(401).json({ message: 'No autorizado' });
+      return;
+    }
+
+    const actualValida = await usuario.compararPassword(passwordActual);
+    if (!actualValida) {
+      res.status(400).json({ message: 'La contraseña actual es incorrecta' });
+      return;
+    }
+
+    // Defensa adicional al validador Zod por si alguien evita el middleware
+    if (!validarComplejidadPassword(nuevaPassword)) {
+      res.status(400).json({ message: 'La nueva contraseña no cumple los requisitos de complejidad' });
+      return;
+    }
+
+    if (nuevaPassword === passwordActual) {
+      res.status(400).json({ message: 'La nueva contraseña no puede ser igual a la actual' });
+      return;
+    }
+
+    // Código de 6 dígitos crypto-safe; relleno con ceros si quedó corto
+    const codigo = crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
+    const [codigoHash, nuevaPasswordHash] = await Promise.all([
+      bcrypt.hash(codigo, 10),
+      bcrypt.hash(nuevaPassword, 10),
+    ]);
+
+    // Invalida challenges previos para que solo el más reciente sea válido
+    await PasswordChangeChallenge.deleteMany({ usuario: usuario._id });
+    await PasswordChangeChallenge.create({
+      usuario: usuario._id,
+      codigoHash,
+      nuevaPasswordHash,
+      expiresAt: new Date(Date.now() + VIDA_CODIGO_MS),
+    });
+
+    await enviarEmailCodigoCambioPassword(usuario.email, codigo);
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Confirma el cambio de contraseña con el código recibido por email.
+ *
+ * Tras validar el código aplica `nuevaPasswordHash` directamente sobre el
+ * usuario con updateOne (sin pasar por save) para evitar que el pre-hook
+ * vuelva a hashear el hash. Revoca todos los refresh tokens previos y emite
+ * un par nuevo así la pestaña actual del usuario sigue funcionando.
+ */
+export const confirmarCambioPassword = async (
+  req: RequestConUsuario,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { codigo } = req.body as { codigo: string };
+
+    const challenge = await PasswordChangeChallenge.findOne({ usuario: req.usuario!.id });
+    if (!challenge) {
+      res.status(400).json({ message: 'No hay un cambio de contraseña pendiente. Iniciá el proceso nuevamente.' });
+      return;
+    }
+
+    if (challenge.expiresAt.getTime() < Date.now()) {
+      await challenge.deleteOne();
+      res.status(400).json({ message: 'El código expiró. Iniciá el proceso nuevamente.' });
+      return;
+    }
+
+    const codigoValido = await bcrypt.compare(codigo, challenge.codigoHash);
+    if (!codigoValido) {
+      challenge.intentos += 1;
+      // Tras MAX_INTENTOS_CODIGO fallidos invalidamos el challenge para forzar a reiniciar
+      if (challenge.intentos >= MAX_INTENTOS_CODIGO) {
+        await challenge.deleteOne();
+        res.status(400).json({ message: 'Demasiados intentos fallidos. Iniciá el proceso nuevamente.' });
+        return;
+      }
+      await challenge.save();
+      const restantes = MAX_INTENTOS_CODIGO - challenge.intentos;
+      res.status(400).json({ message: `Código inválido. Te quedan ${restantes} intento(s).` });
+      return;
+    }
+
+    // Aplicamos el hash directamente para evitar el pre('save') que re-hashearía.
+    // Devolvemos el documento para tener nombre y email actualizado para el aviso.
+    const usuarioActualizado = await User.findOneAndUpdate(
+      { _id: req.usuario!.id },
+      { password: challenge.nuevaPasswordHash },
+      { new: true },
+    );
+
+    // Revocamos todos los refresh tokens previos y consumimos el challenge
+    await Promise.all([
+      RefreshToken.deleteMany({ usuario: req.usuario!.id }),
+      challenge.deleteOne(),
+    ]);
+
+    // Aviso best-effort: si el envío falla no rompemos la respuesta al usuario
+    if (usuarioActualizado) {
+      enviarEmailCambioPasswordExitoso(usuarioActualizado.email, usuarioActualizado.nombre).catch((error) => {
+        logger.error('No se pudo enviar el aviso de cambio de password', {
+          email: usuarioActualizado.email,
+          error: String(error),
+        });
+      });
+    }
+
+    // Emitimos un par nuevo para no desloguear la pestaña actual
+    const payload: JwtPayload = { id: req.usuario!.id, email: req.usuario!.email };
+    const accessToken = generarAccessToken(payload);
+    const refreshToken = await generarRefreshToken(req.usuario!.id);
+
+    const respuesta: AuthResponse = { accessToken, refreshToken };
+    res.json(respuesta);
   } catch (error) {
     next(error);
   }

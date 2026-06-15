@@ -91,6 +91,22 @@ const Navbar = () => {
                   >
                     Mi perfil
                   </Link>
+                  <Link
+                    href="/perfil?tab=direcciones"
+                    className="navbar-menu-item"
+                    role="menuitem"
+                    onClick={() => setMenuAbierto(false)}
+                  >
+                    Mis direcciones
+                  </Link>
+                  <Link
+                    href="/perfil?tab=compras"
+                    className="navbar-menu-item"
+                    role="menuitem"
+                    onClick={() => setMenuAbierto(false)}
+                  >
+                    Mis pedidos
+                  </Link>
                   <button
                     type="button"
                     className="navbar-menu-item navbar-menu-item--peligro"

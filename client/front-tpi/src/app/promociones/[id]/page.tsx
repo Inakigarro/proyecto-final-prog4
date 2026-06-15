@@ -42,6 +42,7 @@ export default async function PaginaDetallePromocion({
           </header>
           <ListaResultadosProductos
             productos={productos}
+            promociones={[promocion]}
             mensajeVacio="Esta promoción todavía no tiene productos asociados."
           />
         </div>

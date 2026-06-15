@@ -16,7 +16,7 @@ Aplicación web e-commerce completa desarrollada como proyecto del curso Program
 - **Node.js** + **TypeScript 5** — runtime y lenguaje
 - **JWT** — autenticación stateless (access 15m + refresh 30d)
 - **bcryptjs**, **Helmet**, **CORS**, **rate-limiting**, **Zod**
-- **Resend** — envío de emails transaccionales (reset de contraseña)
+- **Nodemailer + Brevo (SMTP)** — envío de emails transaccionales (reset de contraseña, código de cambio de password). Configurado contra `smtp-relay.brevo.com`; cualquier proveedor SMTP funciona cambiando solo las variables de entorno.
 
 **Frontend (`client/front-tpi/`):**
 - **Next.js 16** (App Router) + **React 19** + **TypeScript 5**
@@ -268,9 +268,15 @@ PORT=4000
 MONGODB_URI=mongodb://localhost:27017/programacion4
 JWT_SECRET=cambiar_por_clave_secreta_segura
 SUPERADMIN_PASSWORD=contraseña_superadmin_segura
-RESEND_API_KEY=re_xxxxxxxxxxxx
 FRONTEND_URL=http://localhost:3000
 ALLOWED_ORIGIN=http://localhost:3000
+
+# SMTP (Brevo por defecto)
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=el-login-smtp-que-te-da-brevo
+SMTP_PASSWORD=la-smtp-key-de-brevo
+EMAIL_FROM=TechPoint <noreply@tu-email-verificado.com>
 ```
 
 ## Comandos

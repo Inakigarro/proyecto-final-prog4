@@ -15,48 +15,61 @@ import { perfilActualizado, type UsuarioPerfil } from '@/store/authSlice';
 export const TELEFONO_AR_REGEX = /^\+54[\s-]?9?[\s-]?\d{2,4}[\s-]?\d{3,4}[\s-]?\d{4}$/;
 
 /**
- * Estado expuesto por el hook useActualizarTelefono.
+ * Datos editables del perfil propio. Email queda afuera a propósito: se usa
+ * como identificador de login y el usuario común no lo puede modificar.
+ *
+ * Los campos son opcionales: solo se envían los que cambiaron.
  */
-export interface EstadoTelefono {
+export interface CambiosPerfil {
+  nombre?: string;
+  apellido?: string;
+  /** Fecha en formato yyyy-MM-dd (lo que devuelve <input type="date">) */
+  fechaNacimiento?: string;
+  /** String vacío = limpiar el teléfono almacenado */
+  telefono?: string;
+}
+
+/**
+ * Estado expuesto por el hook useActualizarPerfil.
+ */
+export interface EstadoPerfil {
   /** True mientras se está guardando el cambio en el backend */
   guardando: boolean;
   /** Mensaje de error de la última operación, o null si fue exitosa */
   error: string | null;
   /** True si el último guardado terminó OK (se resetea al volver a guardar) */
   exito: boolean;
-  /** Envía el nuevo teléfono al backend y refresca el perfil en Redux */
-  guardar: (telefono: string) => Promise<void>;
+  /** Envía los cambios al backend y refresca el perfil en Redux */
+  guardar: (cambios: CambiosPerfil) => Promise<void>;
 }
 
 /**
- * Hook para editar el teléfono del usuario autenticado.
+ * Hook para editar los datos personales del usuario autenticado.
  *
- * Hace PUT /api/users/me con el campo teléfono y, si el backend responde OK,
- * despacha perfilActualizado al store para que el resto de la app vea el
- * nuevo valor sin necesidad de recargar la sesión.
- *
- * Permite enviar un string vacío para "limpiar" el teléfono almacenado.
+ * Hace PUT /api/users/me con los campos provistos y, si el backend responde OK,
+ * despacha perfilActualizado al store para que el resto de la app vea los
+ * nuevos valores sin necesidad de recargar la sesión.
  */
-export function useActualizarTelefono(): EstadoTelefono {
+export function useActualizarPerfil(): EstadoPerfil {
   const dispatch = useAppDispatch();
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState(false);
 
   const guardar = useCallback(
-    async (telefono: string) => {
+    async (cambios: CambiosPerfil) => {
       setGuardando(true);
       setError(null);
       setExito(false);
       try {
         const usuario = await apiFetch<UsuarioPerfil>('/api/users/me', {
           method: 'PUT',
-          body: JSON.stringify({ telefono: telefono.trim() }),
+          body: JSON.stringify(cambios),
         });
         dispatch(perfilActualizado(usuario));
         setExito(true);
       } catch (err) {
-        const mensaje = err instanceof ApiError ? err.message : 'No se pudo guardar el teléfono.';
+        const mensaje = err instanceof ApiError ? err.message : 'No se pudieron guardar los cambios.';
         setError(mensaje);
         throw err;
       } finally {

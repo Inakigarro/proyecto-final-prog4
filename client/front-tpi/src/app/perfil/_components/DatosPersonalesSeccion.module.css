@@ -17,21 +17,27 @@
   margin: 0;
 }
 
-.lista {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 20px;
-  margin: 0;
+  padding: 24px;
 }
 
-.item {
+.fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.campo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  min-width: 0;
 }
 
 .etiqueta {
@@ -42,29 +48,6 @@
   font-weight: 600;
 }
 
-.valor {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--color-text);
-  word-break: break-word;
-}
-
-.formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 20px;
-}
-
-.campo {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
 .input {
   padding: 10px 12px;
   border: 1px solid var(--color-border);
@@ -72,6 +55,7 @@
   font-size: 1rem;
   background: var(--color-bg);
   color: var(--color-text);
+  font-family: inherit;
   transition: border-color 0.15s ease;
 }
 
@@ -81,8 +65,28 @@
 }
 
 .input:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
+}
+
+.inputBloqueado {
+  background: var(--color-border);
+  color: var(--color-muted);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.leyenda {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.separador {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 4px 0;
 }
 
 .error {
@@ -91,18 +95,27 @@
   color: var(--color-error);
 }
 
+.errorGeneral {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  padding: 10px 14px;
+  border-radius: 6px;
+}
+
 .mensajeExito {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--color-success);
   background: var(--color-success-bg);
-  padding: 6px 10px;
-  border-radius: 4px;
+  padding: 10px 14px;
+  border-radius: 6px;
 }
 
 .botonGuardar {
   align-self: flex-start;
-  padding: 10px 20px;
+  padding: 10px 22px;
   border: none;
   border-radius: 6px;
   background: var(--color-primary);
@@ -120,4 +133,14 @@
 .botonGuardar:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .fila {
+    grid-template-columns: 1fr;
+  }
+
+  .formulario {
+    padding: 18px;
+  }
 }

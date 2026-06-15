@@ -56,7 +56,10 @@ export default function DireccionesSeccion({ habilitado }: DireccionesSeccionPro
 
       {!cargando && direcciones.length === 0 && !error && (
         <div className={styles.estadoVacio}>
-          <p>Todavía no tenés direcciones guardadas.</p>
+          <p className={styles.estadoVacioTitulo}>Todavía no tenés direcciones guardadas</p>
+          <p className={styles.estadoVacioSubtitulo}>
+            Vas a poder agregar una dirección al confirmar tu próxima compra.
+          </p>
         </div>
       )}
 

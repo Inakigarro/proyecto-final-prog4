@@ -29,4 +29,4 @@ export interface CompraResumen {
 }
 
 /** Tabs disponibles dentro de la página de perfil */
-export type PerfilTab = 'datos' | 'direcciones' | 'compras';
+export type PerfilTab = 'datos' | 'direcciones' | 'compras' | 'seguridad';

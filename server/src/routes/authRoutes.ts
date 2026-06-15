@@ -2,12 +2,15 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import * as authController from '../controllers/authController';
 import { validar } from '../middlewares/validar';
+import { verificarToken } from '../middlewares/auth';
 import {
   RegisterSchema,
   LoginSchema,
   ForgotPasswordSchema,
   ResetPasswordSchema,
   RefreshTokenSchema,
+  CambiarPasswordRequestSchema,
+  CambiarPasswordConfirmSchema,
 } from '../schemas/auth.schemas';
 
 const router = Router();
@@ -43,5 +46,21 @@ router.post('/refresh',                           validar(RefreshTokenSchema),  
 router.post('/logout',                            validar(RefreshTokenSchema),   authController.logout);
 router.post('/forgot-password', limiterPassword,  validar(ForgotPasswordSchema), authController.forgotPassword);
 router.post('/reset-password',  limiterPassword,  validar(ResetPasswordSchema),  authController.resetPassword);
+
+// Cambio de contraseña desde el perfil (con verificación por email)
+router.post(
+  '/password/change/request',
+  limiterPassword,
+  verificarToken,
+  validar(CambiarPasswordRequestSchema),
+  authController.solicitarCambioPassword,
+);
+router.post(
+  '/password/change/confirm',
+  limiterPassword,
+  verificarToken,
+  validar(CambiarPasswordConfirmSchema),
+  authController.confirmarCambioPassword,
+);
 
 export default router;
