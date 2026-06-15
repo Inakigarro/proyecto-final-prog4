@@ -17,13 +17,10 @@ import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
 import CartItemRow from './CartItemRow';
 import ConfirmDialog from './ConfirmDialog';
-<<<<<<< HEAD
-import { useValidacionCarrito } from './hooks/useValidacionCarrito';
-=======
 import CheckoutStepper from './CheckoutStepper';
 import CheckoutEnvioForm from './CheckoutEnvioForm';
 import CheckoutPagoForm from './CheckoutPagoForm';
-import { useValidacionCarrito } from './useValidacionCarrito';
+import { useValidacionCarrito } from './hooks/useValidacionCarrito';
 import type { PasoCheckout } from './CheckoutStepper';
 import type {
   DatosEnvioDto,
@@ -32,7 +29,6 @@ import type {
   CheckoutResponse,
   MetodoPagoResponse,
 } from '@/lib/cart-types';
->>>>>>> master
 import './CartPageClient.css';
 
 const CartPageClient = () => {

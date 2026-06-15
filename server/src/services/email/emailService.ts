@@ -37,7 +37,7 @@ function obtenerTransporter(): Transporter {
 function obtenerRemitente(): string {
   const from = process.env.EMAIL_FROM?.trim();
   if (!from) {
-    throw new Error('EMAIL_FROM no está definida. Configurala en el .env con el sender verificado en Brevo.');
+    throw new Error('EMAIL_FROM no está definida. Configurala en el .env con el sender verificado del proveedor SMTP.');
   }
   return from;
 }
@@ -225,27 +225,6 @@ export async function enviarEmailCambioPasswordExitoso(
   );
 }
 
-/**
- * Confirmación de compra. Le llega al usuario apenas se aprueba el checkout
- * con el número de orden, fecha y detalle.
- */
-export async function enviarEmailConfirmacionCompra(
-  destinatario: string,
-  ordenCorta: string,
-  fecha: string
-): Promise<void> {
-  await enviarEmail(
-    destinatario,
-    `Confirmación de compra #${ordenCorta} — TechPoint`,
-    `
-      <h2 style="color: #1c2826; margin-bottom: 4px;">¡Gracias por tu compra!</h2>
-      <p style="color: #888; font-size: 14px; margin-top: 0;">Orden #${ordenCorta} · ${fecha}</p>
-      <p>Registramos tu pedido correctamente. En cuanto despachemos los productos te vamos a avisar por este mismo medio.</p>
-      ${boton(`${urlFrontend()}/perfil`, 'Ver mis pedidos')}
-    `
-  );
-}
-
 // ── Email de confirmación de compra ───────────────────────────────────────
 
 interface DetalleItemEmail {
@@ -298,8 +277,8 @@ export async function enviarEmailConfirmacionCompra(
 
   const ordenCorta = datos.ordenId.slice(-8).toUpperCase();
 
-  await transporter.sendMail({
-    from: EMAIL_FROM,
+  await obtenerTransporter().sendMail({
+    from: obtenerRemitente(),
     to: datos.destinatario,
     subject: `Confirmación de compra #${ordenCorta} — TechPoint`,
     html: `

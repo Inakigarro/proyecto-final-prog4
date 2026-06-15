@@ -291,21 +291,13 @@ JWT_SECRET=cambiar_por_clave_secreta_segura
 SUPERADMIN_PASSWORD=contraseña_superadmin_segura
 FRONTEND_URL=http://localhost:3000
 ALLOWED_ORIGIN=http://localhost:3000
-<<<<<<< HEAD
 
-# SMTP (Brevo por defecto)
-SMTP_HOST=smtp-relay.brevo.com
-SMTP_PORT=587
-SMTP_USER=el-login-smtp-que-te-da-brevo
-SMTP_PASSWORD=la-smtp-key-de-brevo
-EMAIL_FROM=TechPoint <noreply@tu-email-verificado.com>
-=======
+# SMTP (Gmail con app password)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=tu-gmail@gmail.com
 SMTP_PASSWORD=la-app-password-de-16-chars-sin-espacios
 EMAIL_FROM=TechPoint <tu-gmail@gmail.com>
->>>>>>> master
 ```
 
 ## Comandos
