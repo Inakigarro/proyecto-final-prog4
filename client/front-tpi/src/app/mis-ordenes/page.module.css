@@ -1,0 +1,151 @@
+.contenedor {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+.encabezado {
+  margin-bottom: 32px;
+}
+
+.titulo {
+  margin: 0 0 8px 0;
+  font-size: 26px;
+  color: var(--color-text);
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.estado {
+  text-align: center;
+  color: var(--color-muted);
+  padding: 48px 0;
+}
+
+.error {
+  background: var(--color-error-bg);
+  border-left: 4px solid var(--color-error);
+  color: var(--color-error-text);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.vacio {
+  text-align: center;
+  padding: 64px 16px;
+  color: var(--color-muted);
+}
+
+.vacio p {
+  margin: 0 0 20px 0;
+  font-size: 16px;
+}
+
+.botonPrimario {
+  display: inline-block;
+  padding: 12px 24px;
+  background: var(--color-highlight);
+  color: #fff;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  transition: background 0.15s ease;
+}
+
+.botonPrimario:hover {
+  background: var(--color-accent-hover);
+}
+
+/* ── Lista de órdenes ──────────────────────────────────────────────────── */
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  display: block;
+  background: var(--color-dark-bg);
+  border: 1px solid var(--color-dark-border);
+  border-radius: 12px;
+  padding: 20px;
+  text-decoration: none;
+  color: var(--color-dark-text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--color-highlight);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cardOrden {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-dark-text);
+}
+
+.cardFecha {
+  font-size: 13px;
+  color: var(--color-dark-muted);
+}
+
+.cardBody {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--color-dark-text-2);
+}
+
+.cardPago {
+  font-size: 12px;
+  color: var(--color-dark-muted);
+}
+
+.cardTotal {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-dark-text);
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-dark-border);
+}
+
+.cardEnvio {
+  font-size: 12px;
+  color: var(--color-dark-muted);
+}
+
+.cardVer {
+  font-size: 13px;
+  color: var(--color-highlight);
+  font-weight: 500;
+}

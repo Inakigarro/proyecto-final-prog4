@@ -38,15 +38,20 @@
 ### Gestión de carrito
 - ✅ Agregar / modificar / eliminar / vaciar — gestionado en cliente (Redux + localStorage)
 - ✅ Validación de stock y precios contra backend (`POST /api/cart/validate`)
+- ✅ Checkout completo (`POST /api/cart/checkout`) — envío, tarjeta, email de confirmación
+- ✅ Métodos de pago (`GET /api/cart/payment-methods`)
+- ✅ Carrito scopeado por usuario en localStorage (`techpoint:cart:{userId}`)
 - ⚠️ **No hay modelo `Carrito` persistido en MongoDB.** El TPI exige `Carrito` como modelo mínimo. El carrito actual vive solo en el cliente. Evaluar si el docente acepta esta arquitectura o si hay que agregar persistencia.
 
 ### Órdenes de compra
 - ✅ Generación de orden (`POST /api/cart/checkout`) — descuento atómico de stock
 - ✅ Asociación al usuario y persistencia de ítems comprados (modelos `PurchaseOrder` + `PurchaseOrderDetail`)
 - ✅ Cálculo del total (hooks `pre-save` en los modelos)
-- ❌ **Cliente: consultar sus órdenes** — falta `GET /api/orders/me`
-- ❌ **Cliente: ver detalle de una orden** — falta `GET /api/orders/me/:id`
-- ❌ **Admin: ver todas las órdenes** — falta `GET /api/orders`
+- ✅ Email de confirmación de compra (nodemailer/SMTP)
+- ✅ Cliente: consultar sus órdenes (`GET /api/orders/me`)
+- ✅ Cliente: ver detalle de una orden (`GET /api/orders/me/:id`)
+- ✅ Admin: ver todas las órdenes (`GET /api/orders`)
+- ✅ Admin: ver detalle de cualquier orden (`GET /api/orders/:id`)
 
 ---
 
@@ -69,16 +74,22 @@
 - ✅ Eliminar productos
 - ✅ Vaciar carrito
 - ✅ Visualización del total (con descuentos de promociones aplicados)
-- ❌ **Confirmación de compra** — `handleConfirmarCompra` en `CartPageClient.tsx` tiene el TODO pendiente de conectar a `POST /api/cart/checkout`
-- ❌ **Página de confirmación post-compra** — no existe (`/orden-confirmada` o similar)
+- ✅ Confirmación de compra — checkout por pasos (envío → pago → confirmación)
+- ✅ Detección de tarjeta por BIN (Visa, Mastercard, Amex, Diners) + validación Luhn
+- ✅ Tarjetas de prueba dummy con auto-fill
+- ✅ Página de confirmación post-compra con resumen de la orden
+- ✅ Email de confirmación enviado al usuario
 
 ### Perfil de usuario
 - ✅ Ver perfil (`/perfil`)
 - ✅ Editar datos personales (nombre, apellido, email)
+- ✅ Gestión de direcciones
+- ✅ Sección "Mis compras" accesible desde perfil y navbar
 
 ### Órdenes de compra
-- ❌ **Ver órdenes del usuario** — falta página `/mis-ordenes`
-- ❌ **Ver detalle de una orden** — falta página `/mis-ordenes/:id`
+- ✅ Ver órdenes del usuario — página `/mis-ordenes`
+- ✅ Ver detalle de una orden — página `/mis-ordenes/[id]`
+- ✅ Link "Mis compras" en dropdown de usuario del navbar
 
 ### Panel de gestión (dueño)
 - ✅ Link "Panel de gestión" en navbar — visible solo para el rol `dueno`
@@ -92,11 +103,11 @@
 - ❌ **Editar usuarios** — no hay UI (el endpoint existe)
 - ❌ **Baja lógica de usuario** — no hay UI (el endpoint existe)
 - ❌ **Recuperar usuarios/productos dados de baja** — no hay UI ni endpoint de reactivación
-- ❌ **Ver órdenes del sistema** — no hay UI (falta el endpoint también)
+- ❌ **Ver órdenes del sistema** — no hay UI (el endpoint ya existe: `GET /api/orders`)
 
 ### Estado global
 - ✅ Redux Toolkit + Context API (patrón adaptador)
-- ✅ Persistencia en localStorage (carrito e refresh tok`en)
+- ✅ Persistencia en localStorage (carrito scopeado por usuario + refresh token)
 
 ---
 
@@ -112,11 +123,8 @@
 
 | Área | Tarea | Dónde |
 |------|-------|-------|
-| Backend | Endpoints de órdenes (GET /api/orders, /api/orders/me, /api/orders/me/:id) | `server/src/` |
 | Backend | Endpoint reactivar usuario/producto dado de baja (PATCH activo: true) | `server/src/` |
-| Frontend | Conectar checkout a `POST /api/cart/checkout` + página de confirmación | `CartPageClient.tsx` |
 | Frontend | Mostrar stock en catálogo y PDP | `card.tsx`, `PanelInfo.tsx`, tipos |
-| Frontend | Historial de órdenes del cliente | nueva ruta `/mis-ordenes` |
 | Frontend | Panel superadmin — ver/editar/baja de usuarios, ver órdenes del sistema | nueva ruta `/admin` |
 | Docs | README en el root | `README.md` |
 | Docs | Documentación de endpoints + PDF | a coordinar |

@@ -100,13 +100,23 @@ const Navbar = () => {
                     Mis direcciones
                   </Link>
                   <Link
-                    href="/perfil?tab=compras"
+                    href="/mis-ordenes"
                     className="navbar-menu-item"
                     role="menuitem"
                     onClick={() => setMenuAbierto(false)}
                   >
-                    Mis pedidos
+                    Mis compras
                   </Link>
+                  {tieneRol('dueno') && (
+                    <Link
+                      href="/dashboard"
+                      className="navbar-menu-item"
+                      role="menuitem"
+                      onClick={() => setMenuAbierto(false)}
+                    >
+                      Panel de gestión
+                    </Link>
+                  )}
                   <button
                     type="button"
                     className="navbar-menu-item navbar-menu-item--peligro"
