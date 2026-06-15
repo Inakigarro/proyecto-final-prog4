@@ -79,32 +79,25 @@ export const crearUserController = (servicio: IUserService) => ({
   },
 
   /**
-   * Actualiza el perfil propio del usuario autenticado.
-   * Permite modificar nombre, apellido, fecha de nacimiento y teléfono.
-   * El email queda fijo: se usa como identificador de login y solo el superadmin
-   * lo puede cambiar.
+   * Actualiza los datos personales del usuario autenticado.
+   * No permite cambiar roles, activo ni password por esta vía.
    */
   actualizarPerfil: async (req: RequestConUsuario, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { nombre, apellido, fechaNacimiento, telefono } = req.body as {
+      const { nombre, apellido, email, direccion, telefono } = req.body as {
         nombre?: string;
         apellido?: string;
-        fechaNacimiento?: string;
+        email?: string;
+        direccion?: string;
         telefono?: string;
       };
-
-      // Armamos el DTO solo con los campos enviados para no pisar valores existentes
-      const cambios: ActualizarUsuarioDto = {};
-      if (nombre !== undefined) cambios.nombre = nombre;
-      if (apellido !== undefined) cambios.apellido = apellido;
-      if (telefono !== undefined) cambios.telefono = telefono;
-      if (fechaNacimiento !== undefined) {
-        // Parseo manual para evitar shifts por timezone de new Date("yyyy-MM-dd")
-        const [anio, mes, dia] = fechaNacimiento.split('-').map(Number);
-        cambios.fechaNacimiento = new Date(anio, mes - 1, dia);
-      }
-
-      const usuario = await servicio.actualizar(req.usuario!.id, cambios);
+      const usuario = await servicio.actualizar(req.usuario!.id, {
+        nombre,
+        apellido,
+        email,
+        direccion,
+        telefono,
+      });
       if (!usuario) {
         res.status(404).json({ message: 'Usuario no encontrado' });
         return;

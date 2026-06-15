@@ -30,7 +30,7 @@ Helpers disponibles en `useAuth()`:
 - `login(email, password)` — inicia sesión
 - `logout()` — cierra sesión
 - `registrar(RegistrarInput)` — crea cuenta nueva
-- `solicitarReset(email)` — envía email de reset via backend (Resend)
+- `solicitarReset(email)` — envía email de reset via backend (nodemailer/SMTP)
 - `resetearPassword(token, password)` — confirma el nuevo password con el token recibido por email
 - `tienePermiso(recurso, accion)` — RBAC granular
 - `tieneRol(nombre)`, `esSuperAdmin()` — RBAC por rol
@@ -68,9 +68,22 @@ Para datos públicos en Server Components:
 | `/search-result` | `ListaResultadosProductos` | Implementado |
 | `/promociones` | `app/promociones/page.tsx` | Implementado |
 | `/promociones/[id]` | `app/promociones/[id]/page.tsx` | Implementado |
+| `/dashboard` | `app/dashboard/layout.tsx` + `page.tsx` | Implementado (solo rol `dueno`) |
+| `/dashboard/productos` | `app/dashboard/productos/page.tsx` | Implementado |
+| `/dashboard/categorias` | `app/dashboard/categorias/page.tsx` | Implementado |
+| `/dashboard/promociones` | `app/dashboard/promociones/page.tsx` | Implementado |
+
+## Rewrites de Next.js (importante)
+
+`next.config.ts` tiene un rewrite catch-all `source: "/api/:path*"` → `destination: "${BACKEND_URL}/api/:path*"`. Comportamiento:
+
+- Las API routes en `app/api/` toman **precedencia** sobre el rewrite para sus paths exactos (son "afterFiles")
+- `GET /api/products` → `app/api/products/route.ts` (solo GET; envuelve respuesta en `{ success, products }`)
+- `GET /api/promotions` → `app/api/promotions/route.ts` (solo GET; envuelve en `{ success, promociones }`)
+- Todo lo demás → rewrite → Express directamente (headers incluyendo `Authorization` se reenvían)
+- El dashboard usa `app/api/dashboard/products|categories|promotions/route.ts` como proxies transparentes que devuelven la respuesta cruda de Express, evitando la interferencia de las rutas existentes
 
 ## Pendiente
 
 - **Checkout**: conectar `handleConfirmarCompra` en `CartPageClient.tsx` a `POST /api/cart/checkout` y crear página de confirmación de orden.
-- **Perfil de usuario**: página en `/perfil` implementada; usa `PUT /api/users/me` para auto-edición (nombre, apellido, email).
-- **Historial de órdenes**: sin UI.
+- **Historial de órdenes**: sin UI — falta página `/mis-ordenes` y los endpoints `GET /api/orders/me` en el backend.

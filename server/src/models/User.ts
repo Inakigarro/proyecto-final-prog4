@@ -12,6 +12,8 @@ export interface IUser extends Document {
   telefono?: string;
   activo: boolean;
   roles: Types.ObjectId[];
+  /** Dirección de envío guardada (opcional, se actualiza en cada checkout). */
+  direccion?: string;
   // Método de instancia para verificar la contraseña
   compararPassword(passwordPlano: string): Promise<boolean>;
 }
@@ -97,6 +99,11 @@ const usuarioSchema = new Schema<IUser>(
         validator: (roles: Types.ObjectId[]) => roles.length >= 1,
         message: 'El usuario debe tener al menos un rol asignado',
       },
+    },
+    direccion: {
+      type: String,
+      trim: true,
+      default: undefined,
     },
   },
   { timestamps: true }

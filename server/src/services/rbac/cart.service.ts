@@ -18,6 +18,7 @@ import {
 } from '../../types/rbac/cart.dtos';
 import { ICartService } from '../../types/rbac/cart.service.interface';
 import { aplicarDescuentos } from '../../utils/descuentos';
+import { enviarEmailConfirmacionCompra } from '../email/emailService';
 import {
   calcularDescuentoItem,
   describirPromocionAplicada,
@@ -231,7 +232,9 @@ export class CartService implements ICartService {
    *     filtrando por stock >= cantidad. Si el update no encuentra documento,
    *     el stock era insuficiente y se cancela el checkout (rollback manual).
    *  3. Crea los PurchaseOrderDetail (su monto se autocalcula en pre-save).
-   *  4. Crea la PurchaseOrder con el montoTotal calculado.
+   *  4. Crea la PurchaseOrder con el montoTotal calculado + datos de envío/tarjeta.
+   *  5. Opcionalmente actualiza dirección y teléfono en el perfil del usuario.
+   *  6. Envía email de confirmación de compra (async, no bloquea la respuesta).
    */
   async checkout(usuarioId: string, dto: CheckoutDto): Promise<CheckoutResponse> {
     // Validaciones del DTO antes de abrir la sesión
@@ -296,14 +299,42 @@ export class CartService implements ICartService {
         detalles.push(detalle);
       }
 
-      // Calcular el monto total y crear la orden
+      // Calcular el monto total y crear la orden con datos de envío y tarjeta
       const montoBase = detalles.reduce((acc, d) => acc + d.monto, 0);
       const montoTotal = aplicarDescuentos(montoBase, descuentos);
 
       const [orden] = await PurchaseOrder.create(
-        [{ usuario: usuario._id, detalles: detalles.map((d) => d._id), metodoPago: metodoPago._id, descuentos, montoTotal }],
+        [{
+          usuario: usuario._id,
+          detalles: detalles.map((d) => d._id),
+          metodoPago: metodoPago._id,
+          descuentos,
+          montoTotal,
+          envio: {
+            nombre: dto.envio.nombre,
+            apellido: dto.envio.apellido,
+            direccion: dto.envio.direccion,
+            telefono: dto.envio.telefono,
+          },
+          tarjeta: {
+            marca: dto.tarjeta.marca,
+            ultimos4: dto.tarjeta.ultimos4,
+          },
+        }],
         { session }
       );
+
+      // Guardar dirección y teléfono en el perfil si el usuario lo pidió (default: true)
+      if (dto.guardarDatosEnPerfil !== false) {
+        await User.findByIdAndUpdate(
+          usuarioId,
+          {
+            direccion: dto.envio.direccion,
+            telefono: dto.envio.telefono,
+          },
+          { session }
+        );
+      }
 
       await session.commitTransaction();
 
@@ -312,14 +343,47 @@ export class CartService implements ICartService {
         _id: { $in: detalles.map((d) => d._id) },
       }).populate('item');
 
+      const detallesResponse = (detallesPopulados as unknown as PurchaseOrderDetailPopulado[]).map(mapearDetalleAResponseDto);
+
+      // Enviar email de confirmación (async, no bloquea la respuesta)
+      enviarEmailConfirmacionCompra({
+        ordenId: orden._id.toString(),
+        destinatario: usuario.email,
+        nombreCompleto: `${dto.envio.nombre} ${dto.envio.apellido}`,
+        direccion: dto.envio.direccion,
+        telefono: dto.envio.telefono,
+        marcaTarjeta: dto.tarjeta.marca,
+        ultimos4: dto.tarjeta.ultimos4,
+        detalles: detallesResponse.map((d) => ({
+          nombreItem: d.nombreItem,
+          cantidad: d.cantidad,
+          precioUnitario: d.precioUnitario,
+          monto: d.monto,
+        })),
+        montoTotal: orden.montoTotal,
+        fechaCreacion: orden.createdAt,
+      }).catch((err: unknown) => {
+        console.error('Error al enviar email de confirmación:', err);
+      });
+
       return {
         ordenId: orden._id.toString(),
         usuarioId: usuario._id.toString(),
         metodoPagoId: metodoPago._id.toString(),
-        detalles: (detallesPopulados as unknown as PurchaseOrderDetailPopulado[]).map(mapearDetalleAResponseDto),
+        detalles: detallesResponse,
         descuentos: orden.descuentos,
         montoTotal: orden.montoTotal,
         fechaCreacion: orden.createdAt,
+        envio: {
+          nombre: dto.envio.nombre,
+          apellido: dto.envio.apellido,
+          direccion: dto.envio.direccion,
+          telefono: dto.envio.telefono,
+        },
+        tarjeta: {
+          marca: dto.tarjeta.marca,
+          ultimos4: dto.tarjeta.ultimos4,
+        },
       };
     } catch (error) {
       await session.abortTransaction();

@@ -21,7 +21,7 @@ const Navbar = () => {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const { state, logout } = useAuth();
+  const { state, logout, tieneRol } = useAuth();
   const { isAutenticado, isCargando, usuario } = state;
 
   const { categorias } = useCategorias();

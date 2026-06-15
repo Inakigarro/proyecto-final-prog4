@@ -1,36 +1,40 @@
 /**
- * localStorageMiddleware — persiste el carrito en localStorage.
+ * localStorageMiddleware — persiste el carrito en localStorage por usuario.
  *
- * Se ejecuta después de cada action y vuelca state.cart.items en
- * localStorage bajo la key 'techpoint:cart'. Mantiene la misma key y
- * formato que la implementación previa con Context, así no rompemos
- * carritos existentes de usuarios actuales.
+ * La key se scopea con el ID del usuario autenticado:
+ *   - Logueado: 'techpoint:cart:{userId}'
+ *   - Sin sesión: 'techpoint:cart:guest'
  *
- * No persiste mientras el estado no esté hidratado (evita pisar el
- * storage con el array vacío del estado inicial antes de leerlo).
+ * Solo persiste en acciones del carrito (prefijo 'cart/') para evitar
+ * que al despachar acciones de auth se pise el storage del usuario
+ * incorrecto durante la transición de sesión.
  */
-
 import type { Middleware } from '@reduxjs/toolkit';
 import type { RootState } from './index';
 
-export const STORAGE_KEY = 'techpoint:cart';
+/** Construye la key de localStorage para el usuario dado. */
+export function getStorageKey(userId?: string): string {
+  return userId ? `techpoint:cart:${userId}` : 'techpoint:cart:guest';
+}
 
 export const localStorageMiddleware: Middleware<unknown, RootState> =
   (storeApi) => (next) => (action) => {
     const result = next(action);
+
+    // Solo persistir en acciones del carrito
+    const actionType = (action as { type?: string }).type ?? '';
+    if (!actionType.startsWith('cart/')) return result;
+
     const state = storeApi.getState();
 
-    // Solo persistir cuando el estado ya esté hidratado, para no pisar
-    // el contenido de localStorage con el array vacío inicial.
-    if (state.cart.hidratado && typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify(state.cart.items)
-        );
-      } catch {
-        // Storage lleno o deshabilitado, silenciamos.
-      }
+    // No pisar storage antes de hidratar
+    if (!state.cart.hidratado || typeof window === 'undefined') return result;
+
+    try {
+      const key = getStorageKey(state.auth.usuario?.id);
+      window.localStorage.setItem(key, JSON.stringify(state.cart.items));
+    } catch {
+      // Storage lleno o deshabilitado, silenciamos.
     }
 
     return result;
