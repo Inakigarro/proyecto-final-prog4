@@ -13,7 +13,7 @@ import { useCategorias } from "./hooks/useCategorias";
 
 const enlacesPrincipales: EnlacePrincipal[] = [
   { etiqueta: "Promociones", ruta: "/promociones" },
-  { etiqueta: "Quiénes somos", ruta: "/test-connection" },
+  { etiqueta: "Quiénes somos", ruta: "/quienes-somos" },
 ];
 
 const Navbar = () => {

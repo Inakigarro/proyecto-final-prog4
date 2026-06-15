@@ -68,6 +68,7 @@ Para datos públicos en Server Components:
 | `/search-result` | `ListaResultadosProductos` | Implementado |
 | `/promociones` | `app/promociones/page.tsx` | Implementado |
 | `/promociones/[id]` | `app/promociones/[id]/page.tsx` | Implementado |
+| `/quienes-somos` | `app/quienes-somos/page.tsx` | Implementado |
 | `/dashboard` | `app/dashboard/layout.tsx` + `page.tsx` | Implementado (solo rol `dueno`) |
 | `/dashboard/productos` | `app/dashboard/productos/page.tsx` | Implementado |
 | `/dashboard/categorias` | `app/dashboard/categorias/page.tsx` | Implementado |
