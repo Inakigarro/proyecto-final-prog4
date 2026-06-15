@@ -79,15 +79,25 @@ export const crearUserController = (servicio: IUserService) => ({
   },
 
   /**
-   * Actualiza el perfil propio del usuario autenticado.
-   * Solo se permite modificar el teléfono — el resto de datos personales son
-   * de solo lectura para usuarios comunes.
+   * Actualiza los datos personales del usuario autenticado.
+   * No permite cambiar roles, activo ni password por esta vía.
    */
   actualizarPerfil: async (req: RequestConUsuario, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { telefono } = req.body as { telefono?: string };
-      // Un string vacío significa "limpiar" el teléfono almacenado
-      const usuario = await servicio.actualizar(req.usuario!.id, { telefono });
+      const { nombre, apellido, email, direccion, telefono } = req.body as {
+        nombre?: string;
+        apellido?: string;
+        email?: string;
+        direccion?: string;
+        telefono?: string;
+      };
+      const usuario = await servicio.actualizar(req.usuario!.id, {
+        nombre,
+        apellido,
+        email,
+        direccion,
+        telefono,
+      });
       if (!usuario) {
         res.status(404).json({ message: 'Usuario no encontrado' });
         return;

@@ -27,7 +27,7 @@ import {
   cerrarDrawer as cerrarDrawerAction,
   hidratar as hidratarAction,
 } from '@/store/cartSlice';
-import { STORAGE_KEY } from '@/store/localStorageMiddleware';
+import { getStorageKey } from '@/store/localStorageMiddleware';
 import type { CartItem } from '@/lib/cart-types';
 import type { CartState } from '@/store/cartSlice';
 
@@ -49,20 +49,30 @@ interface CartContextValue {
 }
 
 
-// Componente interno: hidrata el store desde localStorage al montar.
+// Componente interno: hidrata el store desde localStorage al montar
+// y cada vez que cambia el usuario autenticado.
 
 
 /**
- * Lee el carrito persistido en localStorage y dispara la acción `hidratar`
- * una sola vez al montar. Vive dentro del <ReduxProvider> para que pueda
- * usar useAppDispatch.
+ * Lee el carrito persistido en localStorage para el usuario actual y
+ * dispara la acción `hidratar`. Se re-ejecuta cuando el usuario cambia
+ * (login / logout) para cargar el carrito correcto.
+ *
+ * Espera a que auth termine de cargar (isCargando === false) para no
+ * hidratar desde la key guest mientras se verifica el refresh token.
  */
 function CartHidratator() {
   const dispatch = useAppDispatch();
+  const userId = useAppSelector((s) => s.auth.usuario?.id);
+  const authCargando = useAppSelector((s) => s.auth.isCargando);
 
   useEffect(() => {
+    // No hidratar mientras auth sigue verificando la sesión
+    if (authCargando) return;
+
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const key = getStorageKey(userId);
+      const raw = window.localStorage.getItem(key);
       const items = raw ? (JSON.parse(raw) as CartItem[]) : [];
       const itemsValidos = Array.isArray(items)
         ? items.filter(esCartItemValido)
@@ -71,7 +81,7 @@ function CartHidratator() {
     } catch {
       dispatch(hidratarAction([]));
     }
-  }, [dispatch]);
+  }, [dispatch, userId, authCargando]);
 
   return null;
 }

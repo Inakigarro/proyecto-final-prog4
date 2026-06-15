@@ -96,7 +96,7 @@
 
 ### Estado global
 - ✅ Redux Toolkit + Context API (patrón adaptador)
-- ✅ Persistencia en localStorage (carrito e refresh token)
+- ✅ Persistencia en localStorage (carrito e refresh tok`en)
 
 ---
 
