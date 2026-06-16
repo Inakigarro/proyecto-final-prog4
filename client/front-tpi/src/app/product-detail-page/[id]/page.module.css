@@ -480,6 +480,24 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+/* En mobile compactamos columnas y padding del comparador para que entren
+   más productos sin scroll lateral excesivo. El wrapper sigue siendo
+   overflow-x: auto como fallback. */
+@media (max-width: 600px) {
+  .comparadorFila {
+    grid-template-columns: 110px repeat(var(--col-count, 2), minmax(120px, 1fr));
+  }
+  .comparadorFila > * {
+    padding: 12px 10px;
+  }
+  .comparadorCeldaAtributo {
+    font-size: 0.72rem;
+  }
+  .comparadorHeader {
+    padding: 12px 14px;
+  }
+}
+
 .comparadorFila:last-child {
   border-bottom: none;
 }

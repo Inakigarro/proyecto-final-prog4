@@ -154,7 +154,7 @@
   color: var(--color-muted, #888);
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .fila {
     grid-template-columns: 1fr;
   }

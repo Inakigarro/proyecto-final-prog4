@@ -260,6 +260,12 @@
   }
 }
 
+@media (max-width: 480px) {
+  .checkout-pago-fila {
+    grid-template-columns: 1fr;
+  }
+}
+
 .checkout-pago-campo input {
   width: 100%;
   box-sizing: border-box;
