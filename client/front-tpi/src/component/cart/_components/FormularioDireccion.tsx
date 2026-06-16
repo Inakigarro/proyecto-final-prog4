@@ -1,5 +1,7 @@
 'use client';
 
+import { PROVINCIAS_ARGENTINA } from './provincias-argentina';
+
 /**
  * Datos de dirección manejados por el formulario.
  * Subconjunto de {@link import('@/lib/cart-types').DatosEnvioDto} con solo
@@ -171,16 +173,28 @@ const FormularioDireccion = ({
 
       <div className="checkout-envio-campo">
         <label htmlFor="envio-provincia">Provincia</label>
-        <input
+        <select
           id="envio-provincia"
-          type="text"
           value={valores.provincia}
           onChange={(e) => onChange('provincia', e.target.value)}
           onBlur={() => onBlur('provincia')}
-          placeholder="Entre Ríos"
-          autoComplete="address-level1"
-          readOnly={soloLectura}
-        />
+          disabled={soloLectura}
+        >
+          <option value="">Elegí una provincia</option>
+          {PROVINCIAS_ARGENTINA.map((nombre) => (
+            <option key={nombre} value={nombre}>
+              {nombre}
+            </option>
+          ))}
+          {/* Fallback: si el valor cargado no matchea ninguna canónica
+              (típicamente direcciones viejas con strings raros), lo mostramos
+              como opción inválida para que el usuario lo reemplace. */}
+          {valores.provincia && !PROVINCIAS_ARGENTINA.includes(valores.provincia) && (
+            <option value={valores.provincia}>
+              {valores.provincia} (revisar)
+            </option>
+          )}
+        </select>
         {mensajeError('provincia', tocados, errores) && (
           <span className="checkout-envio-error">{mensajeError('provincia', tocados, errores)}</span>
         )}

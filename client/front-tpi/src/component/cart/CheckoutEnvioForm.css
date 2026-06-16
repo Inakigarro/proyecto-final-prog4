@@ -105,6 +105,11 @@
   box-shadow: 0 0 0 2px rgba(204, 148, 118, 0.25);
 }
 
+.checkout-envio-campo select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* Variante de campo angosto para piso, depto, número, CP */
 .checkout-envio-campo--corto {
   max-width: 100%;

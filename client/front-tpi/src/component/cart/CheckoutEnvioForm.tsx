@@ -24,6 +24,7 @@ import CamposContacto, {
   type DatosContacto,
   type ErroresContacto,
 } from './_components/CamposContacto';
+import { normalizarProvincia } from './_components/provincias-argentina';
 import './CheckoutEnvioForm.css';
 
 interface CheckoutEnvioFormProps {
@@ -153,7 +154,7 @@ const CheckoutEnvioForm = ({
       piso: primera.piso ?? '',
       departamento: primera.departamento ?? '',
       ciudad: primera.ciudad,
-      provincia: primera.provincia,
+      provincia: normalizarProvincia(primera.provincia),
       codigoPostal: primera.codigoPostal,
     });
     // Solo cuando llegan las direcciones por primera vez
@@ -256,7 +257,7 @@ const CheckoutEnvioForm = ({
       piso: elegida.piso ?? '',
       departamento: elegida.departamento ?? '',
       ciudad: elegida.ciudad,
-      provincia: elegida.provincia,
+      provincia: normalizarProvincia(elegida.provincia),
       codigoPostal: elegida.codigoPostal,
     });
   };
