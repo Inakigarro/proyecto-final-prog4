@@ -50,7 +50,7 @@ export default function SliderPage() {
     setCargando(true);
     setError(null);
     try {
-      const res = await apiFetch<SlideDashboard[]>('/api/dashboard/slides');
+      const res = await apiFetch<SlideDashboard[]>('/api/slides');
       setDatos(res);
     } catch (err) {
       setDatos([]);
@@ -67,7 +67,7 @@ export default function SliderPage() {
     const id = idAEliminar;
     setIdAEliminar(null);
     try {
-      await apiFetch(`/api/dashboard/slides/${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/slides/${id}`, { method: 'DELETE' });
       await cargar();
     } catch (err) {
       const mensaje = err instanceof Error ? err.message : 'No se pudo eliminar el slide.';
