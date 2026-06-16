@@ -48,6 +48,31 @@ export interface ConflictoLoginCarrito {
   userItems: CartItem[];
 }
 
+/** Decisión que el usuario toma en el modal de conflicto. */
+export type EleccionConflicto = 'guest' | 'user' | 'merge';
+
+/**
+ * Combina dos carritos sumando cantidades para items repetidos (mismo itemId).
+ * Para los campos no acumulables (nombre, precio) usa el valor de `guest` cuando
+ * el item está en ambos, asumiendo que el armado más reciente prevalece.
+ * Los items presentes en uno solo se incluyen tal cual.
+ */
+export function combinarCarritos(guest: CartItem[], user: CartItem[]): CartItem[] {
+  const mapa = new Map<string, CartItem>();
+  for (const item of user) {
+    mapa.set(item.itemId, { ...item });
+  }
+  for (const item of guest) {
+    const existente = mapa.get(item.itemId);
+    if (existente) {
+      mapa.set(item.itemId, { ...item, cantidad: existente.cantidad + item.cantidad });
+    } else {
+      mapa.set(item.itemId, { ...item });
+    }
+  }
+  return Array.from(mapa.values());
+}
+
 /** Estado interno del carrito. */
 export interface CartState {
   items: CartItem[];
@@ -210,17 +235,27 @@ const cartSlice = createSlice({
     },
 
     /**
-     * Resuelve el conflicto reemplazando el carrito con el snapshot elegido
-     * por el usuario ('guest' = lo que arrastraba sin sesión, 'user' = lo
-     * guardado de la sesión anterior). La limpieza del localStorage de la
-     * key descartada la hace el componente del modal.
+     * Resuelve el conflicto con la opción elegida por el usuario:
+     * - 'guest' → solo el carrito armado sin sesión.
+     * - 'user' → solo el carrito guardado de la sesión anterior.
+     * - 'merge' → combina ambos sumando cantidades en items repetidos.
+     *
+     * La limpieza del localStorage la hace el componente del modal.
      */
-    resolverConflictoLogin(state, action: PayloadAction<'guest' | 'user'>) {
+    resolverConflictoLogin(state, action: PayloadAction<EleccionConflicto>) {
       if (!state.conflictoLogin) return;
-      const elegidos = action.payload === 'guest'
-        ? state.conflictoLogin.guestItems
-        : state.conflictoLogin.userItems;
-      state.items = elegidos;
+      const { guestItems, userItems } = state.conflictoLogin;
+      switch (action.payload) {
+        case 'guest':
+          state.items = guestItems;
+          break;
+        case 'user':
+          state.items = userItems;
+          break;
+        case 'merge':
+          state.items = combinarCarritos(guestItems, userItems);
+          break;
+      }
       state.conflictoLogin = null;
     },
   },

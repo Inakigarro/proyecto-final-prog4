@@ -5,8 +5,8 @@ import styles from './OpcionCarrito.module.css';
 
 interface OpcionCarritoProps {
   /** Id único de esta opción (se usa como value del radio). */
-  id: 'guest' | 'user';
-  /** Texto del encabezado de la tarjeta ("Carrito actual" / "Carrito guardado"). */
+  id: 'guest' | 'user' | 'merge';
+  /** Texto del encabezado de la tarjeta ("Carrito actual" / "Carrito guardado" / "Combinar ambos"). */
   titulo: string;
   /** Texto secundario aclaratorio bajo el título. */
   descripcion: string;

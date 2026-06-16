@@ -15,7 +15,7 @@
   border: 1px solid var(--color-dark-border);
   border-radius: 16px;
   width: 100%;
-  max-width: 720px;
+  max-width: 1040px;
   max-height: calc(100vh - 32px);
   display: flex;
   flex-direction: column;
@@ -44,7 +44,7 @@
 
 .conflicto-carrito-opciones {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   padding: 20px 24px;
   overflow-y: auto;
@@ -88,7 +88,7 @@
   to   { transform: translateY(0);   opacity: 1; }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 960px) {
   .conflicto-carrito-opciones {
     grid-template-columns: 1fr;
   }

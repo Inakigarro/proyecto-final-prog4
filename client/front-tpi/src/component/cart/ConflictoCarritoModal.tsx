@@ -13,14 +13,16 @@
  *    siempre).
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { resolverConflictoLogin as resolverAction } from '@/store/cartSlice';
+import {
+  resolverConflictoLogin as resolverAction,
+  combinarCarritos,
+  type EleccionConflicto,
+} from '@/store/cartSlice';
 import { getStorageKey } from '@/store/localStorageMiddleware';
 import OpcionCarrito from './_components/OpcionCarrito';
 import './ConflictoCarritoModal.css';
-
-type OpcionElegida = 'guest' | 'user';
 
 const ConflictoCarritoModal = () => {
   const dispatch = useAppDispatch();
@@ -28,7 +30,13 @@ const ConflictoCarritoModal = () => {
   const userId = useAppSelector((s) => s.auth.usuario?.id);
 
   /** Opción seleccionada por el usuario. Empieza null para forzar la elección. */
-  const [eleccion, setEleccion] = useState<OpcionElegida | null>(null);
+  const [eleccion, setEleccion] = useState<EleccionConflicto | null>(null);
+
+  // Preview del carrito combinado, derivado solo si hay conflicto activo.
+  const itemsCombinados = useMemo(() => {
+    if (!conflicto) return [];
+    return combinarCarritos(conflicto.guestItems, conflicto.userItems);
+  }, [conflicto]);
 
   // Al reabrirse el modal (nuevo conflicto), resetear la elección previa.
   useEffect(() => {
@@ -40,9 +48,13 @@ const ConflictoCarritoModal = () => {
   const confirmar = () => {
     if (!eleccion || !userId) return;
 
-    const itemsElegidos = eleccion === 'guest'
-      ? conflicto.guestItems
-      : conflicto.userItems;
+    const itemsElegidos = (() => {
+      switch (eleccion) {
+        case 'guest': return conflicto.guestItems;
+        case 'user': return conflicto.userItems;
+        case 'merge': return itemsCombinados;
+      }
+    })();
 
     try {
       const userKey = getStorageKey(userId);
@@ -89,6 +101,14 @@ const ConflictoCarritoModal = () => {
             items={conflicto.userItems}
             seleccionado={eleccion === 'user'}
             alSeleccionar={() => setEleccion('user')}
+          />
+          <OpcionCarrito
+            id="merge"
+            titulo="Combinar ambos"
+            descripcion="Suma las cantidades de los productos repetidos"
+            items={itemsCombinados}
+            seleccionado={eleccion === 'merge'}
+            alSeleccionar={() => setEleccion('merge')}
           />
         </div>
 
