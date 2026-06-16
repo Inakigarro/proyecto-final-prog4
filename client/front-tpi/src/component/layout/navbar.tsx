@@ -9,11 +9,11 @@ import { useAuth } from "@/context/AuthContext";
 import BarraBusqueda from "./BarraBusqueda";
 import CategoriasMenu from "./CategoriasMenu";
 import MenuMovilDrawer, { type EnlacePrincipal } from "./MenuMovilDrawer";
-import { useCategorias } from "./useCategorias";
+import { useCategorias } from "./hooks/useCategorias";
 
 const enlacesPrincipales: EnlacePrincipal[] = [
   { etiqueta: "Promociones", ruta: "/promociones" },
-  { etiqueta: "Quiénes somos", ruta: "/test-connection" },
+  { etiqueta: "Quiénes somos", ruta: "/quienes-somos" },
 ];
 
 const Navbar = () => {
@@ -21,10 +21,16 @@ const Navbar = () => {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const { state, logout, tieneRol } = useAuth();
+  const { state, logout, tieneRol, esSuperAdmin } = useAuth();
   const { isAutenticado, isCargando, usuario } = state;
 
   const { categorias } = useCategorias();
+
+  /**
+   * El dashboard de gestión está disponible para `dueno` (su rol principal)
+   * y también para `superadmin` (que tiene acceso a todo el sistema).
+   */
+  const puedeVerDashboard = tieneRol('dueno') || esSuperAdmin();
 
   // Cerrar el menú al hacer click fuera
   useEffect(() => {
@@ -91,7 +97,23 @@ const Navbar = () => {
                   >
                     Mi perfil
                   </Link>
-                  {tieneRol('dueno') && (
+                  <Link
+                    href="/perfil?tab=direcciones"
+                    className="navbar-menu-item"
+                    role="menuitem"
+                    onClick={() => setMenuAbierto(false)}
+                  >
+                    Mis direcciones
+                  </Link>
+                  <Link
+                    href="/perfil?tab=compras"
+                    className="navbar-menu-item"
+                    role="menuitem"
+                    onClick={() => setMenuAbierto(false)}
+                  >
+                    Mis compras
+                  </Link>
+                  {puedeVerDashboard && (
                     <Link
                       href="/dashboard"
                       className="navbar-menu-item"

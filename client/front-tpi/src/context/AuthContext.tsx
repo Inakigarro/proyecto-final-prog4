@@ -21,6 +21,7 @@ import {
   cargaCompleta as cargaCompletaAction,
   logout as logoutAction,
 } from '@/store/authSlice';
+import { vaciar as vaciarCartAction } from '@/store/cartSlice';
 import { setAccessToken } from '@/lib/api';
 
 // Re-exportar tipos del slice para que los consumidores no cambien sus imports.
@@ -49,7 +50,8 @@ async function fetchPerfil(accessToken: string): Promise<UsuarioPerfil> {
 /**
  * Intenta renovar la sesión usando el refresh token guardado en localStorage.
  * Si tiene éxito, actualiza el access token en memoria y despacha el perfil.
- * Si falla (token vencido/inválido), cierra la sesión.
+ * Si falla (token vencido/inválido), cierra la sesión y limpia el carrito
+ * asociado a la sesión que estaba intentando renovarse.
  * Al finalizar con éxito, programa el próximo refresh automático.
  */
 async function intentarRefresh(dispatch: AppDispatch): Promise<void> {
@@ -86,6 +88,9 @@ async function intentarRefresh(dispatch: AppDispatch): Promise<void> {
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     setAccessToken(null);
     if (refreshTimer) clearTimeout(refreshTimer);
+    // Limpiar el carrito asociado a la sesión antes de cerrarla: el middleware
+    // persiste el [] en la key del usuario actual, dejando su storage limpio.
+    dispatch(vaciarCartAction());
     dispatch(logoutAction());
   }
 }
@@ -211,7 +216,9 @@ export function useAuth(): AuthContextValue {
 
   /**
    * Cierra la sesión. Intenta revocar el refresh token en el backend (best effort)
-   * y siempre limpia el estado local.
+   * y siempre limpia el estado local. Además vacía el carrito asociado a la
+   * sesión: el middleware persiste el array vacío en `techpoint:cart:{userId}`
+   * dejando el storage del usuario limpio para la próxima vez que entre.
    */
   const logout = useCallback(async (): Promise<void> => {
     const storedRefresh = localStorage.getItem(REFRESH_TOKEN_KEY);
@@ -227,6 +234,10 @@ export function useAuth(): AuthContextValue {
         // Ignorar errores de red — siempre cerramos la sesión localmente
       }
     }
+
+    // Vaciar el cart ANTES de cerrar la sesión: con el userId todavía vigente
+    // el middleware persiste `[]` en la key del usuario, dejándola limpia.
+    dispatch(vaciarCartAction());
 
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     setAccessToken(null);

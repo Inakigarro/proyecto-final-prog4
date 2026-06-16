@@ -68,6 +68,7 @@ Para datos públicos en Server Components:
 | `/search-result` | `ListaResultadosProductos` | Implementado |
 | `/promociones` | `app/promociones/page.tsx` | Implementado |
 | `/promociones/[id]` | `app/promociones/[id]/page.tsx` | Implementado |
+| `/quienes-somos` | `app/quienes-somos/page.tsx` | Implementado |
 | `/dashboard` | `app/dashboard/layout.tsx` + `page.tsx` | Implementado (solo rol `dueno`) |
 | `/dashboard/productos` | `app/dashboard/productos/page.tsx` | Implementado |
 | `/dashboard/categorias` | `app/dashboard/categorias/page.tsx` | Implementado |
@@ -86,4 +87,4 @@ Para datos públicos en Server Components:
 ## Pendiente
 
 - **Checkout**: conectar `handleConfirmarCompra` en `CartPageClient.tsx` a `POST /api/cart/checkout` y crear página de confirmación de orden.
-- **Historial de órdenes**: sin UI — falta página `/mis-ordenes` y los endpoints `GET /api/orders/me` en el backend.
+- **Historial de órdenes**: implementado dentro del perfil en la pestaña "Mis compras" (`/perfil?tab=compras`); listado de cards + detalle por orden via query param `?orden=ID`. No hay ruta standalone `/mis-ordenes`.

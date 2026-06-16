@@ -6,9 +6,20 @@ import { useAppSelector } from '@/store/hooks';
 import DashboardSidebar from '@/component/dashboard/DashboardSidebar';
 import styles from './dashboard.module.css';
 
+/**
+ * Roles autorizados para acceder al panel de gestión.
+ * - `dueno`: gestiona catálogo, categorías y promociones (rol principal del panel).
+ * - `superadmin`: tiene acceso total al sistema; el backend admite sus requests
+ *   sobre los mismos endpoints CRUD, así que tiene sentido que también vea la UI.
+ */
+const ROLES_AUTORIZADOS = ['dueno', 'superadmin'] as const;
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isAutenticado, isCargando, usuario } = useAppSelector((s) => s.auth);
+
+  const tieneAcceso =
+    usuario?.roles.some((r) => (ROLES_AUTORIZADOS as readonly string[]).includes(r.nombre)) ?? false;
 
   useEffect(() => {
     if (isCargando) return;
@@ -16,16 +27,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.replace('/login?redirect=/dashboard');
       return;
     }
-    const esDueno = usuario?.roles.some((r) => r.nombre === 'dueno') ?? false;
-    if (!esDueno) {
+    if (!tieneAcceso) {
       router.replace('/');
     }
-  }, [isCargando, isAutenticado, usuario, router]);
+  }, [isCargando, isAutenticado, tieneAcceso, router]);
 
   if (isCargando || !isAutenticado) return null;
-
-  const esDueno = usuario?.roles.some((r) => r.nombre === 'dueno') ?? false;
-  if (!esDueno) return null;
+  if (!tieneAcceso) return null;
 
   return (
     <div className={styles.contenedor}>

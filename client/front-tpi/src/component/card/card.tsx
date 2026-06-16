@@ -13,6 +13,14 @@ import "./card.css";
 // Breakpoint a partir del cual el drawer lateral reemplaza la navegación directa.
 const MOBILE_BREAKPOINT = 768;
 
+/**
+ * Formatea un precio en ARS sin decimales. Para montos grandes (productos
+ * de varios millones) los centavos no aportan información y ocupan espacio
+ * en cards angostas.
+ */
+const formatearPrecio = (valor: number): string =>
+  Math.round(valor).toLocaleString("es-AR");
+
 export type CardProductProps = {
   /** ID único del producto — se usa como itemId en el carrito. */
   itemId: string;
@@ -113,15 +121,15 @@ const CardProduct = ({
             {hayPrecioTachado ? (
               <>
                 <span className="card-precio-tachado">
-                  ${precioUnitario.toLocaleString("es-AR")}
+                  ${formatearPrecio(precioUnitario)}
                 </span>
                 <span className="card-precio card-precio-descuento">
-                  ${precioConDescuento.toLocaleString("es-AR")}
+                  ${formatearPrecio(precioConDescuento)}
                 </span>
               </>
             ) : (
               <span className="card-precio">
-                ${precioUnitario.toLocaleString("es-AR")}
+                ${formatearPrecio(precioUnitario)}
               </span>
             )}
           </div>

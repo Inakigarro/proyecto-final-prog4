@@ -86,7 +86,7 @@ export default function RelatedSlider({
                 itemId={producto.id}
                 title={producto.nombre}
                 precioUnitario={producto.precioUnitario}
-                imageSrc={producto.imageSrc}
+                imageSrc={producto.imagen}
                 categoria={producto.category[0]?.nombre}
                 promocion={promocionAplicable}
                 cucarda={producto.cucarda}

@@ -15,6 +15,7 @@ const TABS: TabDef[] = [
   { id: 'datos', label: 'Datos personales' },
   { id: 'direcciones', label: 'Mis direcciones' },
   { id: 'compras', label: 'Mis compras' },
+  { id: 'seguridad', label: 'Seguridad' },
 ];
 
 interface PerfilTabsProps {

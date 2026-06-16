@@ -1,0 +1,173 @@
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tituloSeccion {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  margin: 0;
+}
+
+.subtitulo {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.etiqueta {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 1rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.inputCodigo {
+  text-align: center;
+  letter-spacing: 0.4em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.ayuda {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+
+.aviso {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  color: var(--color-warning);
+  font-size: 0.9rem;
+}
+
+.aviso strong {
+  color: var(--color-primary-dark);
+}
+
+.error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.acciones {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.botonPrimario {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 6px;
+  background: var(--color-primary);
+  color: var(--color-surface);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.botonPrimario:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.botonPrimario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.botonSecundario {
+  padding: 10px 22px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.botonSecundario:hover:not(:disabled) {
+  background: var(--color-bg);
+  border-color: var(--color-primary);
+}
+
+.botonSecundario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.exitoCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success);
+  color: var(--color-success-dark);
+  padding: 20px 24px;
+  border-radius: 8px;
+}
+
+.exitoTitulo {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.exitoSubtitulo {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}

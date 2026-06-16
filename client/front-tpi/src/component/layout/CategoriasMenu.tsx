@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import styles from "./CategoriasMenu.module.css";
-import { urlBusquedaPorCategoria, type Categoria } from "./useCategorias";
+import { urlBusquedaPorCategoria, type Categoria } from "./hooks/useCategorias";
 
 interface CategoriasMenuProps {
   categorias: Categoria[];

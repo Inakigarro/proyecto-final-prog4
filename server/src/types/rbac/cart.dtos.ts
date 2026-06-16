@@ -23,13 +23,38 @@ export interface ValidarCarritoDto {
 
 /**
  * Datos de envío enviados en el checkout.
+ *
+ * El campo `direccionId` es opcional: si está presente y pertenece al usuario,
+ * el backend reutiliza esa Address (no crea ni dedupea) y los demás campos
+ * funcionan solo como snapshot dentro de la PurchaseOrder. Si no se envía,
+ * el backend hace upsert: busca una Address activa con los mismos datos para
+ * el usuario y, si no existe, crea una nueva.
  */
 export interface DatosEnvioDto {
+  /** Nombre de quien recibe el pedido (puede diferir del titular). */
   nombre: string;
+  /** Apellido de quien recibe el pedido. */
   apellido: string;
-  direccion: string;
-  /** 10 dígitos: código de área + número */
+  /** Teléfono de contacto: 10 dígitos (código de área + número, sin 0 ni 15). */
   telefono: string;
+
+  /** Calle de la dirección de envío. */
+  calle: string;
+  /** Número de puerta. */
+  numero: string;
+  /** Piso del edificio (opcional). */
+  piso?: string;
+  /** Departamento dentro del piso (opcional). */
+  departamento?: string;
+  /** Ciudad o localidad. */
+  ciudad: string;
+  /** Provincia. */
+  provincia: string;
+  /** Código postal. */
+  codigoPostal: string;
+
+  /** Id de una dirección ya guardada del usuario; si viene, el backend la reusa. */
+  direccionId?: string;
 }
 
 /**
@@ -53,7 +78,10 @@ export interface CheckoutDto {
   descuentos?: number[];
   envio: DatosEnvioDto;
   tarjeta: DatosTarjetaDto;
-  /** Si true, guarda dirección y teléfono en el perfil del usuario. */
+  /**
+   * Si true, el teléfono se persiste también en el perfil del usuario.
+   * La dirección siempre se guarda como Address (con dedupe).
+   */
   guardarDatosEnPerfil?: boolean;
 }
 
@@ -123,6 +151,24 @@ export interface DetalleOrdenResponse {
 }
 
 /**
+ * Snapshot de envío incluido en la respuesta del checkout.
+ * No incluye `direccionId` porque el cliente ya sabe qué eligió; este es el
+ * snapshot histórico de los datos exactos que viajaron con la orden.
+ */
+export interface EnvioOrdenResponse {
+  nombre: string;
+  apellido: string;
+  telefono: string;
+  calle: string;
+  numero: string;
+  piso?: string;
+  departamento?: string;
+  ciudad: string;
+  provincia: string;
+  codigoPostal: string;
+}
+
+/**
  * Respuesta del endpoint POST /api/cart/checkout.
  */
 export interface CheckoutResponse {
@@ -133,6 +179,6 @@ export interface CheckoutResponse {
   descuentos: number[];
   montoTotal: number;
   fechaCreacion: Date;
-  envio: DatosEnvioDto;
+  envio: EnvioOrdenResponse;
   tarjeta: DatosTarjetaDto;
 }

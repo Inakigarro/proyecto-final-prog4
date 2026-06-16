@@ -1,0 +1,95 @@
+.conflicto-carrito-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: conflicto-fade-in 0.2s ease;
+}
+
+.conflicto-carrito-modal {
+  background: var(--color-dark-surface);
+  border: 1px solid var(--color-dark-border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 1040px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  animation: conflicto-pop-in 0.2s ease;
+}
+
+.conflicto-carrito-encabezado {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--color-dark-border);
+}
+
+.conflicto-carrito-titulo {
+  margin: 0 0 6px 0;
+  font-size: 20px;
+  color: var(--color-dark-text);
+}
+
+.conflicto-carrito-subtitulo {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-dark-muted);
+  line-height: 1.5;
+}
+
+.conflicto-carrito-opciones {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+
+.conflicto-carrito-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--color-dark-border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.conflicto-carrito-confirmar {
+  padding: 10px 20px;
+  background: var(--color-highlight);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.conflicto-carrito-confirmar:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.conflicto-carrito-confirmar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes conflicto-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes conflicto-pop-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+@media (max-width: 960px) {
+  .conflicto-carrito-opciones {
+    grid-template-columns: 1fr;
+  }
+}

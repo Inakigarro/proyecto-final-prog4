@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./MenuMovilDrawer.module.css";
-import { urlBusquedaPorCategoria, type Categoria } from "./useCategorias";
+import { urlBusquedaPorCategoria, type Categoria } from "./hooks/useCategorias";
 
 export interface EnlacePrincipal {
   etiqueta: string;

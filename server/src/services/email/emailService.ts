@@ -1,59 +1,228 @@
-import nodemailer from 'nodemailer';
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-});
-
-const EMAIL_FROM = process.env.EMAIL_FROM ?? 'TechPoint <noreply@techpoint.com>';
+import nodemailer, { Transporter } from 'nodemailer';
+import { logger } from '../../config/logger';
 
 /**
- * Envía el email de recuperación de contraseña con el enlace que contiene el token.
+ * Transporter SMTP perezoso. Se construye en la primera llamada para que el
+ * servidor pueda arrancar aunque falten las variables de email.
+ *
+ * Configurado para Brevo (smtp-relay.brevo.com:587) pero funciona contra
+ * cualquier proveedor SMTP: solo cambian las variables de entorno.
+ */
+let _transporter: Transporter | null = null;
+
+function obtenerTransporter(): Transporter {
+  if (_transporter) return _transporter;
+
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT;
+  const user = process.env.SMTP_USER;
+  const password = process.env.SMTP_PASSWORD;
+
+  if (!host || !port || !user || !password) {
+    throw new Error(
+      'Faltan variables SMTP. Definí SMTP_HOST, SMTP_PORT, SMTP_USER y SMTP_PASSWORD en el .env.'
+    );
+  }
+
+  _transporter = nodemailer.createTransport({
+    host,
+    port: Number(port),
+    secure: Number(port) === 465,
+    auth: { user, pass: password },
+  });
+
+  return _transporter;
+}
+
+function obtenerRemitente(): string {
+  const from = process.env.EMAIL_FROM?.trim();
+  if (!from) {
+    throw new Error('EMAIL_FROM no está definida. Configurala en el .env con el sender verificado del proveedor SMTP.');
+  }
+  return from;
+}
+
+function urlFrontend(): string {
+  return process.env.FRONTEND_URL ?? '#';
+}
+
+/**
+ * Envuelve el contenido específico del email en el layout base común a todos
+ * los mails transaccionales (wrapper, separador y footer de TechPoint).
+ */
+function envolverHtml(contenido: string): string {
+  return `
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+      ${contenido}
+      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+      <p style="color: #aaa; font-size: 12px;">TechPoint — Tecnicatura en Programación</p>
+    </div>
+  `;
+}
+
+/**
+ * Render de botón CTA con estilos consistentes en todos los mails.
+ */
+function boton(href: string, texto: string, color: string = '#566965'): string {
+  return `
+    <a
+      href="${href}"
+      style="
+        display: inline-block;
+        margin: 24px 0;
+        padding: 12px 24px;
+        background-color: ${color};
+        color: #fff;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: bold;
+      "
+    >
+      ${texto}
+    </a>
+  `;
+}
+
+/**
+ * Helper único de envío. Centraliza el transporter, el remitente y el layout
+ * base para que cada función solo arme su contenido específico.
+ */
+async function enviarEmail(destinatario: string, subject: string, contenido: string): Promise<void> {
+  await obtenerTransporter().sendMail({
+    from: obtenerRemitente(),
+    to: destinatario,
+    subject,
+    html: envolverHtml(contenido),
+  });
+}
+
+/**
+ * Email de recuperación de contraseña con enlace al reset.
  * El token expira en 1 hora (definido en el modelo PasswordResetToken).
  */
 export async function enviarEmailResetPassword(
   destinatario: string,
   token: string
 ): Promise<void> {
-  const enlace = `${process.env.FRONTEND_URL}/recuperar-contrasena?token=${token}`;
+  const enlace = `${urlFrontend()}/recuperar-contrasena?token=${token}`;
 
-  await transporter.sendMail({
-    from: EMAIL_FROM,
-    to: destinatario,
-    subject: 'Recuperación de contraseña — TechPoint',
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
-        <h2 style="color: #1c2826;">Recuperá tu contraseña</h2>
-        <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en TechPoint.</p>
-        <p>Hacé clic en el botón para crear una nueva contraseña. El enlace es válido por <strong>1 hora</strong>.</p>
-        <a
-          href="${enlace}"
-          style="
-            display: inline-block;
-            margin: 24px 0;
-            padding: 12px 24px;
-            background-color: #cc9476;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: bold;
-          "
-        >
-          Restablecer contraseña
-        </a>
-        <p style="color: #888; font-size: 13px;">
-          Si no solicitaste este cambio, podés ignorar este email. Tu contraseña no será modificada.
-        </p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-        <p style="color: #aaa; font-size: 12px;">TechPoint — Tecnicatura en Programación</p>
+  await enviarEmail(
+    destinatario,
+    'Recuperación de contraseña — TechPoint',
+    `
+      <h2 style="color: #1c2826;">Recuperá tu contraseña</h2>
+      <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en TechPoint.</p>
+      <p>Hacé clic en el botón para crear una nueva contraseña. El enlace es válido por <strong>1 hora</strong>.</p>
+      ${boton(enlace, 'Restablecer contraseña', '#cc9476')}
+      <p style="color: #888; font-size: 13px;">
+        Si no solicitaste este cambio, podés ignorar este email. Tu contraseña no será modificada.
+      </p>
+    `
+  );
+}
+
+/**
+ * Código de 6 dígitos para confirmar el cambio de contraseña iniciado desde
+ * el perfil. Expira en 5 minutos. En desarrollo se loggea por consola para
+ * poder probar el flujo sin depender del email.
+ */
+export async function enviarEmailCodigoCambioPassword(
+  destinatario: string,
+  codigo: string
+): Promise<void> {
+  logger.info('Código de cambio de password generado', { destinatario, codigo });
+
+  await enviarEmail(
+    destinatario,
+    'Código de verificación — TechPoint',
+    `
+      <h2 style="color: #1c2826;">Confirmá el cambio de contraseña</h2>
+      <p>Recibimos una solicitud para cambiar la contraseña de tu cuenta en TechPoint.</p>
+      <p>Ingresá el siguiente código para confirmar el cambio. El código es válido por <strong>5 minutos</strong>.</p>
+      <div
+        style="
+          margin: 24px 0;
+          padding: 20px;
+          background-color: #f5efe8;
+          border: 1px solid #cc9476;
+          border-radius: 8px;
+          text-align: center;
+          font-family: monospace;
+          font-size: 32px;
+          letter-spacing: 8px;
+          font-weight: bold;
+          color: #1c2826;
+        "
+      >
+        ${codigo}
       </div>
-    `,
-  });
+      <p style="color: #888; font-size: 13px;">
+        Si no solicitaste este cambio, ignorá este email. Tu contraseña no será modificada.
+      </p>
+    `
+  );
+}
+
+/**
+ * Email de bienvenida tras el registro exitoso.
+ */
+export async function enviarEmailBienvenida(
+  destinatario: string,
+  nombre: string
+): Promise<void> {
+  await enviarEmail(
+    destinatario,
+    '¡Bienvenido a TechPoint!',
+    `
+      <h2 style="color: #1c2826;">¡Hola ${nombre}, te damos la bienvenida!</h2>
+      <p>Tu cuenta en TechPoint se creó correctamente. Ya podés iniciar sesión y empezar a explorar nuestro catálogo.</p>
+      <p>Algunos puntos para arrancar:</p>
+      <ul style="color: #2e3a37; padding-left: 20px;">
+        <li>Revisá nuestras promociones activas para no perderte ninguna oferta.</li>
+        <li>Desde "Mi perfil" podés cargar tu teléfono y administrar tus direcciones.</li>
+        <li>Si te olvidás la contraseña, podés recuperarla desde la pantalla de login.</li>
+      </ul>
+      ${boton(urlFrontend(), 'Ir a TechPoint')}
+      <p style="color: #888; font-size: 13px;">
+        Si no creaste vos esta cuenta, contactanos a la brevedad para que podamos revisarlo.
+      </p>
+    `
+  );
+}
+
+/**
+ * Aviso al usuario de que su contraseña fue cambiada con éxito. Funciona como
+ * señal de alerta si el cambio no fue iniciado por él.
+ */
+export async function enviarEmailCambioPasswordExitoso(
+  destinatario: string,
+  nombre: string
+): Promise<void> {
+  const enlaceLogin = `${urlFrontend()}/login`;
+
+  await enviarEmail(
+    destinatario,
+    'Tu contraseña fue actualizada — TechPoint',
+    `
+      <h2 style="color: #1c2826;">Hola ${nombre}, cambiamos tu contraseña</h2>
+      <p>Te avisamos que la contraseña de tu cuenta en TechPoint fue actualizada hace unos instantes.</p>
+      <p>Por seguridad, todas las sesiones abiertas en otros dispositivos fueron cerradas.</p>
+      <div
+        style="
+          margin: 24px 0;
+          padding: 16px;
+          background-color: #fff5ec;
+          border-left: 4px solid #cc9476;
+          border-radius: 4px;
+          color: #2e3a37;
+          font-size: 14px;
+        "
+      >
+        <strong>¿No fuiste vos?</strong> Cambiá la contraseña inmediatamente desde la opción "Olvidé mi contraseña" y contactanos para revisarlo.
+      </div>
+      ${boton(enlaceLogin, 'Ir a iniciar sesión')}
+    `
+  );
 }
 
 // ── Email de confirmación de compra ───────────────────────────────────────
@@ -108,8 +277,8 @@ export async function enviarEmailConfirmacionCompra(
 
   const ordenCorta = datos.ordenId.slice(-8).toUpperCase();
 
-  await transporter.sendMail({
-    from: EMAIL_FROM,
+  await obtenerTransporter().sendMail({
+    from: obtenerRemitente(),
     to: datos.destinatario,
     subject: `Confirmación de compra #${ordenCorta} — TechPoint`,
     html: `

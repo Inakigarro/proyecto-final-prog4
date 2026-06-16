@@ -11,6 +11,8 @@ import categoryRoutes from './routes/categoryRoutes';
 import cartRoutes from './routes/cartRoutes';
 import promotionRoutes from './routes/promotionRoutes';
 import addressRoutes from './routes/addressRoutes';
+import orderRoutes from './routes/orderRoutes';
+import slideRoutes from './routes/slideRoutes';
 
 /**
  * Crea y configura la aplicación Express.
@@ -25,7 +27,10 @@ export function crearApp() {
     credentials: true,
   }));
   app.use(helmet());
-  app.use(express.json());
+  // express.json() con límite generoso porque el endpoint POST /api/slides
+  // recibe el data URI base64 de la imagen en el body (hasta ~6.7MB con
+  // overhead para un archivo original de 5MB).
+  app.use(express.json({ limit: '10mb' }));
 
   app.get('/api', (_req, res) => {
     res.send('¡Bienvenido a la API de gestión de usuarios, roles y permisos!');
@@ -40,6 +45,8 @@ export function crearApp() {
   app.use('/api/cart',        cartRoutes);
   app.use('/api/promotions',  promotionRoutes);
   app.use('/api/addresses',   addressRoutes);
+  app.use('/api/orders',      orderRoutes);
+  app.use('/api/slides',      slideRoutes);
 
   app.use((_req, res) => {
     res.status(404).json({ message: 'Ruta no encontrada' });

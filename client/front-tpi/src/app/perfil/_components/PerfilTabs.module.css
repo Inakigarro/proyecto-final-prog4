@@ -39,3 +39,14 @@
     font-size: 0.9rem;
   }
 }
+
+@media (max-width: 480px) {
+  .contenedor {
+    gap: 2px;
+    margin-bottom: 16px;
+  }
+  .tab {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+}
