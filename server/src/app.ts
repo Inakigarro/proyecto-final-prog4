@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'path';
 import { errorHandler } from './middlewares/errorHandler';
 import authRoutes from './routes/authRoutes';
 import roleRoutes from './routes/roleRoutes';
@@ -12,6 +13,7 @@ import cartRoutes from './routes/cartRoutes';
 import promotionRoutes from './routes/promotionRoutes';
 import addressRoutes from './routes/addressRoutes';
 import orderRoutes from './routes/orderRoutes';
+import slideRoutes from './routes/slideRoutes';
 
 /**
  * Crea y configura la aplicación Express.
@@ -25,8 +27,18 @@ export function crearApp() {
     origin: process.env.ALLOWED_ORIGIN ?? 'http://localhost:3000',
     credentials: true,
   }));
-  app.use(helmet());
+  // crossOriginResourcePolicy: cross-origin permite que el cliente Next.js
+  // referencie las imágenes servidas por /uploads desde otro origen. Sin esto
+  // Helmet bloquea las requests con CORP.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(express.json());
+
+  // Servir las imágenes subidas (slides del home) como estáticos públicos.
+  // Las URLs absolutas devueltas por POST /api/slides/imagen apuntan acá.
+  app.use(
+    '/uploads',
+    express.static(path.resolve(__dirname, '..', 'public', 'uploads')),
+  );
 
   app.get('/api', (_req, res) => {
     res.send('¡Bienvenido a la API de gestión de usuarios, roles y permisos!');
@@ -42,6 +54,7 @@ export function crearApp() {
   app.use('/api/promotions',  promotionRoutes);
   app.use('/api/addresses',   addressRoutes);
   app.use('/api/orders',      orderRoutes);
+  app.use('/api/slides',      slideRoutes);
 
   app.use((_req, res) => {
     res.status(404).json({ message: 'Ruta no encontrada' });
