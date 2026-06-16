@@ -3,8 +3,13 @@
 /**
  * Stepper visual para el flujo de checkout.
  * Muestra los 3 pasos: Carrito → Datos de envío → Pago.
+ *
+ * Cada paso se renderiza en una columna (círculo arriba, label abajo)
+ * para mantener la simetría visual y que los nombres más largos
+ * (ej. "Datos de envío") no descoloquen los círculos.
  */
 
+import { Fragment } from 'react';
 import './CheckoutStepper.css';
 
 export type PasoCheckout = 'carrito' | 'envio' | 'pago' | 'confirmacion';
@@ -36,36 +41,36 @@ const CheckoutStepper = ({ pasoActual }: CheckoutStepperProps) => {
         const activo = i === actual;
 
         return (
-          <div key={paso.id} className="stepper-item">
-            {/* Línea conectora (no se muestra antes del primer paso) */}
+          <Fragment key={paso.id}>
+            {/* Línea conectora entre el paso anterior y este (no aparece antes del primero) */}
             {i > 0 && (
               <div
                 className={`stepper-linea ${completado || activo ? 'stepper-linea-activa' : ''}`}
               />
             )}
 
-            {/* Círculo del paso */}
-            <div
-              className={`stepper-circulo ${
-                completado
-                  ? 'stepper-circulo-completado'
-                  : activo
-                    ? 'stepper-circulo-activo'
-                    : ''
-              }`}
-            >
-              {completado ? '✓' : paso.numero}
-            </div>
+            <div className="stepper-paso">
+              <div
+                className={`stepper-circulo ${
+                  completado
+                    ? 'stepper-circulo-completado'
+                    : activo
+                      ? 'stepper-circulo-activo'
+                      : ''
+                }`}
+              >
+                {completado ? '✓' : paso.numero}
+              </div>
 
-            {/* Label del paso */}
-            <span
-              className={`stepper-label ${
-                activo ? 'stepper-label-activo' : completado ? 'stepper-label-completado' : ''
-              }`}
-            >
-              {paso.label}
-            </span>
-          </div>
+              <span
+                className={`stepper-label ${
+                  activo ? 'stepper-label-activo' : completado ? 'stepper-label-completado' : ''
+                }`}
+              >
+                {paso.label}
+              </span>
+            </div>
+          </Fragment>
         );
       })}
     </nav>
