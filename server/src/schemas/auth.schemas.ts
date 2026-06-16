@@ -16,11 +16,11 @@ const passwordSchema = z
 export const RegisterSchema = z.object({
   nombre: z
     .string()
-    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .min(3, 'El nombre debe tener al menos 3 caracteres')
     .max(50, 'El nombre no puede superar los 50 caracteres'),
   apellido: z
     .string()
-    .min(2, 'El apellido debe tener al menos 2 caracteres')
+    .min(3, 'El apellido debe tener al menos 3 caracteres')
     .max(50, 'El apellido no puede superar los 50 caracteres'),
   email: z.string().email('Email inválido'),
   password: passwordSchema,

@@ -120,6 +120,12 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 
     const { usuario } = tokenGuardado as unknown as RefreshTokenPopulado;
 
+    if (!usuario.activo) {
+      await tokenGuardado.deleteOne();
+      res.status(401).json({ message: 'Usuario inactivo' });
+      return;
+    }
+
     // Rotar: eliminar el token anterior y emitir uno nuevo
     await tokenGuardado.deleteOne();
     const nuevoRefreshToken = await generarRefreshToken(usuario._id.toString());

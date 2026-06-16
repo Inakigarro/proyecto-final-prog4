@@ -60,11 +60,11 @@ export default function RegistroPage() {
   const validar = (): boolean => {
     const nuevos: FormErrors = {};
 
-    if (form.nombre.trim().length < 2)
-      nuevos.nombre = "El nombre debe tener al menos 2 caracteres.";
+    if (form.nombre.trim().length < 3)
+      nuevos.nombre = "El nombre debe tener al menos 3 caracteres.";
 
-    if (form.apellido.trim().length < 2)
-      nuevos.apellido = "El apellido debe tener al menos 2 caracteres.";
+    if (form.apellido.trim().length < 3)
+      nuevos.apellido = "El apellido debe tener al menos 3 caracteres.";
 
     if (!form.email.trim()) {
       nuevos.email = "El email es obligatorio.";

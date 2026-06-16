@@ -112,6 +112,11 @@ export default function LoginPage() {
 
         <div className={styles.footer}>
           <p>
+            <Link href="/recuperar-contrasena">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </p>
+          <p>
             ¿No tienes cuenta?{" "}
             <Link href="/registro">
               Registrarse

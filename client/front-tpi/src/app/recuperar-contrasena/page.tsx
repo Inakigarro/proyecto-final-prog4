@@ -124,7 +124,7 @@ function FormNuevaPassword() {
     setCargando(true);
     try {
       await resetearPassword(token, form.password);
-      router.push('/');
+      router.push('/login');
     } catch (err) {
       setErrors({ general: err instanceof Error ? err.message : 'Error al restablecer la contraseña.' });
     } finally {
