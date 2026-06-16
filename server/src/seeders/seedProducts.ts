@@ -45,7 +45,8 @@ const CATEGORIAS_DUMMYJSON: { slug: string; nombre: string }[] = [
   { slug: 'smartphones', nombre: 'Smartphones' },
   { slug: 'tablets', nombre: 'Tablets' },
   { slug: 'mobile-accessories', nombre: 'Accesorios móviles' },
-  { slug: 'mens-watches', nombre: 'Relojes' },
+  { slug: 'mens-watches', nombre: 'Relojes hombre' },
+  { slug: 'womens-watches', nombre: 'Relojes mujer' },
 ];
 
 interface ProductoDummyJson {
@@ -99,7 +100,8 @@ function generarDescripcion(categoria: string, brand?: string): string {
       return `Tablet ${marca}con pantalla amplia y procesador potente. Ideal para productividad, lectura y consumo multimedia.`;
     case 'Accesorios móviles':
       return `Accesorio ${marca}compatible con dispositivos móviles. Calidad premium y diseño práctico para uso cotidiano.`;
-    case 'Relojes':
+    case 'Relojes hombre':
+    case 'Relojes mujer':
       return `Reloj ${marca}con diseño atemporal y mecanismo de precisión. Acabados de alta gama y materiales nobles.`;
     default:
       return `Producto ${marca}de calidad premium.`;
