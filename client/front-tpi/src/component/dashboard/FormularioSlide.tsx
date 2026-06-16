@@ -39,7 +39,7 @@ export default function FormularioSlide({ id }: FormularioSlideProps) {
   // Precarga en modo edición
   useEffect(() => {
     if (!esEdicion) return;
-    apiFetch<SlideDashboard>(`/api/dashboard/slides/${id}`)
+    apiFetch<SlideDashboard>(`/api/slides/${id}`)
       .then((s) => {
         setImagen(s.imagen);
         setAlt(s.alt);
@@ -63,7 +63,7 @@ export default function FormularioSlide({ id }: FormularioSlideProps) {
       // apiFetch agrega Content-Type: application/json; para multipart hay que
       // hacer fetch manual y NO setear Content-Type (el browser arma el boundary).
       const token = getAccessToken();
-      const respuesta = await fetch('/api/dashboard/slides/imagen', {
+      const respuesta = await fetch('/api/slides/imagen', {
         method: 'POST',
         body: formData,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -115,12 +115,12 @@ export default function FormularioSlide({ id }: FormularioSlideProps) {
       };
 
       if (esEdicion) {
-        await apiFetch(`/api/dashboard/slides/${id}`, {
+        await apiFetch(`/api/slides/${id}`, {
           method: 'PUT',
           body: JSON.stringify(body),
         });
       } else {
-        await apiFetch('/api/dashboard/slides', {
+        await apiFetch('/api/slides', {
           method: 'POST',
           body: JSON.stringify(body),
         });
