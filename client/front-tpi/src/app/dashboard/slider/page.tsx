@@ -44,14 +44,17 @@ export default function SliderPage() {
   const [datos, setDatos] = useState<SlideDashboard[]>([]);
   const [cargando, setCargando] = useState(true);
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
+    setError(null);
     try {
       const res = await apiFetch<SlideDashboard[]>('/api/dashboard/slides');
       setDatos(res);
-    } catch {
+    } catch (err) {
       setDatos([]);
+      setError(err instanceof Error ? err.message : 'No se pudo cargar el listado.');
     } finally {
       setCargando(false);
     }
@@ -61,17 +64,37 @@ export default function SliderPage() {
 
   const handleEliminar = async () => {
     if (!idAEliminar) return;
+    const id = idAEliminar;
+    setIdAEliminar(null);
     try {
-      await apiFetch(`/api/dashboard/slides/${idAEliminar}`, { method: 'DELETE' });
-      setIdAEliminar(null);
+      await apiFetch(`/api/dashboard/slides/${id}`, { method: 'DELETE' });
       await cargar();
-    } catch {
-      setIdAEliminar(null);
+    } catch (err) {
+      const mensaje = err instanceof Error ? err.message : 'No se pudo eliminar el slide.';
+      setError(mensaje);
+      // Como el error es bloqueante para el usuario (el slide sigue ahí),
+      // alert() asegura que se entere aunque la página no tenga toast.
+      if (typeof window !== 'undefined') window.alert(`Error al eliminar: ${mensaje}`);
     }
   };
 
   return (
     <>
+      {error && (
+        <p
+          role="alert"
+          style={{
+            margin: '0 0 12px 0',
+            padding: '10px 14px',
+            background: 'var(--color-error-bg, #fee)',
+            color: 'var(--color-error, #c52)',
+            borderRadius: 8,
+            fontSize: '0.9rem',
+          }}
+        >
+          {error}
+        </p>
+      )}
       <TablaEntidad
         titulo="Slider del home"
         rutaNuevo="/dashboard/slider/nuevo"

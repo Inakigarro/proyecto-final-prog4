@@ -2,13 +2,15 @@ import { z } from 'zod';
 
 /**
  * Validación Zod para el alta y actualización de slides del home.
- * `imagen` se valida como URL para que solo entren rutas servibles por el browser.
+ * `imagen` puede ser una URL http(s) común o un data URI base64 (los uploads
+ * desde el dashboard llegan como data URI). No usamos z.url() porque
+ * rechazaría los data URIs.
  */
 export const CrearSlideSchema = z.object({
   imagen: z
-    .string({ error: 'La URL de la imagen es obligatoria' })
-    .url('La imagen debe ser una URL válida')
-    .max(500, 'La URL no puede superar los 500 caracteres'),
+    .string({ error: 'La imagen es obligatoria' })
+    .min(1, 'La imagen es obligatoria')
+    .max(2_000_000, 'La imagen excede el tamaño máximo permitido'),
   alt: z
     .string({ error: 'El texto alternativo es obligatorio' })
     .trim()

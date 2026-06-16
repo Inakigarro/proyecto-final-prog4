@@ -27,9 +27,10 @@ const slideSchema = new Schema<ISlide>(
   {
     imagen: {
       type: String,
-      required: [true, 'La URL de la imagen es obligatoria'],
-      trim: true,
-      maxlength: [500, 'La URL no puede superar los 500 caracteres'],
+      required: [true, 'La imagen es obligatoria'],
+      // Soporta tanto URLs http(s) como data URIs base64 (data:image/...;base64,...).
+      // El cap está dimensionado para un archivo de ~1MB en base64 con margen.
+      maxlength: [2_000_000, 'La imagen excede el tamaño máximo permitido'],
     },
     alt: {
       type: String,

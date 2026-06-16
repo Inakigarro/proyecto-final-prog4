@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import path from 'path';
 import { errorHandler } from './middlewares/errorHandler';
 import authRoutes from './routes/authRoutes';
 import roleRoutes from './routes/roleRoutes';
@@ -27,18 +26,10 @@ export function crearApp() {
     origin: process.env.ALLOWED_ORIGIN ?? 'http://localhost:3000',
     credentials: true,
   }));
-  // crossOriginResourcePolicy: cross-origin permite que el cliente Next.js
-  // referencie las imágenes servidas por /uploads desde otro origen. Sin esto
-  // Helmet bloquea las requests con CORP.
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-  app.use(express.json());
-
-  // Servir las imágenes subidas (slides del home) como estáticos públicos.
-  // Las URLs absolutas devueltas por POST /api/slides/imagen apuntan acá.
-  app.use(
-    '/uploads',
-    express.static(path.resolve(__dirname, '..', 'public', 'uploads')),
-  );
+  app.use(helmet());
+  // express.json() con límite generoso porque el endpoint POST /api/slides
+  // recibe el data URI base64 de la imagen en el body (hasta ~1.4MB con overhead).
+  app.use(express.json({ limit: '5mb' }));
 
   app.get('/api', (_req, res) => {
     res.send('¡Bienvenido a la API de gestión de usuarios, roles y permisos!');
