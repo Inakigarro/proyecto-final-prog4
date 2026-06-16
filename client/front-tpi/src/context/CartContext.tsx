@@ -8,11 +8,6 @@
  * adapter para no romper a los consumidores: la API pública (CartProvider
  * y useCart) sigue siendo idéntica, pero por dentro lee/escribe contra el
  * store de Redux.
- *
- * Componentes que consumen useCart() (CartIcon, CartDrawer, CartToast,
- * CartItemRow, CartPageClient, LoginGateModal, etc.) no necesitan
- * modificarse. Si en el futuro se decide migrarlos a useSelector /
- * useDispatch directos, este archivo se puede eliminar.
  */
 
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
@@ -54,12 +49,36 @@ interface CartContextValue {
 
 
 /**
- * Lee el carrito persistido en localStorage para el usuario actual y
- * dispara la acción `hidratar`. Se re-ejecuta cuando el usuario cambia
- * (login / logout) para cargar el carrito correcto.
+ * Lee el carrito persistido en localStorage para la key indicada y lo
+ * devuelve como un array de items válidos. Si la key no existe, está mal
+ * formada o tiene items inválidos, devuelve un array vacío.
+ */
+function leerCartLocal(key: string): CartItem[] {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return [];
+    const parseado = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parseado)) return [];
+    return parseado.filter(esCartItemValido);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Mantiene sincronizado el carrito con el storage del usuario actual.
  *
- * Espera a que auth termine de cargar (isCargando === false) para no
- * hidratar desde la key guest mientras se verifica el refresh token.
+ * Reglas:
+ * - Sin sesión (`userId` indefinido): hidrata desde la key guest.
+ * - Con sesión y carrito guest no vacío: el guest "se asocia" al usuario
+ *   reemplazando el carrito previo que pudiera tener; la key guest se borra
+ *   para no quedar arrastrando items huérfanos.
+ * - Con sesión sin carrito guest: hidrata desde la key del usuario, dejando
+ *   intacto su carrito guardado de sesiones anteriores.
+ *
+ * La limpieza al cerrar sesión y al confirmar la compra ocurre fuera:
+ * `AuthContext.logout()` y `CartPageClient` despachan `vaciar()` antes del
+ * cambio de userId.
  */
 function CartHidratator() {
   const dispatch = useAppDispatch();
@@ -67,20 +86,34 @@ function CartHidratator() {
   const authCargando = useAppSelector((s) => s.auth.isCargando);
 
   useEffect(() => {
-    // No hidratar mientras auth sigue verificando la sesión
     if (authCargando) return;
+    if (typeof window === 'undefined') return;
 
-    try {
-      const key = getStorageKey(userId);
-      const raw = window.localStorage.getItem(key);
-      const items = raw ? (JSON.parse(raw) as CartItem[]) : [];
-      const itemsValidos = Array.isArray(items)
-        ? items.filter(esCartItemValido)
-        : [];
-      dispatch(hidratarAction(itemsValidos));
-    } catch {
-      dispatch(hidratarAction([]));
+    const guestKey = getStorageKey();
+    const guestItems = leerCartLocal(guestKey);
+
+    if (!userId) {
+      // Sin sesión: el carrito visible es el guest.
+      dispatch(hidratarAction(guestItems));
+      return;
     }
+
+    // Con sesión: si hay carrito guest, lo asociamos al usuario reemplazando
+    // el carrito previo que pudiera haber tenido.
+    const userKey = getStorageKey(userId);
+    if (guestItems.length > 0) {
+      try {
+        window.localStorage.setItem(userKey, JSON.stringify(guestItems));
+        window.localStorage.removeItem(guestKey);
+      } catch {
+        // Storage lleno o deshabilitado, igual hidratamos con los items en memoria.
+      }
+      dispatch(hidratarAction(guestItems));
+      return;
+    }
+
+    // Sin carrito guest: cargar el carrito guardado del usuario (si lo tiene).
+    dispatch(hidratarAction(leerCartLocal(userKey)));
   }, [dispatch, userId, authCargando]);
 
   return null;
