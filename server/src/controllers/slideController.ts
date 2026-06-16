@@ -70,9 +70,10 @@ export const crearSlideController = (servicio: ISlideService) => ({
   },
 
   /**
-   * POST /api/slides/imagen — recibe un archivo via multipart y devuelve la
-   * URL absoluta donde quedó accesible. El cliente la usa después como
-   * `imagen` del DTO al crear/actualizar el slide.
+   * POST /api/slides/imagen — recibe un archivo via multipart, lo convierte
+   * a un data URI base64 y lo devuelve. El cliente lo persiste después como
+   * `imagen` del DTO al crear/actualizar el slide. La imagen vive enteramente
+   * dentro del documento de Mongo, sin filesystem ni storage externo.
    */
   subirImagen: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -80,10 +81,8 @@ export const crearSlideController = (servicio: ISlideService) => ({
         res.status(400).json({ message: 'No se recibió ningún archivo' });
         return;
       }
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const respuesta: SlideUploadResponse = {
-        url: `${baseUrl}/uploads/slides/${req.file.filename}`,
-      };
+      const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const respuesta: SlideUploadResponse = { url: dataUri };
       res.status(201).json(respuesta);
     } catch (error) {
       next(error);
