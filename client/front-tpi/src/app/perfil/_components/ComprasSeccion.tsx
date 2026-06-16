@@ -1,33 +1,72 @@
 'use client';
 
+import { useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useCompras } from '../_hooks/useCompras';
-import type { CompraResumen } from '../_types';
+import CompraCard from './CompraCard';
+import CompraDetalle from './CompraDetalle';
 import styles from './ComprasSeccion.module.css';
 
 interface ComprasSeccionProps {
-  /** True cuando la sesión está hidratada y se puede llamar al backend */
+  /** True cuando la sesión está hidratada y se puede llamar al backend. */
   habilitado: boolean;
 }
 
 /**
  * Sección "Mis compras" del perfil.
  *
- * Renderiza una tabla con el historial de pedidos del usuario. Hoy el hook
- * `useCompras` devuelve un array vacío y mostramos el estado "sin compras";
- * cuando el módulo de pedidos esté listo, basta con conectar el endpoint
- * dentro del hook y la UI ya queda funcionando.
+ * Orquesta dos vistas según el query param `orden`:
+ * - Sin `orden`: listado de cards con todas las compras del usuario.
+ * - Con `orden=ID`: detalle de esa compra puntual con botón de volver.
+ *
+ * Reemplaza la antigua ruta `/mis-ordenes` para que todo el historial de
+ * compras viva dentro del perfil con una sola URL canónica.
  */
 export default function ComprasSeccion({ habilitado }: ComprasSeccionProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const ordenId = searchParams.get('orden');
+
   const { compras, cargando, error } = useCompras(habilitado);
 
+  /** Navega al detalle de una compra particular sin agregar entrada al history. */
+  const verDetalle = useCallback(
+    (id: string) => {
+      router.replace(`/perfil?tab=compras&orden=${id}`, { scroll: false });
+    },
+    [router],
+  );
+
+  /** Vuelve al listado limpiando el `orden` del URL. */
+  const volverAlListado = useCallback(() => {
+    router.replace('/perfil?tab=compras', { scroll: false });
+  }, [router]);
+
+  // Detalle de una compra puntual
+  if (ordenId) {
+    return (
+      <section className={styles.seccion} aria-labelledby="compras-titulo">
+        <h2 id="compras-titulo" className={styles.tituloSeccion}>Mis compras</h2>
+        <CompraDetalle
+          ordenId={ordenId}
+          habilitado={habilitado}
+          alVolver={volverAlListado}
+        />
+      </section>
+    );
+  }
+
+  // Listado
   return (
     <section className={styles.seccion} aria-labelledby="compras-titulo">
       <h2 id="compras-titulo" className={styles.tituloSeccion}>Mis compras</h2>
       <p className={styles.subtitulo}>
-        Acá vas a poder consultar el historial de tus pedidos.
+        Historial completo de tus órdenes de compra. Hacé click en una para ver el detalle.
       </p>
 
       {cargando && <p className={styles.mensajeNeutro}>Cargando compras…</p>}
+
       {error && <p className={styles.errorGeneral} role="alert">{error}</p>}
 
       {!cargando && !error && compras.length === 0 && (
@@ -36,59 +75,19 @@ export default function ComprasSeccion({ habilitado }: ComprasSeccionProps) {
           <p className={styles.estadoVacioSubtitulo}>
             Cuando hagas tu primer pedido, vas a poder seguirlo desde acá.
           </p>
+          <Link href="/" className={styles.botonPrimario}>
+            Ir a la tienda
+          </Link>
         </div>
       )}
 
       {!cargando && !error && compras.length > 0 && (
-        <TablaCompras compras={compras} />
+        <div className={styles.lista}>
+          {compras.map((compra) => (
+            <CompraCard key={compra.id} compra={compra} alVerDetalle={verDetalle} />
+          ))}
+        </div>
       )}
     </section>
   );
-}
-
-/**
- * Tabla con el resumen de compras. Se separa del componente padre para
- * mantener al `ComprasSeccion` enfocado en orquestar estados (vacío/error/etc.)
- */
-function TablaCompras({ compras }: { compras: CompraResumen[] }) {
-  return (
-    <div className={styles.contenedorTabla}>
-      <table className={styles.tabla}>
-        <thead>
-          <tr>
-            <th>N° pedido</th>
-            <th>Fecha</th>
-            <th>Items</th>
-            <th>Estado</th>
-            <th className={styles.celdaDerecha}>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {compras.map((compra) => (
-            <tr key={compra.id}>
-              <td className={styles.idPedido}>#{compra.id.slice(-6)}</td>
-              <td>{formatearFecha(compra.fecha)}</td>
-              <td>{compra.cantidadItems}</td>
-              <td>
-                <span className={styles.badgeEstado}>{compra.estado}</span>
-              </td>
-              <td className={styles.celdaDerecha}>{formatearMonto(compra.montoTotal)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-/** Formatea una fecha ISO a dd/mm/aaaa en español rioplatense. */
-function formatearFecha(iso: string): string {
-  const fecha = new Date(iso);
-  if (Number.isNaN(fecha.getTime())) return '—';
-  return fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-/** Formatea un monto numérico como pesos argentinos. */
-function formatearMonto(monto: number): string {
-  return monto.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 }

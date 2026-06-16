@@ -87,4 +87,4 @@ Para datos públicos en Server Components:
 ## Pendiente
 
 - **Checkout**: conectar `handleConfirmarCompra` en `CartPageClient.tsx` a `POST /api/cart/checkout` y crear página de confirmación de orden.
-- **Historial de órdenes**: sin UI — falta página `/mis-ordenes` y los endpoints `GET /api/orders/me` en el backend.
+- **Historial de órdenes**: implementado dentro del perfil en la pestaña "Mis compras" (`/perfil?tab=compras`); listado de cards + detalle por orden via query param `?orden=ID`. No hay ruta standalone `/mis-ordenes`.

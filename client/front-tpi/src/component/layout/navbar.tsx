@@ -100,7 +100,7 @@ const Navbar = () => {
                     Mis direcciones
                   </Link>
                   <Link
-                    href="/mis-ordenes"
+                    href="/perfil?tab=compras"
                     className="navbar-menu-item"
                     role="menuitem"
                     onClick={() => setMenuAbierto(false)}

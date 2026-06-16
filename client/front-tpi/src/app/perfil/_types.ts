@@ -15,18 +15,13 @@ export interface Direccion {
   codigoPostal: string;
 }
 
-/** Línea resumida de una orden de compra para el historial */
-export interface CompraResumen {
-  id: string;
-  /** Fecha de la compra como string ISO */
-  fecha: string;
-  /** Monto total ya con descuentos aplicados */
-  montoTotal: number;
-  /** Estado de la orden (pendiente, confirmada, entregada, cancelada, etc.) */
-  estado: string;
-  /** Cantidad total de items comprados (suma de cantidades) */
-  cantidadItems: number;
-}
-
-/** Tabs disponibles dentro de la página de perfil */
+/**
+ * Tabs disponibles dentro de la página de perfil.
+ *
+ * Para el historial de compras se usan los tipos canónicos
+ * {@link import('@/lib/order-types').OrdenResumen} y
+ * {@link import('@/lib/order-types').OrdenDetalle} en lugar de tipos propios
+ * del perfil — la pestaña "Mis compras" consume los mismos endpoints que el
+ * resto de la app.
+ */
 export type PerfilTab = 'datos' | 'direcciones' | 'compras' | 'seguridad';
