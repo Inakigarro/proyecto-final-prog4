@@ -114,12 +114,19 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
+  /* Si el botón no entra al lado del precio, baja a la fila siguiente
+     en lugar de comprimir o desbordar. Pasa típicamente cuando hay
+     precio tachado en cards angostas. */
+  flex-wrap: wrap;
 }
 
 .card-precio-bloque {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* Permite que el bloque se compacte si el botón llega al mismo renglón. */
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .card-precio {
@@ -153,6 +160,7 @@
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: background 0.2s ease, transform 0.1s ease;
 }
 

@@ -32,6 +32,7 @@ const mapearItemAResponse = (item: ItemPopulado): ItemResponse => ({
   id: item._id.toString(),
   nombre: item.nombre,
   descripcion: item.descripcion,
+  imagen: item.imagen,
   precioUnitario: item.precioUnitario,
   stock: item.stock,
   category: item.category.map((cat) => ({
