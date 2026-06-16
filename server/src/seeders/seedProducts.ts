@@ -9,43 +9,37 @@ import { logger } from '../config/logger';
 // Idempotente: usa upsert tanto en categorías como en items.
 // Se puede correr múltiples veces sin duplicar datos.
 //
-// Productos y URLs de imagen tomados de DummyJSON Products (cdn.dummyjson.com)
-// que provee imágenes reales y estables para productos de e-commerce demo.
-// Categorías elegidas: las cinco que DummyJSON cubre con cobertura completa
-// (laptops, smartphones, tablets, mobile-accessories y mens-watches).
+// La URL de imagen NO está hardcodeada en este archivo: el seeder hace HTTP GET
+// a DummyJSON Products al arrancar y toma la URL del thumbnail oficial del
+// producto. Eso garantiza que los links siempre apunten a una imagen válida
+// (sin depender de que el patrón de URL del CDN cambie). Si DummyJSON está
+// caído o no encuentra el producto, se usa placehold.co como fallback para
+// que la app siga renderizando sin imágenes rotas.
 //
-// Las descripciones están traducidas al español manualmente para mantener
-// la coherencia idiomática del sitio.
+// Las descripciones están traducidas al español y los precios en ARS para
+// mantener la coherencia del sitio.
 //
 // Orden interno:
-//  1. Crea/actualiza las categorías vacías (con validateBeforeSave: false
+//  1. Resuelve la URL de imagen de cada item consultando DummyJSON.
+//  2. Crea/actualiza las categorías vacías (con validateBeforeSave: false
 //     porque el modelo Categoria exige al menos 1 item).
-//  2. Crea/actualiza los items asociándoles su categoría.
-//  3. Actualiza cada categoría con la lista final de items.
+//  3. Crea/actualiza los items asociándoles su categoría.
+//  4. Actualiza cada categoría con la lista final de items.
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface ItemSeed {
+  /** Nombre tal como aparece en DummyJSON; se usa también como query de búsqueda. */
   nombre: string;
   descripcion: string;
-  imagen: string;
   precioUnitario: number;
   stock: number;
 }
 
-/**
- * Construye la URL del thumbnail de DummyJSON para un producto dado.
- * Patrón: https://cdn.dummyjson.com/products/images/{categoria}/{Nombre}/thumbnail.png
- *
- * @param categoria - Slug de la categoría en DummyJSON (ej. 'laptops').
- * @param nombre - Nombre exacto del producto tal como aparece en DummyJSON.
- */
-function urlDummyJson(categoria: string, nombre: string): string {
-  return `https://cdn.dummyjson.com/products/images/${categoria}/${encodeURIComponent(nombre)}/thumbnail.png`;
-}
+const BASE_DUMMYJSON = 'https://dummyjson.com';
 
 /**
- * Catálogo declarativo: lista de categorías y los items que pertenecen a cada una.
- * Para agregar productos nuevos solo hay que extender los arrays de items.
+ * Catálogo declarativo. Para agregar productos nuevos solo hay que extender
+ * los arrays de items con el nombre exacto del producto en DummyJSON.
  */
 const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
   {
@@ -55,7 +49,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Apple MacBook Pro 14 Inch Space Grey',
         descripcion:
           'Notebook profesional con pantalla mini-LED de 14 pulgadas, chip Apple Silicon y autonomía extendida. Ideal para desarrollo, edición de video y diseño.',
-        imagen: urlDummyJson('laptops', 'Apple MacBook Pro 14 Inch Space Grey'),
         precioUnitario: 2150000,
         stock: 3,
       },
@@ -63,7 +56,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Asus Zenbook Pro Duo 15',
         descripcion:
           'Notebook con segunda pantalla ScreenPad Plus de 14 pulgadas, GPU dedicada y construcción premium. Pensada para creadores de contenido y multitarea profesional.',
-        imagen: urlDummyJson('laptops', 'Asus Zenbook Pro Duo 15'),
         precioUnitario: 1500000,
         stock: 5,
       },
@@ -71,15 +63,13 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Huawei Matebook X Pro',
         descripcion:
           'Ultrabook con pantalla 3K táctil de 13.9 pulgadas y procesador Intel Core de última generación. Chasis de aluminio y peso ultraliviano.',
-        imagen: urlDummyJson('laptops', 'Huawei Matebook X Pro'),
         precioUnitario: 1200000,
         stock: 7,
       },
       {
-        nombre: 'Lenovo ThinkPad X1',
+        nombre: 'Lenovo Thinkpad X1',
         descripcion:
           'Notebook empresarial con teclado ThinkPad, lector de huellas, certificación MIL-SPEC y conectividad LTE. Para uso corporativo intenso en movilidad.',
-        imagen: urlDummyJson('laptops', 'Lenovo Thinkpad X1'),
         precioUnitario: 1400000,
         stock: 6,
       },
@@ -92,7 +82,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'iPhone 15 Pro Max',
         descripcion:
           'Tope de gama con chip A17 Pro, cámara de 48MP con teleobjetivo de zoom óptico 5x, construcción en titanio y conexión USB-C.',
-        imagen: urlDummyJson('smartphones', 'iPhone 15 Pro Max'),
         precioUnitario: 1950000,
         stock: 4,
       },
@@ -100,7 +89,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Samsung Galaxy S24 Ultra 5G',
         descripcion:
           'Pantalla Dynamic AMOLED 2X de 6.8 pulgadas, cámara principal de 200MP, S Pen integrado y procesador Snapdragon 8 Gen 3 for Galaxy.',
-        imagen: urlDummyJson('smartphones', 'Samsung Galaxy S24 Ultra 5G'),
         precioUnitario: 1750000,
         stock: 6,
       },
@@ -108,7 +96,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'OnePlus 12R',
         descripcion:
           'Pantalla AMOLED 120Hz, batería de 5500mAh con carga SUPERVOOC de 100W y procesador Snapdragon 8 Gen 2. Diseño premium a precio accesible.',
-        imagen: urlDummyJson('smartphones', 'OnePlus 12R'),
         precioUnitario: 620000,
         stock: 10,
       },
@@ -116,7 +103,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Realme C53',
         descripcion:
           'Pantalla de 6.74 pulgadas a 90Hz, cámara de 50MP y acabado dorado tipo "Champion". Excelente relación precio-calidad para uso diario.',
-        imagen: urlDummyJson('smartphones', 'Realme C53'),
         precioUnitario: 250000,
         stock: 18,
       },
@@ -129,7 +115,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'iPad Mini 2021 Starlight',
         descripcion:
           'Tablet compacta con chip A15 Bionic, pantalla Liquid Retina de 8.3 pulgadas y soporte para Apple Pencil de segunda generación.',
-        imagen: urlDummyJson('tablets', 'iPad Mini 2021 Starlight'),
         precioUnitario: 850000,
         stock: 8,
       },
@@ -137,7 +122,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Samsung Galaxy Tab S8 Plus',
         descripcion:
           'Tablet Android con pantalla Super AMOLED de 12.4 pulgadas, S Pen incluido y procesador Snapdragon 8 Gen 1. Ideal para productividad y entretenimiento.',
-        imagen: urlDummyJson('tablets', 'Samsung Galaxy Tab S8 Plus'),
         precioUnitario: 1100000,
         stock: 5,
       },
@@ -145,7 +129,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Huawei MatePad Pro',
         descripcion:
           'Pantalla OLED de 12.6 pulgadas, sonido cuádruple Harman Kardon y compatibilidad con M-Pencil. Excelente para diseño y consumo multimedia.',
-        imagen: urlDummyJson('tablets', 'Huawei MatePad Pro'),
         precioUnitario: 950000,
         stock: 6,
       },
@@ -158,7 +141,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Apple AirPods Pro',
         descripcion:
           'Auriculares in-ear inalámbricos con cancelación activa de ruido, audio espacial personalizado y estuche de carga MagSafe.',
-        imagen: urlDummyJson('mobile-accessories', 'Apple AirPods Pro'),
         precioUnitario: 385000,
         stock: 15,
       },
@@ -166,7 +148,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Apple Airpods Max Silver',
         descripcion:
           'Auriculares supraurales premium con cancelación activa de ruido, modo Transparencia y audio espacial dinámico con seguimiento de cabeza.',
-        imagen: urlDummyJson('mobile-accessories', 'Apple Airpods Max Silver'),
         precioUnitario: 890000,
         stock: 4,
       },
@@ -174,7 +155,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Apple Magic Mouse',
         descripcion:
           'Mouse inalámbrico con superficie multitouch para gestos. Conexión Bluetooth, base recargable y diseño ergonómico para uso prolongado.',
-        imagen: urlDummyJson('mobile-accessories', 'Apple Magic Mouse'),
         precioUnitario: 145000,
         stock: 12,
       },
@@ -182,7 +162,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Apple Wireless Charger',
         descripcion:
           'Base de carga inalámbrica compatible con iPhone, AirPods y dispositivos Qi. Carga rápida hasta 15W y diseño minimalista.',
-        imagen: urlDummyJson('mobile-accessories', 'Apple Wireless Charger'),
         precioUnitario: 65000,
         stock: 25,
       },
@@ -195,7 +174,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Rolex Cellini Date',
         descripcion:
           'Reloj de lujo con caja de oro blanco de 39mm, esfera negra con fecha y correa de cuero. Movimiento automático certificado COSC.',
-        imagen: urlDummyJson('mens-watches', 'Rolex Cellini Date'),
         precioUnitario: 4500000,
         stock: 1,
       },
@@ -203,7 +181,6 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Longines Master Collection',
         descripcion:
           'Reloj suizo de la Master Collection con esfera blanca, agujas dauphine y movimiento automático L888 con reserva de marcha de 64 horas.',
-        imagen: urlDummyJson('mens-watches', 'Longines Master Collection'),
         precioUnitario: 1250000,
         stock: 3,
       },
@@ -211,13 +188,43 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
         nombre: 'Brown Leather Belt Watch',
         descripcion:
           'Reloj clásico con correa de cuero marrón, esfera analógica blanca y caja de acero inoxidable de 40mm. Diseño atemporal para uso diario.',
-        imagen: urlDummyJson('mens-watches', 'Brown Leather Belt Watch'),
         precioUnitario: 180000,
         stock: 8,
       },
     ],
   },
 ];
+
+interface ProductoDummyJson {
+  id: number;
+  title: string;
+  thumbnail: string;
+}
+
+/**
+ * Resuelve la URL del thumbnail de DummyJSON para un producto buscando por su
+ * nombre exacto. Si no hay match o el endpoint falla, devuelve una URL de
+ * placehold.co con la paleta del proyecto y el nombre del producto en el
+ * cartel para que la app siga viéndose presentable.
+ */
+async function resolverUrlImagen(nombre: string): Promise<string> {
+  try {
+    const url = `${BASE_DUMMYJSON}/products/search?q=${encodeURIComponent(nombre)}&limit=5`;
+    const respuesta = await fetch(url);
+    if (!respuesta.ok) throw new Error(`DummyJSON respondió ${respuesta.status}`);
+
+    const data = (await respuesta.json()) as { products: ProductoDummyJson[] };
+    const match = data.products.find((p) => p.title.toLowerCase() === nombre.toLowerCase())
+      ?? data.products[0];
+    if (match?.thumbnail) return match.thumbnail;
+
+    throw new Error('Sin coincidencias');
+  } catch (error) {
+    logger.warn('Fallback a placeholder', { producto: nombre, error: String(error) });
+    const texto = encodeURIComponent(nombre);
+    return `https://placehold.co/600x600/1c2826/cc9476/png?text=${texto}`;
+  }
+}
 
 /**
  * Punto de entrada del seeder.
@@ -234,15 +241,23 @@ async function seed(): Promise<void> {
     //    schema exige >=1 item, y todavía no creamos los items.
     const categoria = await upsertCategoriaVacia(grupo.categoria);
 
-    // 2. Upsert de cada item del grupo, ya con la categoría asignada.
+    // 2. Resolvemos las URLs de DummyJSON en paralelo para acelerar el seed.
+    const itemsConImagen = await Promise.all(
+      grupo.items.map(async (item) => ({
+        ...item,
+        imagen: await resolverUrlImagen(item.nombre),
+      })),
+    );
+
+    // 3. Upsert de cada item del grupo, ya con la categoría asignada.
     const idsItems: Types.ObjectId[] = [];
-    for (const datosItem of grupo.items) {
+    for (const datosItem of itemsConImagen) {
       const item = await upsertItem(datosItem, categoria._id);
       idsItems.push(item._id);
       itemsSincronizados++;
     }
 
-    // 3. Actualizamos la categoría con la lista final de items.
+    // 4. Actualizamos la categoría con la lista final de items.
     categoria.items = idsItems;
     await categoria.save();
 
@@ -276,7 +291,7 @@ async function upsertCategoriaVacia(nombre: string): Promise<ICategory> {
  * referencias en órdenes.
  */
 async function upsertItem(
-  datos: ItemSeed,
+  datos: ItemSeed & { imagen: string },
   categoriaId: Types.ObjectId
 ): Promise<IItem> {
   const item = await Item.findOneAndUpdate(
