@@ -30,6 +30,12 @@ export const localStorageMiddleware: Middleware<unknown, RootState> =
     // No pisar storage antes de hidratar
     if (!state.cart.hidratado || typeof window === 'undefined') return result;
 
+    // Mientras hay un conflicto de login pendiente, el snapshot vivo está dentro
+    // del slice (cart.conflictoLogin) y el localStorage debe mantenerse intacto.
+    // Si persistimos `items=[]` ahora, perderíamos el carrito guardado del
+    // usuario si refresca antes de elegir en el modal.
+    if (state.cart.conflictoLogin) return result;
+
     try {
       const key = getStorageKey(state.auth.usuario?.id);
       window.localStorage.setItem(key, JSON.stringify(state.cart.items));

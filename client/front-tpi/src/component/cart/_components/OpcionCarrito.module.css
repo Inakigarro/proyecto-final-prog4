@@ -1,0 +1,100 @@
+.opcion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-dark-bg);
+  border: 2px solid var(--color-dark-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.opcion:hover {
+  border-color: var(--color-highlight);
+}
+
+.opcionSeleccionada {
+  border-color: var(--color-highlight);
+  background: rgba(204, 148, 118, 0.08);
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.radio {
+  margin-top: 4px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-highlight);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tituloBloque {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.titulo {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-dark-text);
+}
+
+.descripcion {
+  font-size: 12px;
+  color: var(--color-dark-muted);
+}
+
+.listaItems {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.itemNombre {
+  color: var(--color-dark-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemDetalle {
+  color: var(--color-dark-muted);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.resumen {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 12px;
+  margin-left: 30px;
+  border-top: 1px solid var(--color-dark-border);
+  font-size: 13px;
+  color: var(--color-dark-muted);
+}
+
+.resumen strong {
+  font-size: 16px;
+  color: var(--color-dark-text);
+}

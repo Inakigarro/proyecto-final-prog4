@@ -21,6 +21,7 @@ import {
   abrirDrawer as abrirDrawerAction,
   cerrarDrawer as cerrarDrawerAction,
   hidratar as hidratarAction,
+  iniciarConflictoLogin as iniciarConflictoLoginAction,
 } from '@/store/cartSlice';
 import { getStorageKey } from '@/store/localStorageMiddleware';
 import type { CartItem } from '@/lib/cart-types';
@@ -68,17 +69,15 @@ function leerCartLocal(key: string): CartItem[] {
 /**
  * Mantiene sincronizado el carrito con el storage del usuario actual.
  *
- * Reglas:
- * - Sin sesión (`userId` indefinido): hidrata desde la key guest.
- * - Con sesión y carrito guest no vacío: el guest "se asocia" al usuario
- *   reemplazando el carrito previo que pudiera tener; la key guest se borra
- *   para no quedar arrastrando items huérfanos.
- * - Con sesión sin carrito guest: hidrata desde la key del usuario, dejando
- *   intacto su carrito guardado de sesiones anteriores.
+ * Reglas al loguearse:
+ * - Sin carrito guest: hidrata desde la key del usuario sin pisar nada.
+ * - Carrito guest + key del usuario vacía: transfiere el guest al usuario.
+ * - Carrito guest + carrito guardado del usuario: dispara conflicto; el modal
+ *   le pide al usuario elegir con cuál seguir y resuelve la persistencia.
  *
- * La limpieza al cerrar sesión y al confirmar la compra ocurre fuera:
- * `AuthContext.logout()` y `CartPageClient` despachan `vaciar()` antes del
- * cambio de userId.
+ * Mientras la sesión está activa, el middleware persiste cada acción del
+ * carrito en `techpoint:cart:{userId}`. La limpieza al cerrar sesión y al
+ * confirmar la compra ocurre fuera (AuthContext.logout / CartPageClient).
  */
 function CartHidratator() {
   const dispatch = useAppDispatch();
@@ -98,9 +97,17 @@ function CartHidratator() {
       return;
     }
 
-    // Con sesión: si hay carrito guest, lo asociamos al usuario reemplazando
-    // el carrito previo que pudiera haber tenido.
     const userKey = getStorageKey(userId);
+    const userItems = leerCartLocal(userKey);
+
+    // Conflicto: el usuario armó algo como guest y además tenía algo guardado
+    // de una sesión anterior. La elección la hace el usuario via modal.
+    if (guestItems.length > 0 && userItems.length > 0) {
+      dispatch(iniciarConflictoLoginAction({ guestItems, userItems }));
+      return;
+    }
+
+    // Carrito guest no vacío y user sin carrito previo: lo transferimos.
     if (guestItems.length > 0) {
       try {
         window.localStorage.setItem(userKey, JSON.stringify(guestItems));
@@ -113,7 +120,7 @@ function CartHidratator() {
     }
 
     // Sin carrito guest: cargar el carrito guardado del usuario (si lo tiene).
-    dispatch(hidratarAction(leerCartLocal(userKey)));
+    dispatch(hidratarAction(userItems));
   }, [dispatch, userId, authCargando]);
 
   return null;
