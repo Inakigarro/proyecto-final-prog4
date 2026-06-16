@@ -21,10 +21,16 @@ const Navbar = () => {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const { state, logout, tieneRol } = useAuth();
+  const { state, logout, tieneRol, esSuperAdmin } = useAuth();
   const { isAutenticado, isCargando, usuario } = state;
 
   const { categorias } = useCategorias();
+
+  /**
+   * El dashboard de gestión está disponible para `dueno` (su rol principal)
+   * y también para `superadmin` (que tiene acceso a todo el sistema).
+   */
+  const puedeVerDashboard = tieneRol('dueno') || esSuperAdmin();
 
   // Cerrar el menú al hacer click fuera
   useEffect(() => {
@@ -107,7 +113,7 @@ const Navbar = () => {
                   >
                     Mis compras
                   </Link>
-                  {tieneRol('dueno') && (
+                  {puedeVerDashboard && (
                     <Link
                       href="/dashboard"
                       className="navbar-menu-item"
