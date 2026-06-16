@@ -9,9 +9,13 @@ import { logger } from '../config/logger';
 // Idempotente: usa upsert tanto en categorías como en items.
 // Se puede correr múltiples veces sin duplicar datos.
 //
-// Las URLs de imagen son fotos públicas de Unsplash (estables, no requieren
-// API key). Si alguna se cae, se puede reemplazar desde el dashboard sin
-// necesidad de re-correr este seeder.
+// Productos y URLs de imagen tomados de DummyJSON Products (cdn.dummyjson.com)
+// que provee imágenes reales y estables para productos de e-commerce demo.
+// Categorías elegidas: las cinco que DummyJSON cubre con cobertura completa
+// (laptops, smartphones, tablets, mobile-accessories y mens-watches).
+//
+// Las descripciones están traducidas al español manualmente para mantener
+// la coherencia idiomática del sitio.
 //
 // Orden interno:
 //  1. Crea/actualiza las categorías vacías (con validateBeforeSave: false
@@ -29,6 +33,17 @@ interface ItemSeed {
 }
 
 /**
+ * Construye la URL del thumbnail de DummyJSON para un producto dado.
+ * Patrón: https://cdn.dummyjson.com/products/images/{categoria}/{Nombre}/thumbnail.png
+ *
+ * @param categoria - Slug de la categoría en DummyJSON (ej. 'laptops').
+ * @param nombre - Nombre exacto del producto tal como aparece en DummyJSON.
+ */
+function urlDummyJson(categoria: string, nombre: string): string {
+  return `https://cdn.dummyjson.com/products/images/${categoria}/${encodeURIComponent(nombre)}/thumbnail.png`;
+}
+
+/**
  * Catálogo declarativo: lista de categorías y los items que pertenecen a cada una.
  * Para agregar productos nuevos solo hay que extender los arrays de items.
  */
@@ -37,39 +52,35 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
     categoria: 'Notebooks',
     items: [
       {
-        nombre: 'MacBook Air M2',
+        nombre: 'Apple MacBook Pro 14 Inch Space Grey',
         descripcion:
-          'Liviana, potente y silenciosa. Chip M2 con CPU de 8 núcleos, 8GB de RAM y pantalla Liquid Retina de 13.6 pulgadas. Ideal para profesionales en movimiento.',
-        imagen:
-          'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=600&fit=crop',
+          'Notebook profesional con pantalla mini-LED de 14 pulgadas, chip Apple Silicon y autonomía extendida. Ideal para desarrollo, edición de video y diseño.',
+        imagen: urlDummyJson('laptops', 'Apple MacBook Pro 14 Inch Space Grey'),
         precioUnitario: 2150000,
         stock: 3,
       },
       {
-        nombre: 'Notebook Lenovo IdeaPad 3',
+        nombre: 'Asus Zenbook Pro Duo 15',
         descripcion:
-          'Procesador Intel Core i5 de 11ª gen, 8GB RAM y 512GB SSD. Pantalla Full HD de 15.6 pulgadas. Perfecta para estudiar y trabajar desde casa.',
-        imagen:
-          'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&h=600&fit=crop',
-        precioUnitario: 850000,
-        stock: 8,
-      },
-      {
-        nombre: 'Notebook HP Pavilion 15',
-        descripcion:
-          'Notebook versátil con AMD Ryzen 5, 16GB RAM y 512GB SSD. Diseño elegante con teclado retroiluminado y pantalla antirreflejos.',
-        imagen:
-          'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&h=600&fit=crop',
-        precioUnitario: 1100000,
+          'Notebook con segunda pantalla ScreenPad Plus de 14 pulgadas, GPU dedicada y construcción premium. Pensada para creadores de contenido y multitarea profesional.',
+        imagen: urlDummyJson('laptops', 'Asus Zenbook Pro Duo 15'),
+        precioUnitario: 1500000,
         stock: 5,
       },
       {
-        nombre: 'Notebook Asus VivoBook 14',
+        nombre: 'Huawei Matebook X Pro',
         descripcion:
-          'Compacta y portátil con Intel Core i7, 8GB RAM y 256GB SSD. NumberPad integrado en el touchpad para mayor productividad.',
-        imagen:
-          'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=600&h=600&fit=crop',
-        precioUnitario: 920000,
+          'Ultrabook con pantalla 3K táctil de 13.9 pulgadas y procesador Intel Core de última generación. Chasis de aluminio y peso ultraliviano.',
+        imagen: urlDummyJson('laptops', 'Huawei Matebook X Pro'),
+        precioUnitario: 1200000,
+        stock: 7,
+      },
+      {
+        nombre: 'Lenovo ThinkPad X1',
+        descripcion:
+          'Notebook empresarial con teclado ThinkPad, lector de huellas, certificación MIL-SPEC y conectividad LTE. Para uso corporativo intenso en movilidad.',
+        imagen: urlDummyJson('laptops', 'Lenovo Thinkpad X1'),
+        precioUnitario: 1400000,
         stock: 6,
       },
     ],
@@ -78,163 +89,131 @@ const CATALOGO: { categoria: string; items: ItemSeed[] }[] = [
     categoria: 'Smartphones',
     items: [
       {
-        nombre: 'iPhone 15',
+        nombre: 'iPhone 15 Pro Max',
         descripcion:
-          'Cámara dual de 48MP, chip A16 Bionic, USB-C, pantalla Super Retina XDR de 6.1 pulgadas. Disponible en cinco colores.',
-        imagen:
-          'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&h=600&fit=crop',
-        precioUnitario: 1750000,
+          'Tope de gama con chip A17 Pro, cámara de 48MP con teleobjetivo de zoom óptico 5x, construcción en titanio y conexión USB-C.',
+        imagen: urlDummyJson('smartphones', 'iPhone 15 Pro Max'),
+        precioUnitario: 1950000,
         stock: 4,
       },
       {
-        nombre: 'Samsung Galaxy A54',
+        nombre: 'Samsung Galaxy S24 Ultra 5G',
         descripcion:
-          'Cámara triple con sensor principal de 50MP, pantalla Super AMOLED de 6.4 pulgadas y batería de 5000mAh con carga rápida.',
-        imagen:
-          'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=600&h=600&fit=crop',
-        precioUnitario: 480000,
-        stock: 12,
+          'Pantalla Dynamic AMOLED 2X de 6.8 pulgadas, cámara principal de 200MP, S Pen integrado y procesador Snapdragon 8 Gen 3 for Galaxy.',
+        imagen: urlDummyJson('smartphones', 'Samsung Galaxy S24 Ultra 5G'),
+        precioUnitario: 1750000,
+        stock: 6,
       },
       {
-        nombre: 'Xiaomi Redmi Note 13',
+        nombre: 'OnePlus 12R',
         descripcion:
-          'Cámara de 108MP, pantalla AMOLED de 120Hz, procesador Snapdragon 685 y carga rápida de 33W. Excelente relación precio-calidad.',
-        imagen:
-          'https://images.unsplash.com/photo-1567581935884-3349723552ca?w=600&h=600&fit=crop',
-        precioUnitario: 320000,
+          'Pantalla AMOLED 120Hz, batería de 5500mAh con carga SUPERVOOC de 100W y procesador Snapdragon 8 Gen 2. Diseño premium a precio accesible.',
+        imagen: urlDummyJson('smartphones', 'OnePlus 12R'),
+        precioUnitario: 620000,
+        stock: 10,
+      },
+      {
+        nombre: 'Realme C53',
+        descripcion:
+          'Pantalla de 6.74 pulgadas a 90Hz, cámara de 50MP y acabado dorado tipo "Champion". Excelente relación precio-calidad para uso diario.',
+        imagen: urlDummyJson('smartphones', 'Realme C53'),
+        precioUnitario: 250000,
+        stock: 18,
+      },
+    ],
+  },
+  {
+    categoria: 'Tablets',
+    items: [
+      {
+        nombre: 'iPad Mini 2021 Starlight',
+        descripcion:
+          'Tablet compacta con chip A15 Bionic, pantalla Liquid Retina de 8.3 pulgadas y soporte para Apple Pencil de segunda generación.',
+        imagen: urlDummyJson('tablets', 'iPad Mini 2021 Starlight'),
+        precioUnitario: 850000,
+        stock: 8,
+      },
+      {
+        nombre: 'Samsung Galaxy Tab S8 Plus',
+        descripcion:
+          'Tablet Android con pantalla Super AMOLED de 12.4 pulgadas, S Pen incluido y procesador Snapdragon 8 Gen 1. Ideal para productividad y entretenimiento.',
+        imagen: urlDummyJson('tablets', 'Samsung Galaxy Tab S8 Plus'),
+        precioUnitario: 1100000,
+        stock: 5,
+      },
+      {
+        nombre: 'Huawei MatePad Pro',
+        descripcion:
+          'Pantalla OLED de 12.6 pulgadas, sonido cuádruple Harman Kardon y compatibilidad con M-Pencil. Excelente para diseño y consumo multimedia.',
+        imagen: urlDummyJson('tablets', 'Huawei MatePad Pro'),
+        precioUnitario: 950000,
+        stock: 6,
+      },
+    ],
+  },
+  {
+    categoria: 'Accesorios móviles',
+    items: [
+      {
+        nombre: 'Apple AirPods Pro',
+        descripcion:
+          'Auriculares in-ear inalámbricos con cancelación activa de ruido, audio espacial personalizado y estuche de carga MagSafe.',
+        imagen: urlDummyJson('mobile-accessories', 'Apple AirPods Pro'),
+        precioUnitario: 385000,
         stock: 15,
       },
       {
-        nombre: 'Motorola Moto G84',
+        nombre: 'Apple Airpods Max Silver',
         descripcion:
-          'Pantalla pOLED de 6.5 pulgadas a 120Hz, cámara de 50MP con OIS, 8GB de RAM y batería de 5000mAh.',
-        imagen:
-          'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=600&h=600&fit=crop',
-        precioUnitario: 360000,
-        stock: 10,
-      },
-    ],
-  },
-  {
-    categoria: 'Periféricos',
-    items: [
-      {
-        nombre: 'Teclado mecánico Redragon Kumara',
-        descripcion:
-          'Teclado mecánico tenkeyless con switches outemu blue, retroiluminación RGB y construcción robusta. Ideal para gaming y oficina.',
-        imagen:
-          'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&h=600&fit=crop',
-        precioUnitario: 55000,
-        stock: 20,
+          'Auriculares supraurales premium con cancelación activa de ruido, modo Transparencia y audio espacial dinámico con seguimiento de cabeza.',
+        imagen: urlDummyJson('mobile-accessories', 'Apple Airpods Max Silver'),
+        precioUnitario: 890000,
+        stock: 4,
       },
       {
-        nombre: 'Mouse Logitech G203',
+        nombre: 'Apple Magic Mouse',
         descripcion:
-          'Mouse gamer con sensor de 8000 DPI, iluminación LIGHTSYNC RGB y 6 botones programables. Software G HUB incluido.',
-        imagen:
-          'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&h=600&fit=crop',
-        precioUnitario: 38000,
+          'Mouse inalámbrico con superficie multitouch para gestos. Conexión Bluetooth, base recargable y diseño ergonómico para uso prolongado.',
+        imagen: urlDummyJson('mobile-accessories', 'Apple Magic Mouse'),
+        precioUnitario: 145000,
+        stock: 12,
+      },
+      {
+        nombre: 'Apple Wireless Charger',
+        descripcion:
+          'Base de carga inalámbrica compatible con iPhone, AirPods y dispositivos Qi. Carga rápida hasta 15W y diseño minimalista.',
+        imagen: urlDummyJson('mobile-accessories', 'Apple Wireless Charger'),
+        precioUnitario: 65000,
         stock: 25,
       },
-      {
-        nombre: 'Monitor LG 24" Full HD',
-        descripcion:
-          'Monitor IPS de 24 pulgadas, resolución 1920x1080, tasa de refresco de 75Hz y tecnología AMD FreeSync. Puertos HDMI y VGA.',
-        imagen:
-          'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&h=600&fit=crop',
-        precioUnitario: 270000,
-        stock: 9,
-      },
-      {
-        nombre: 'Webcam Logitech C920',
-        descripcion:
-          'Webcam Full HD 1080p con dos micrófonos estéreo y enfoque automático. Compatible con todas las plataformas de videollamadas.',
-        imagen:
-          'https://images.unsplash.com/photo-1587826080692-f439cd0b70da?w=600&h=600&fit=crop',
-        precioUnitario: 95000,
-        stock: 14,
-      },
     ],
   },
   {
-    categoria: 'Audio',
+    categoria: 'Relojes',
     items: [
       {
-        nombre: 'Auriculares Sony WH-CH520',
+        nombre: 'Rolex Cellini Date',
         descripcion:
-          'Auriculares inalámbricos supraurales con hasta 50 horas de batería, conexión Bluetooth 5.2 y modo multi-punto. Cómodos para uso prolongado.',
-        imagen:
-          'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600&h=600&fit=crop',
-        precioUnitario: 85000,
-        stock: 18,
+          'Reloj de lujo con caja de oro blanco de 39mm, esfera negra con fecha y correa de cuero. Movimiento automático certificado COSC.',
+        imagen: urlDummyJson('mens-watches', 'Rolex Cellini Date'),
+        precioUnitario: 4500000,
+        stock: 1,
       },
       {
-        nombre: 'Auriculares JBL Tune 510BT',
+        nombre: 'Longines Master Collection',
         descripcion:
-          'Auriculares bluetooth con sonido Pure Bass, hasta 40 horas de autonomía y plegables para fácil transporte.',
-        imagen:
-          'https://images.unsplash.com/photo-1545127398-14699f92334b?w=600&h=600&fit=crop',
-        precioUnitario: 65000,
-        stock: 22,
+          'Reloj suizo de la Master Collection con esfera blanca, agujas dauphine y movimiento automático L888 con reserva de marcha de 64 horas.',
+        imagen: urlDummyJson('mens-watches', 'Longines Master Collection'),
+        precioUnitario: 1250000,
+        stock: 3,
       },
       {
-        nombre: 'Parlante Bluetooth JBL Go 3',
+        nombre: 'Brown Leather Belt Watch',
         descripcion:
-          'Parlante portátil bluetooth, resistente al agua y al polvo (IP67). Hasta 5 horas de reproducción y diseño compacto.',
-        imagen:
-          'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&h=600&fit=crop',
-        precioUnitario: 45000,
-        stock: 30,
-      },
-      {
-        nombre: 'Auriculares HyperX Cloud II',
-        descripcion:
-          'Auriculares gamer con sonido envolvente 7.1, almohadillas de memory foam y micrófono desmontable con cancelación de ruido.',
-        imagen:
-          'https://images.unsplash.com/photo-1599669454699-248893623440?w=600&h=600&fit=crop',
-        precioUnitario: 145000,
-        stock: 7,
-      },
-    ],
-  },
-  {
-    categoria: 'Almacenamiento',
-    items: [
-      {
-        nombre: 'SSD Kingston NV2 500GB',
-        descripcion:
-          'Unidad SSD NVMe PCIe Gen 4.0 con velocidades de hasta 3500 MB/s. Compatible con notebooks y PCs de escritorio modernos.',
-        imagen:
-          'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=600&h=600&fit=crop',
-        precioUnitario: 58000,
-        stock: 35,
-      },
-      {
-        nombre: 'SSD Samsung 870 EVO 1TB',
-        descripcion:
-          'SSD SATA de 2.5 pulgadas con velocidades de hasta 560 MB/s. Tecnología V-NAND y software Samsung Magician incluido.',
-        imagen:
-          'https://images.unsplash.com/photo-1601625148755-6c9b75c25f86?w=600&h=600&fit=crop',
-        precioUnitario: 130000,
-        stock: 16,
-      },
-      {
-        nombre: 'Disco externo WD Elements 1TB',
-        descripcion:
-          'Disco duro portátil USB 3.0 de 1TB. Compatible con Windows y Mac, plug and play sin necesidad de software adicional.',
-        imagen:
-          'https://images.unsplash.com/photo-1531492746076-161ca9bcad58?w=600&h=600&fit=crop',
-        precioUnitario: 75000,
-        stock: 20,
-      },
-      {
-        nombre: 'Pendrive SanDisk 64GB',
-        descripcion:
-          'Pendrive USB 3.0 de 64GB con velocidad de lectura de hasta 130 MB/s. Diseño compacto y resistente.',
-        imagen:
-          'https://images.unsplash.com/photo-1601445638532-3c6f6c3aa1d6?w=600&h=600&fit=crop',
-        precioUnitario: 12000,
-        stock: 50,
+          'Reloj clásico con correa de cuero marrón, esfera analógica blanca y caja de acero inoxidable de 40mm. Diseño atemporal para uso diario.',
+        imagen: urlDummyJson('mens-watches', 'Brown Leather Belt Watch'),
+        precioUnitario: 180000,
+        stock: 8,
       },
     ],
   },
