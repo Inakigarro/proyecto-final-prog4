@@ -5,9 +5,10 @@ import { usePathname } from 'next/navigation';
 import styles from './DashboardSidebar.module.css';
 
 const ENTIDADES = [
-  { etiqueta: 'Productos',   ruta: '/dashboard/productos' },
-  { etiqueta: 'Categorías',  ruta: '/dashboard/categorias' },
-  { etiqueta: 'Promociones', ruta: '/dashboard/promociones' },
+  { etiqueta: 'Productos',     ruta: '/dashboard/productos' },
+  { etiqueta: 'Categorías',    ruta: '/dashboard/categorias' },
+  { etiqueta: 'Promociones',   ruta: '/dashboard/promociones' },
+  { etiqueta: 'Slider del home', ruta: '/dashboard/slider' },
 ];
 
 export default function DashboardSidebar() {

@@ -17,6 +17,20 @@ export interface ProductoDashboard {
   category: CategoriaResumen[];
 }
 
+/** Slide del slider del home tal como lo expone el backend. */
+export interface SlideDashboard {
+  id: string;
+  imagen: string;
+  alt: string;
+  leyenda: string;
+  orden: number;
+}
+
+/** Respuesta del endpoint que sube la imagen del slide. */
+export interface SlideUploadResponse {
+  url: string;
+}
+
 export interface ProductosPageResponse {
   datos: ProductoDashboard[];
   total: number;

@@ -3,3 +3,8 @@ dist/
 .env
 
 .github/
+
+# Imágenes subidas en runtime via /api/slides/imagen. La carpeta se trackea
+# vacía via .gitkeep para que multer pueda escribir en entornos limpios.
+public/uploads/slides/*
+!public/uploads/slides/.gitkeep

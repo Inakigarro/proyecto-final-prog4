@@ -22,6 +22,15 @@ export function setAccessToken(token: string | null): void {
   _accessToken = token;
 }
 
+/**
+ * Devuelve el access token vigente en memoria, o null si no hay sesión.
+ * Pensado para casos puntuales como uploads multipart donde se necesita
+ * armar manualmente el header Authorization sin pasar por apiFetch.
+ */
+export function getAccessToken(): string | null {
+  return _accessToken;
+}
+
 function obtenerToken(): string | null {
   return _accessToken;
 }
