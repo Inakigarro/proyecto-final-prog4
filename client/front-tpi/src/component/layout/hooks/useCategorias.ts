@@ -7,12 +7,15 @@ export interface Categoria {
   nombre: string;
 }
 
-interface RespuestaProductos {
-  products?: {
-    datos?: Array<{
-      category?: Categoria[];
-    }>;
-  };
+/**
+ * Forma que devuelve GET /api/categories.
+ * Cada categoría incluye su cantidad de items para que podamos descartar las
+ * que estén vacías sin tener que pedir el detalle.
+ */
+interface CategoriaApi {
+  id: string;
+  nombre: string;
+  cantidadItems: number;
 }
 
 interface EstadoCategorias {
@@ -20,7 +23,15 @@ interface EstadoCategorias {
   cargando: boolean;
 }
 
-/** Trae categorías derivándolas de la respuesta de productos, dedupadas por id y ordenadas alfabéticamente */
+/**
+ * Trae las categorías directamente desde el endpoint dedicado del backend.
+ *
+ * Antes este hook derivaba las categorías de los productos devueltos por
+ * `/api/products`, pero como esa respuesta está paginada (20 productos por
+ * página), solo aparecían las categorías que tuvieran al menos un producto
+ * en la primera página. Ahora pegamos directo contra `/api/categories` que
+ * lista todas las activas y devolvemos las que tienen al menos un item.
+ */
 export const useCategorias = (): EstadoCategorias => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -28,24 +39,13 @@ export const useCategorias = (): EstadoCategorias => {
   useEffect(() => {
     const cargarCategorias = async () => {
       try {
-        const respuesta = await fetch("/api/products");
+        const respuesta = await fetch("/api/categories");
         if (!respuesta.ok) return;
-        const datos: RespuestaProductos = await respuesta.json();
-        const productos = datos?.products?.datos ?? [];
-        const mapa = new Map<string, Categoria>();
-        for (const producto of productos) {
-          for (const categoria of producto.category ?? []) {
-            if (categoria?.id && !mapa.has(categoria.id)) {
-              mapa.set(categoria.id, {
-                id: categoria.id,
-                nombre: categoria.nombre,
-              });
-            }
-          }
-        }
-        const ordenadas = Array.from(mapa.values()).sort((a, b) =>
-          a.nombre.localeCompare(b.nombre),
-        );
+        const datos: CategoriaApi[] = await respuesta.json();
+        const ordenadas = datos
+          .filter((c) => c.cantidadItems > 0)
+          .map<Categoria>((c) => ({ id: c.id, nombre: c.nombre }))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
         setCategorias(ordenadas);
       } catch {
         // Falla silenciosa: el menú queda vacío
