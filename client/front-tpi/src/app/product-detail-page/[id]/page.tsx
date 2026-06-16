@@ -28,7 +28,7 @@ import PanelInfo from "./_components/PanelInfo";
 import RelatedSlider from "./_components/RelatedSlider";
 import Comparador from "./_components/Comparador";
 import Breadcrumb from "@/component/layout/Breadcrumb";
-import { usePromociones } from "@/component/promociones/usePromociones";
+import { usePromociones } from "@/component/promociones/hooks/usePromociones";
 import { buscarPromocionAplicable, describirPromocion } from "@/lib/promociones";
 import styles from "./page.module.css";
 
@@ -139,7 +139,7 @@ export default function PaginaProducto() {
       <section className={styles.hero}>
         <HeroProducto
           nombre={producto.nombre}
-          imageSrc={producto.imageSrc}
+          imageSrc={producto.imagen}
           cucarda={cucardaPromocional ?? producto.cucarda}
         />
         <PanelInfo
@@ -156,7 +156,9 @@ export default function PaginaProducto() {
       <section className={styles.seccion}>
         <Accordion titulo="Descripción">
           <p className={styles.descripcionTexto}>
-            Este producto aún no tiene una descripción detallada disponible.
+            {producto.descripcion?.trim()
+              ? producto.descripcion
+              : 'Este producto aún no tiene una descripción detallada disponible.'}
           </p>
         </Accordion>
       </section>

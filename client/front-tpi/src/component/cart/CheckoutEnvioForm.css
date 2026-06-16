@@ -82,6 +82,39 @@
   box-shadow: 0 0 0 2px rgba(204, 148, 118, 0.25);
 }
 
+.checkout-envio-campo input[readonly] {
+  background: var(--color-dark-surface);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.checkout-envio-campo select {
+  padding: 10px 12px;
+  border: 1px solid var(--color-dark-border);
+  border-radius: 8px;
+  background: var(--color-dark-surface);
+  color: var(--color-dark-text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.checkout-envio-campo select:focus {
+  border-color: var(--color-highlight);
+  box-shadow: 0 0 0 2px rgba(204, 148, 118, 0.25);
+}
+
+.checkout-envio-campo select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Variante de campo angosto para piso, depto, número, CP */
+.checkout-envio-campo--corto {
+  max-width: 100%;
+}
+
 /* ── Mensajes de error y ayuda ─────────────────────────────────────────── */
 
 .checkout-envio-error {

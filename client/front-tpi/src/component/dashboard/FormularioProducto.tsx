@@ -16,6 +16,7 @@ export default function FormularioProducto({ id }: Props) {
 
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [imagen, setImagen] = useState('');
   const [precioUnitario, setPrecioUnitario] = useState('');
   const [stock, setStock] = useState('0');
   const [categoriaIds, setCategoriaIds] = useState<string[]>([]);
@@ -39,6 +40,7 @@ export default function FormularioProducto({ id }: Props) {
       .then((p) => {
         setNombre(p.nombre);
         setDescripcion(p.descripcion ?? '');
+        setImagen(p.imagen ?? '');
         setPrecioUnitario(String(p.precioUnitario));
         setStock(String(p.stock));
         setCategoriaIds(p.category.map((c) => c.id));
@@ -76,6 +78,7 @@ export default function FormularioProducto({ id }: Props) {
       const body = {
         nombre: nombre.trim(),
         descripcion: descripcion.trim() || undefined,
+        imagen: imagen.trim() || undefined,
         precioUnitario: precio,
         stock: parseInt(stock) || 0,
         category: categoriaIds,
@@ -132,6 +135,28 @@ export default function FormularioProducto({ id }: Props) {
             maxLength={500}
             rows={3}
           />
+        </div>
+
+        <div className={styles.campo}>
+          <label htmlFor="imagen">URL de la imagen</label>
+          <input
+            id="imagen"
+            type="url"
+            value={imagen}
+            onChange={(e) => setImagen(e.target.value)}
+            placeholder="https://..."
+            maxLength={500}
+          />
+          {imagen.trim() && (
+            <img
+              src={imagen.trim()}
+              alt="Vista previa"
+              className={styles.previewImagen}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          )}
         </div>
 
         <div className={styles.fila}>

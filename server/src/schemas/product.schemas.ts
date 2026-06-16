@@ -19,6 +19,11 @@ export const CrearItemSchema = z.object({
     .string()
     .max(500, 'La descripción no puede superar los 500 caracteres')
     .optional(),
+  imagen: z
+    .string()
+    .url('La imagen debe ser una URL válida')
+    .max(500, 'La URL de la imagen no puede superar los 500 caracteres')
+    .optional(),
   precioUnitario: z
     .number({ error: 'El precio debe ser un número' })
     .positive('El precio unitario debe ser mayor a 0'),

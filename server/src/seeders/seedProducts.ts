@@ -9,64 +9,111 @@ import { logger } from '../config/logger';
 // Idempotente: usa upsert tanto en categorías como en items.
 // Se puede correr múltiples veces sin duplicar datos.
 //
+// Fuente: DummyJSON Products (https://dummyjson.com/products). El seeder hace
+// HTTP GET por cada categoría tech relevante y persiste TODOS los productos
+// que el API devuelva, usando sus URLs de thumbnail reales. Las descripciones
+// se generan en español a partir del título y la marca para mantener la
+// coherencia idiomática del sitio. Los precios se convierten de USD a ARS
+// con una tasa fija.
+//
+// Limpieza previa: ANTES de cargar el catálogo nuevo, todos los Items y
+// Categories preexistentes se marcan como inactivos (soft delete). Las
+// referencias históricas (órdenes de compra, promociones) no se rompen
+// porque los documentos siguen existiendo en la BD. Los items y categorías
+// que estén en el catálogo nuevo de DummyJSON se reactivan en el upsert.
+//
 // Orden interno:
-//  1. Crea/actualiza las categorías vacías (con validateBeforeSave: false
-//     porque el modelo Categoria exige al menos 1 item).
-//  2. Crea/actualiza los items asociándoles su categoría.
-//  3. Actualiza cada categoría con la lista final de items.
+//  1. Soft delete: desactiva todos los Items y Categories existentes.
+//  2. Fetch en paralelo de las 5 categorías de DummyJSON.
+//  3. Upsert de las categorías (con validateBeforeSave: false porque el
+//     modelo Categoria exige al menos 1 item).
+//  4. Upsert de cada item, asociándolo a su categoría.
+//  5. Actualiza cada categoría con la lista final de items.
 // ─────────────────────────────────────────────────────────────────────────────
 
+const BASE_DUMMYJSON = 'https://dummyjson.com';
+
+/** Tasa fija USD → ARS para convertir los precios del API. */
+const TASA_USD_ARS = 1500;
+
 /**
- * Catálogo declarativo: lista de categorías y los items que pertenecen a cada una.
- * Para agregar productos nuevos solo hay que extender los arrays de items.
+ * Mapa de categorías DummyJSON → nombre de display en español.
+ * Solo incluye las categorías tech relevantes para TechPoint.
  */
-const CATALOGO: { categoria: string; items: { nombre: string; precioUnitario: number; stock: number }[] }[] = [
-  {
-    categoria: 'Notebooks',
-    items: [
-      { nombre: 'Notebook Lenovo IdeaPad 3',     precioUnitario: 850000,  stock: 8  },
-      { nombre: 'Notebook HP Pavilion 15',       precioUnitario: 1100000, stock: 5  },
-      { nombre: 'Notebook Asus VivoBook 14',     precioUnitario: 920000,  stock: 6  },
-      { nombre: 'MacBook Air M2',                precioUnitario: 2150000, stock: 3  },
-    ],
-  },
-  {
-    categoria: 'Smartphones',
-    items: [
-      { nombre: 'Samsung Galaxy A54',            precioUnitario: 480000,  stock: 12 },
-      { nombre: 'Xiaomi Redmi Note 13',          precioUnitario: 320000,  stock: 15 },
-      { nombre: 'Motorola Moto G84',             precioUnitario: 360000,  stock: 10 },
-      { nombre: 'iPhone 15',                     precioUnitario: 1750000, stock: 4  },
-    ],
-  },
-  {
-    categoria: 'Periféricos',
-    items: [
-      { nombre: 'Teclado mecánico Redragon Kumara',  precioUnitario: 55000,  stock: 20 },
-      { nombre: 'Mouse Logitech G203',               precioUnitario: 38000,  stock: 25 },
-      { nombre: 'Monitor LG 24" Full HD',            precioUnitario: 270000, stock: 9  },
-      { nombre: 'Webcam Logitech C920',              precioUnitario: 95000,  stock: 14 },
-    ],
-  },
-  {
-    categoria: 'Audio',
-    items: [
-      { nombre: 'Auriculares Sony WH-CH520',     precioUnitario: 85000,  stock: 18 },
-      { nombre: 'Auriculares JBL Tune 510BT',    precioUnitario: 65000,  stock: 22 },
-      { nombre: 'Parlante Bluetooth JBL Go 3',   precioUnitario: 45000,  stock: 30 },
-      { nombre: 'Auriculares HyperX Cloud II',   precioUnitario: 145000, stock: 7  },
-    ],
-  },
-  {
-    categoria: 'Almacenamiento',
-    items: [
-      { nombre: 'SSD Kingston NV2 500GB',        precioUnitario: 58000,  stock: 35 },
-      { nombre: 'SSD Samsung 870 EVO 1TB',       precioUnitario: 130000, stock: 16 },
-      { nombre: 'Disco externo WD Elements 1TB', precioUnitario: 75000,  stock: 20 },
-      { nombre: 'Pendrive SanDisk 64GB',         precioUnitario: 12000,  stock: 50 },
-    ],
-  },
+const CATEGORIAS_DUMMYJSON: { slug: string; nombre: string }[] = [
+  { slug: 'laptops', nombre: 'Notebooks' },
+  { slug: 'smartphones', nombre: 'Smartphones' },
+  { slug: 'tablets', nombre: 'Tablets' },
+  { slug: 'mobile-accessories', nombre: 'Accesorios móviles' },
+  { slug: 'mens-watches', nombre: 'Relojes hombre' },
+  { slug: 'womens-watches', nombre: 'Relojes mujer' },
 ];
+
+interface ProductoDummyJson {
+  id: number;
+  title: string;
+  brand?: string;
+  price: number;
+  stock: number;
+  thumbnail: string;
+}
+
+interface RespuestaDummyJson {
+  products: ProductoDummyJson[];
+  total: number;
+}
+
+/**
+ * Trae todos los productos de una categoría de DummyJSON.
+ * Si el API responde con error, devuelve un array vacío y loggea el problema.
+ */
+async function obtenerProductosCategoria(slug: string): Promise<ProductoDummyJson[]> {
+  try {
+    const url = `${BASE_DUMMYJSON}/products/category/${slug}?limit=100`;
+    const respuesta = await fetch(url);
+    if (!respuesta.ok) {
+      throw new Error(`DummyJSON respondió ${respuesta.status}`);
+    }
+    const data = (await respuesta.json()) as RespuestaDummyJson;
+    return data.products ?? [];
+  } catch (error) {
+    logger.error('No se pudo obtener categoría de DummyJSON', {
+      slug,
+      error: String(error),
+    });
+    return [];
+  }
+}
+
+/**
+ * Genera una descripción corta en español según la categoría del producto.
+ * Incluye la marca cuando está disponible para que el texto sea más concreto.
+ */
+function generarDescripcion(categoria: string, brand?: string): string {
+  const marca = brand?.trim() ? `${brand.trim()} ` : '';
+  switch (categoria) {
+    case 'Notebooks':
+      return `Notebook ${marca}con prestaciones modernas, ideal para uso profesional, estudio o entretenimiento. Diseño elegante y construcción premium.`;
+    case 'Smartphones':
+      return `Smartphone ${marca}con pantalla de alta resolución, cámara avanzada y rendimiento fluido para uso diario.`;
+    case 'Tablets':
+      return `Tablet ${marca}con pantalla amplia y procesador potente. Ideal para productividad, lectura y consumo multimedia.`;
+    case 'Accesorios móviles':
+      return `Accesorio ${marca}compatible con dispositivos móviles. Calidad premium y diseño práctico para uso cotidiano.`;
+    case 'Relojes hombre':
+    case 'Relojes mujer':
+      return `Reloj ${marca}con diseño atemporal y mecanismo de precisión. Acabados de alta gama y materiales nobles.`;
+    default:
+      return `Producto ${marca}de calidad premium.`;
+  }
+}
+
+/**
+ * Convierte el precio del API (USD) al precio del catálogo (ARS) redondeado.
+ */
+function convertirPrecio(usd: number): number {
+  return Math.round(usd * TASA_USD_ARS);
+}
 
 /**
  * Punto de entrada del seeder.
@@ -75,67 +122,115 @@ async function seed(): Promise<void> {
   await mongoose.connect(process.env.MONGODB_URI as string);
   logger.info('Conectado a MongoDB');
 
+  // 1. Soft delete del catálogo preexistente. Los items y categorías que
+  //    estén en el catálogo nuevo de DummyJSON se reactivan en el upsert.
+  await desactivarCatalogoExistente();
+
+  // 2. Fetch en paralelo de las 5 categorías.
+  const respuestas = await Promise.all(
+    CATEGORIAS_DUMMYJSON.map(async ({ slug, nombre }) => ({
+      nombreCategoria: nombre,
+      productos: await obtenerProductosCategoria(slug),
+    })),
+  );
+
   let categoriasSincronizadas = 0;
   let itemsSincronizados = 0;
 
-  for (const grupo of CATALOGO) {
-    // 1. Upsert de la categoría vacía. Salteamos validaciones porque el
-    //    schema exige >=1 item, y todavía no creamos los items.
-    const categoria = await upsertCategoriaVacia(grupo.categoria);
+  for (const { nombreCategoria, productos } of respuestas) {
+    if (productos.length === 0) {
+      logger.warn('Categoría sin productos, se omite', { categoria: nombreCategoria });
+      continue;
+    }
 
-    // 2. Upsert de cada item del grupo, ya con la categoría asignada.
+    // 3. Upsert de la categoría vacía (la reactiva si estaba inactiva).
+    const categoria = await upsertCategoriaVacia(nombreCategoria);
+
+    // 4. Upsert de cada item del grupo, ya con la categoría asignada.
     const idsItems: Types.ObjectId[] = [];
-    for (const datosItem of grupo.items) {
-      const item = await upsertItem(datosItem, categoria._id);
+    for (const producto of productos) {
+      const item = await upsertItem(producto, nombreCategoria, categoria._id);
       idsItems.push(item._id);
       itemsSincronizados++;
     }
 
-    // 3. Actualizamos la categoría con la lista final de items.
+    // 5. Actualizamos la categoría con la lista final de items.
     categoria.items = idsItems;
     await categoria.save();
 
     categoriasSincronizadas++;
-    logger.info(`✓ Categoría sincronizada`, { categoria: grupo.categoria, items: idsItems.length });
+    logger.info('✓ Categoría sincronizada', {
+      categoria: nombreCategoria,
+      items: idsItems.length,
+    });
   }
 
-  logger.info(`✓ Seeder finalizado`, { categorias: categoriasSincronizadas, items: itemsSincronizados });
+  logger.info('✓ Seeder finalizado', {
+    categorias: categoriasSincronizadas,
+    items: itemsSincronizados,
+  });
   await mongoose.disconnect();
 }
 
 /**
- * Crea o actualiza una categoría por nombre, sin requerir items.
- * Usa validateBeforeSave:false para esquivar la validación de "mínimo 1 item",
- * que se cumplirá recién cuando agreguemos los items en el paso siguiente.
+ * Marca como inactivos todos los Items y Categories existentes en la BD.
+ * Es un soft delete que conserva las referencias históricas (órdenes,
+ * promociones) y permite que el upsert posterior reactive los que están
+ * en el catálogo nuevo.
+ */
+async function desactivarCatalogoExistente(): Promise<void> {
+  const [itemsResult, categoriesResult] = await Promise.all([
+    Item.updateMany({ activo: { $ne: false } }, { activo: false }),
+    Category.updateMany({ activo: { $ne: false } }, { activo: false }),
+  ]);
+  logger.info('Catálogo existente desactivado (soft delete)', {
+    itemsDesactivados: itemsResult.modifiedCount,
+    categoriasDesactivadas: categoriesResult.modifiedCount,
+  });
+}
+
+/**
+ * Crea o reactiva una categoría por nombre, sin requerir items.
+ * Si la categoría existía (incluso desactivada por el soft delete previo),
+ * la reactiva. Usa validateBeforeSave:false para esquivar la validación de
+ * "mínimo 1 item", que se cumplirá recién cuando agreguemos los items en
+ * el paso siguiente.
  */
 async function upsertCategoriaVacia(nombre: string): Promise<ICategory> {
   const existente = await Category.findOne({ nombre });
   if (existente) {
+    existente.activo = true;
+    await existente.save({ validateBeforeSave: false });
     return existente;
   }
-  const nueva = new Category({ nombre, items: [] });
+  const nueva = new Category({ nombre, items: [], activo: true });
   await nueva.save({ validateBeforeSave: false });
   return nueva;
 }
 
 /**
  * Crea o actualiza un item por nombre, asignándole su categoría.
- * Si el item ya existe, actualiza precio y stock (útil para reflejar cambios
- * declarados en el catálogo sin perder el _id ni las referencias).
+ * Mapea los campos de DummyJSON al schema del proyecto. Si el item ya existía
+ * (incluso desactivado por el soft delete previo), lo reactiva y actualiza
+ * todos los campos para reflejar cambios del catálogo remoto.
  */
 async function upsertItem(
-  datos: { nombre: string; precioUnitario: number; stock: number },
-  categoriaId: Types.ObjectId
+  producto: ProductoDummyJson,
+  nombreCategoria: string,
+  categoriaId: Types.ObjectId,
 ): Promise<IItem> {
   const item = await Item.findOneAndUpdate(
-    { nombre: datos.nombre },
+    { nombre: producto.title },
     {
-      nombre: datos.nombre,
-      precioUnitario: datos.precioUnitario,
-      stock: datos.stock,
+      nombre: producto.title,
+      descripcion: generarDescripcion(nombreCategoria, producto.brand),
+      imagen: producto.thumbnail,
+      precioUnitario: convertirPrecio(producto.price),
+      stock: producto.stock,
       category: [categoriaId],
+      activo: true,
     },
-    { upsert: true, new: true, runValidators: true }
+    { upsert: true, new: true, runValidators: true },
   );
   return item as IItem;
 }

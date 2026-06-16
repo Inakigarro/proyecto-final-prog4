@@ -25,6 +25,28 @@ import {
   elegirMejorPromocion,
   type PromocionAplicable,
 } from '../../utils/calculadoraPromocion';
+import { AddressService } from './address.service';
+import { IAddressService } from './address.service.interface';
+import { AddressResponseDto } from '../../types/address.dtos';
+
+/**
+ * Concatena los campos de una dirección en una línea legible para mostrar
+ * en emails y notificaciones. Omite piso y departamento si no existen.
+ *
+ * @example "Av. Siempre Viva 742, Piso 3 Depto B, Concepción del Uruguay,
+ *           Entre Ríos (E3260)"
+ */
+function formatearDireccionLegible(d: AddressResponseDto): string {
+  const calle = `${d.calle} ${d.numero}`.trim();
+  const pisoDepto = [
+    d.piso ? `Piso ${d.piso}` : null,
+    d.departamento ? `Depto ${d.departamento}` : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const ciudadProvincia = `${d.ciudad}, ${d.provincia} (${d.codigoPostal})`;
+  return [calle, pisoDepto, ciudadProvincia].filter(Boolean).join(', ');
+}
 
 /**
  * Valida que un id sea un ObjectId de Mongo bien formado.
@@ -107,9 +129,12 @@ function mapearDetalleAResponseDto(
  * El carrito es híbrido: los items se manejan en el frontend y este
  * servicio expone operaciones para validar el estado contra la BD
  * y para confirmar la compra creando la orden correspondiente.
+ *
+ * Depende del servicio de direcciones para resolver el envío del checkout:
+ * el cliente puede mandar `direccionId` (reusa) o los campos sueltos (crea o dedupea).
  */
 export class CartService implements ICartService {
-  constructor() {}
+  constructor(private readonly addressService: IAddressService = new AddressService()) {}
 
   /**
    * Valida los items del carrito contra la base.
@@ -256,6 +281,30 @@ export class CartService implements ICartService {
     const descuentos = dto.descuentos ?? [];
     validarDescuentos(descuentos);
 
+    // Resolver la dirección de envío antes de abrir la transacción:
+    // si vino direccionId, validar pertenencia; si no, crear o dedupear.
+    let direccionEnvio: AddressResponseDto;
+    if (dto.envio.direccionId) {
+      const existente = await this.addressService.obtenerPorIdYUsuario(
+        dto.envio.direccionId,
+        usuarioId,
+      );
+      if (!existente) {
+        throw new Error('La dirección elegida no existe o no te pertenece');
+      }
+      direccionEnvio = existente;
+    } else {
+      direccionEnvio = await this.addressService.crearODedup(usuarioId, {
+        calle: dto.envio.calle,
+        numero: dto.envio.numero,
+        piso: dto.envio.piso,
+        departamento: dto.envio.departamento,
+        ciudad: dto.envio.ciudad,
+        provincia: dto.envio.provincia,
+        codigoPostal: dto.envio.codigoPostal,
+      });
+    }
+
     const session = await mongoose.startSession();
     try {
       session.startTransaction();
@@ -313,8 +362,14 @@ export class CartService implements ICartService {
           envio: {
             nombre: dto.envio.nombre,
             apellido: dto.envio.apellido,
-            direccion: dto.envio.direccion,
             telefono: dto.envio.telefono,
+            calle: direccionEnvio.calle,
+            numero: direccionEnvio.numero,
+            piso: direccionEnvio.piso,
+            departamento: direccionEnvio.departamento,
+            ciudad: direccionEnvio.ciudad,
+            provincia: direccionEnvio.provincia,
+            codigoPostal: direccionEnvio.codigoPostal,
           },
           tarjeta: {
             marca: dto.tarjeta.marca,
@@ -324,14 +379,12 @@ export class CartService implements ICartService {
         { session }
       );
 
-      // Guardar dirección y teléfono en el perfil si el usuario lo pidió (default: true)
+      // Sincronizar el teléfono al perfil si el usuario lo pidió (default: true).
+      // La dirección ya quedó persistida como Address vía addressService.
       if (dto.guardarDatosEnPerfil !== false) {
         await User.findByIdAndUpdate(
           usuarioId,
-          {
-            direccion: dto.envio.direccion,
-            telefono: dto.envio.telefono,
-          },
+          { telefono: dto.envio.telefono },
           { session }
         );
       }
@@ -345,12 +398,13 @@ export class CartService implements ICartService {
 
       const detallesResponse = (detallesPopulados as unknown as PurchaseOrderDetailPopulado[]).map(mapearDetalleAResponseDto);
 
-      // Enviar email de confirmación (async, no bloquea la respuesta)
+      // Enviar email de confirmación (async, no bloquea la respuesta).
+      // La dirección viaja como una línea legible armada a partir de los campos.
       enviarEmailConfirmacionCompra({
         ordenId: orden._id.toString(),
         destinatario: usuario.email,
         nombreCompleto: `${dto.envio.nombre} ${dto.envio.apellido}`,
-        direccion: dto.envio.direccion,
+        direccion: formatearDireccionLegible(direccionEnvio),
         telefono: dto.envio.telefono,
         marcaTarjeta: dto.tarjeta.marca,
         ultimos4: dto.tarjeta.ultimos4,
@@ -377,8 +431,14 @@ export class CartService implements ICartService {
         envio: {
           nombre: dto.envio.nombre,
           apellido: dto.envio.apellido,
-          direccion: dto.envio.direccion,
           telefono: dto.envio.telefono,
+          calle: direccionEnvio.calle,
+          numero: direccionEnvio.numero,
+          piso: direccionEnvio.piso,
+          departamento: direccionEnvio.departamento,
+          ciudad: direccionEnvio.ciudad,
+          provincia: direccionEnvio.provincia,
+          codigoPostal: direccionEnvio.codigoPostal,
         },
         tarjeta: {
           marca: dto.tarjeta.marca,

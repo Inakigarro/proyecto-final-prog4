@@ -8,11 +8,6 @@
  * adapter para no romper a los consumidores: la API pública (CartProvider
  * y useCart) sigue siendo idéntica, pero por dentro lee/escribe contra el
  * store de Redux.
- *
- * Componentes que consumen useCart() (CartIcon, CartDrawer, CartToast,
- * CartItemRow, CartPageClient, LoginGateModal, etc.) no necesitan
- * modificarse. Si en el futuro se decide migrarlos a useSelector /
- * useDispatch directos, este archivo se puede eliminar.
  */
 
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
@@ -26,6 +21,7 @@ import {
   abrirDrawer as abrirDrawerAction,
   cerrarDrawer as cerrarDrawerAction,
   hidratar as hidratarAction,
+  iniciarConflictoLogin as iniciarConflictoLoginAction,
 } from '@/store/cartSlice';
 import { getStorageKey } from '@/store/localStorageMiddleware';
 import type { CartItem } from '@/lib/cart-types';
@@ -54,12 +50,34 @@ interface CartContextValue {
 
 
 /**
- * Lee el carrito persistido en localStorage para el usuario actual y
- * dispara la acción `hidratar`. Se re-ejecuta cuando el usuario cambia
- * (login / logout) para cargar el carrito correcto.
+ * Lee el carrito persistido en localStorage para la key indicada y lo
+ * devuelve como un array de items válidos. Si la key no existe, está mal
+ * formada o tiene items inválidos, devuelve un array vacío.
+ */
+function leerCartLocal(key: string): CartItem[] {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return [];
+    const parseado = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parseado)) return [];
+    return parseado.filter(esCartItemValido);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Mantiene sincronizado el carrito con el storage del usuario actual.
  *
- * Espera a que auth termine de cargar (isCargando === false) para no
- * hidratar desde la key guest mientras se verifica el refresh token.
+ * Reglas al loguearse:
+ * - Sin carrito guest: hidrata desde la key del usuario sin pisar nada.
+ * - Carrito guest + key del usuario vacía: transfiere el guest al usuario.
+ * - Carrito guest + carrito guardado del usuario: dispara conflicto; el modal
+ *   le pide al usuario elegir con cuál seguir y resuelve la persistencia.
+ *
+ * Mientras la sesión está activa, el middleware persiste cada acción del
+ * carrito en `techpoint:cart:{userId}`. La limpieza al cerrar sesión y al
+ * confirmar la compra ocurre fuera (AuthContext.logout / CartPageClient).
  */
 function CartHidratator() {
   const dispatch = useAppDispatch();
@@ -67,20 +85,42 @@ function CartHidratator() {
   const authCargando = useAppSelector((s) => s.auth.isCargando);
 
   useEffect(() => {
-    // No hidratar mientras auth sigue verificando la sesión
     if (authCargando) return;
+    if (typeof window === 'undefined') return;
 
-    try {
-      const key = getStorageKey(userId);
-      const raw = window.localStorage.getItem(key);
-      const items = raw ? (JSON.parse(raw) as CartItem[]) : [];
-      const itemsValidos = Array.isArray(items)
-        ? items.filter(esCartItemValido)
-        : [];
-      dispatch(hidratarAction(itemsValidos));
-    } catch {
-      dispatch(hidratarAction([]));
+    const guestKey = getStorageKey();
+    const guestItems = leerCartLocal(guestKey);
+
+    if (!userId) {
+      // Sin sesión: el carrito visible es el guest.
+      dispatch(hidratarAction(guestItems));
+      return;
     }
+
+    const userKey = getStorageKey(userId);
+    const userItems = leerCartLocal(userKey);
+
+    // Conflicto: el usuario armó algo como guest y además tenía algo guardado
+    // de una sesión anterior. La elección la hace el usuario via modal.
+    if (guestItems.length > 0 && userItems.length > 0) {
+      dispatch(iniciarConflictoLoginAction({ guestItems, userItems }));
+      return;
+    }
+
+    // Carrito guest no vacío y user sin carrito previo: lo transferimos.
+    if (guestItems.length > 0) {
+      try {
+        window.localStorage.setItem(userKey, JSON.stringify(guestItems));
+        window.localStorage.removeItem(guestKey);
+      } catch {
+        // Storage lleno o deshabilitado, igual hidratamos con los items en memoria.
+      }
+      dispatch(hidratarAction(guestItems));
+      return;
+    }
+
+    // Sin carrito guest: cargar el carrito guardado del usuario (si lo tiene).
+    dispatch(hidratarAction(userItems));
   }, [dispatch, userId, authCargando]);
 
   return null;

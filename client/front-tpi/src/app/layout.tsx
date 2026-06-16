@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import CartToast from "@/component/cart/CartToast";
 import CartDrawer from "@/component/cart/CartDrawer";
+import ConflictoCarritoModal from "@/component/cart/ConflictoCarritoModal";
 
 export const metadata: Metadata = {
   title: "TechPoint",
@@ -26,6 +27,7 @@ export default function RootLayout({
             <main>{children}</main>
             <CartToast />
             <CartDrawer />
+            <ConflictoCarritoModal />
           </CartProvider>
         </AuthProvider>
       </body>

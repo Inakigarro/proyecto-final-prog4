@@ -1,0 +1,91 @@
+.card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--color-dark-bg);
+  border: 1px solid var(--color-dark-border);
+  border-radius: 12px;
+  padding: 20px;
+  color: var(--color-dark-text);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--color-highlight);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card:active {
+  transform: translateY(1px);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--color-highlight);
+  outline-offset: 2px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cardOrden {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-dark-text);
+}
+
+.cardFecha {
+  font-size: 13px;
+  color: var(--color-dark-muted);
+}
+
+.cardBody {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--color-dark-text-2);
+}
+
+.cardPago {
+  font-size: 12px;
+  color: var(--color-dark-muted);
+}
+
+.cardTotal {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-dark-text);
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-dark-border);
+}
+
+.cardEnvio {
+  font-size: 12px;
+  color: var(--color-dark-muted);
+}
+
+.cardVer {
+  font-size: 13px;
+  color: var(--color-highlight);
+  font-weight: 500;
+}

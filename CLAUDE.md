@@ -291,6 +291,8 @@ JWT_SECRET=cambiar_por_clave_secreta_segura
 SUPERADMIN_PASSWORD=contraseña_superadmin_segura
 FRONTEND_URL=http://localhost:3000
 ALLOWED_ORIGIN=http://localhost:3000
+
+# SMTP (Gmail con app password)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=tu-gmail@gmail.com

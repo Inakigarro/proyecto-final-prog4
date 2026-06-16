@@ -18,6 +18,8 @@ export interface ProductosPageResponse {
 export interface CrearItemDto {
   nombre: string;
   descripcion?: string;
+  /** URL pública de la imagen principal del producto. */
+  imagen?: string;
   precioUnitario: number;
   stock?: number;
   category: Types.ObjectId[];
@@ -27,6 +29,8 @@ export interface ItemResponse {
   id: string;
   nombre: string;
   descripcion?: string;
+  /** URL pública de la imagen principal del producto. */
+  imagen?: string;
   precioUnitario: number;
   stock: number;
   /** Categorías del producto en formato resumido (sin el array de items de cada categoría). */

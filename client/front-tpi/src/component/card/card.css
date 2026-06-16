@@ -111,30 +111,40 @@
   padding-top: 12px;
   border-top: 1px solid var(--color-border);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 .card-precio-bloque {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
+  /* Permite que el bloque se compacte sin desbordar la card si el precio
+     es largo (ej. millones con varios separadores de miles). */
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .card-precio {
-  font-size: 1.25rem;
+  font-size: 1.20rem;
   font-weight: 700;
   color: var(--color-text);
-  line-height: 1.1;
+  line-height: 1.15;
+  /* Si el precio es muy largo, mostrar puntos suspensivos en lugar de
+     desbordar la card. En la práctica nunca debería pasar con números
+     enteros, pero protege el layout. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Precio original tachado cuando hay DESCUENTO_PORCENTUAL aplicado */
 .card-precio-tachado {
-  font-size: 0.85rem;
+  font-size: 0.80rem;
   color: var(--color-muted);
   text-decoration: line-through;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .card-precio-descuento {
@@ -153,6 +163,7 @@
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: background 0.2s ease, transform 0.1s ease;
 }
 

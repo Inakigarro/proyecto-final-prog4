@@ -10,9 +10,25 @@ export interface ProductoDashboard {
   id: string;
   nombre: string;
   descripcion?: string;
+  /** URL pública de la imagen principal del producto. */
+  imagen?: string;
   precioUnitario: number;
   stock: number;
   category: CategoriaResumen[];
+}
+
+/** Slide del slider del home tal como lo expone el backend. */
+export interface SlideDashboard {
+  id: string;
+  imagen: string;
+  alt: string;
+  leyenda: string;
+  orden: number;
+}
+
+/** Respuesta del endpoint que sube la imagen del slide. */
+export interface SlideUploadResponse {
+  url: string;
 }
 
 export interface ProductosPageResponse {

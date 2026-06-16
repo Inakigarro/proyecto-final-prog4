@@ -4,6 +4,8 @@ export interface IItem extends Document {
   _id: Types.ObjectId;
   nombre: string;
   descripcion?: string;
+  /** URL pública de la imagen principal del producto. */
+  imagen?: string;
   precioUnitario: number;
   stock: number;
   category: Types.ObjectId[];
@@ -23,6 +25,11 @@ const itemSchema = new Schema<IItem>(
       type: String,
       trim: true,
       maxlength: [500, 'La descripción no puede superar los 500 caracteres'],
+    },
+    imagen: {
+      type: String,
+      trim: true,
+      maxlength: [500, 'La URL de la imagen no puede superar los 500 caracteres'],
     },
     precioUnitario: {
       type: Number,

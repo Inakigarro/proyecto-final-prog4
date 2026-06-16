@@ -12,8 +12,14 @@ export interface IPurchaseOrder extends Document {
   envio: {
     nombre: string;
     apellido: string;
-    direccion: string;
     telefono: string;
+    calle: string;
+    numero: string;
+    piso?: string;
+    departamento?: string;
+    ciudad: string;
+    provincia: string;
+    codigoPostal: string;
   };
   /** Snapshot de datos de la tarjeta (solo info para mostrar, no sensitiva) */
   tarjeta: {
@@ -51,7 +57,6 @@ const purchaseOrderSchema = new Schema<IPurchaseOrder>(
     envio: {
       nombre: { type: String, required: [true, 'El nombre de envío es obligatorio'], trim: true },
       apellido: { type: String, required: [true, 'El apellido de envío es obligatorio'], trim: true },
-      direccion: { type: String, required: [true, 'La dirección de envío es obligatoria'], trim: true },
       telefono: {
         type: String,
         required: [true, 'El teléfono de envío es obligatorio'],
@@ -61,6 +66,13 @@ const purchaseOrderSchema = new Schema<IPurchaseOrder>(
           message: 'El teléfono debe tener exactamente 10 dígitos',
         },
       },
+      calle: { type: String, required: [true, 'La calle es obligatoria'], trim: true },
+      numero: { type: String, required: [true, 'El número es obligatorio'], trim: true },
+      piso: { type: String, trim: true },
+      departamento: { type: String, trim: true },
+      ciudad: { type: String, required: [true, 'La ciudad es obligatoria'], trim: true },
+      provincia: { type: String, required: [true, 'La provincia es obligatoria'], trim: true },
+      codigoPostal: { type: String, required: [true, 'El código postal es obligatorio'], trim: true },
     },
     tarjeta: {
       marca: { type: String, required: [true, 'La marca de la tarjeta es obligatoria'], trim: true },

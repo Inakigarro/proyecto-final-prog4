@@ -35,6 +35,44 @@ interface ErrorValidacion {
   status: number;
 }
 
+/**
+ * Snapshot de carritos en conflicto al loguearse: el usuario tenía un carrito
+ * armado como guest Y un carrito guardado de una sesión anterior. La UI muestra
+ * un modal para que elija con cuál seguir; el slice mantiene los dos snapshots
+ * hasta que se resuelve el conflicto.
+ */
+export interface ConflictoLoginCarrito {
+  /** Items que estaban bajo la key guest al momento de loguearse. */
+  guestItems: CartItem[];
+  /** Items que estaban guardados bajo la key del usuario. */
+  userItems: CartItem[];
+}
+
+/** Decisión que el usuario toma en el modal de conflicto. */
+export type EleccionConflicto = 'guest' | 'user' | 'merge';
+
+/**
+ * Combina dos carritos sumando cantidades para items repetidos (mismo itemId).
+ * Para los campos no acumulables (nombre, precio) usa el valor de `guest` cuando
+ * el item está en ambos, asumiendo que el armado más reciente prevalece.
+ * Los items presentes en uno solo se incluyen tal cual.
+ */
+export function combinarCarritos(guest: CartItem[], user: CartItem[]): CartItem[] {
+  const mapa = new Map<string, CartItem>();
+  for (const item of user) {
+    mapa.set(item.itemId, { ...item });
+  }
+  for (const item of guest) {
+    const existente = mapa.get(item.itemId);
+    if (existente) {
+      mapa.set(item.itemId, { ...item, cantidad: existente.cantidad + item.cantidad });
+    } else {
+      mapa.set(item.itemId, { ...item });
+    }
+  }
+  return Array.from(mapa.values());
+}
+
 /** Estado interno del carrito. */
 export interface CartState {
   items: CartItem[];
@@ -49,6 +87,11 @@ export interface CartState {
    * cuyo requestId no coincide con el vigente, se ignora.
    */
   requestIdValidacion: string | null;
+  /**
+   * Conflicto pendiente entre el carrito guest y el carrito previo del usuario
+   * al loguearse. Cuando es `null` no hay conflicto activo.
+   */
+  conflictoLogin: ConflictoLoginCarrito | null;
 }
 
 const ESTADO_INICIAL: CartState = {
@@ -58,6 +101,7 @@ const ESTADO_INICIAL: CartState = {
   drawerAbierto: false,
   validacion: { tipo: 'idle' },
   requestIdValidacion: null,
+  conflictoLogin: null,
 };
 
 /**
@@ -94,10 +138,16 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState: ESTADO_INICIAL,
   reducers: {
-    /** Hidrata el estado desde la fuente persistida (localStorage). */
+    /**
+     * Hidrata el estado desde la fuente persistida (localStorage).
+     * Limpia cualquier conflicto de login pendiente: si llegamos a hidratar,
+     * la decisión sobre qué carrito usar ya está tomada o el contexto cambió
+     * (ej. logout durante el modal).
+     */
     hidratar(state, action: PayloadAction<CartItem[]>) {
       state.items = action.payload;
       state.hidratado = true;
+      state.conflictoLogin = null;
     },
 
     /**
@@ -139,9 +189,10 @@ const cartSlice = createSlice({
       if (item) item.cantidad = cantidad;
     },
 
-    /** Vacía completamente el carrito. */
+    /** Vacía completamente el carrito y cierra cualquier conflicto pendiente. */
     vaciar(state) {
       state.items = [];
+      state.conflictoLogin = null;
     },
 
     /** Cierra el toast de confirmación (limpia ultimoAgregado). */
@@ -166,6 +217,46 @@ const cartSlice = createSlice({
     resetValidacion(state) {
       state.validacion = { tipo: 'idle' };
       state.requestIdValidacion = null;
+    },
+
+    /**
+     * Marca que hay un conflicto entre el carrito guest y el carrito guardado
+     * del usuario tras loguearse. El `CartHidratator` despacha esta acción en
+     * lugar de hidratar para que la UI muestre el modal de elección.
+     *
+     * Mientras hay conflicto, `hidratado` se mantiene en true para que la app
+     * no quede en estado de carga, pero `items` queda vacío para evitar
+     * acciones del usuario sobre un carrito ambiguo.
+     */
+    iniciarConflictoLogin(state, action: PayloadAction<ConflictoLoginCarrito>) {
+      state.conflictoLogin = action.payload;
+      state.items = [];
+      state.hidratado = true;
+    },
+
+    /**
+     * Resuelve el conflicto con la opción elegida por el usuario:
+     * - 'guest' → solo el carrito armado sin sesión.
+     * - 'user' → solo el carrito guardado de la sesión anterior.
+     * - 'merge' → combina ambos sumando cantidades en items repetidos.
+     *
+     * La limpieza del localStorage la hace el componente del modal.
+     */
+    resolverConflictoLogin(state, action: PayloadAction<EleccionConflicto>) {
+      if (!state.conflictoLogin) return;
+      const { guestItems, userItems } = state.conflictoLogin;
+      switch (action.payload) {
+        case 'guest':
+          state.items = guestItems;
+          break;
+        case 'user':
+          state.items = userItems;
+          break;
+        case 'merge':
+          state.items = combinarCarritos(guestItems, userItems);
+          break;
+      }
+      state.conflictoLogin = null;
     },
   },
   extraReducers(builder) {
@@ -211,6 +302,8 @@ export const {
   abrirDrawer,
   cerrarDrawer,
   resetValidacion,
+  iniciarConflictoLogin,
+  resolverConflictoLogin,
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

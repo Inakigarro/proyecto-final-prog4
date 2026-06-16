@@ -2,17 +2,21 @@
 
 .stepper {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   gap: 0;
   margin-bottom: 32px;
   padding: 0 16px;
 }
 
-.stepper-item {
+/* ── Paso individual: círculo arriba, label centrado debajo ────────────── */
+
+.stepper-paso {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0;
+  gap: 8px;
+  min-width: 96px;
 }
 
 /* ── Línea conectora ───────────────────────────────────────────────────── */
@@ -21,7 +25,9 @@
   width: 60px;
   height: 2px;
   background: var(--color-dark-border);
-  margin: 0 8px;
+  /* Alinea verticalmente con el centro del círculo (36/2 - 2/2 = 17) */
+  margin-top: 17px;
+  flex-shrink: 0;
   transition: background 0.3s ease;
 }
 
@@ -65,8 +71,8 @@
 .stepper-label {
   font-size: 12px;
   color: var(--color-muted);
-  margin-left: 8px;
   white-space: nowrap;
+  text-align: center;
   transition: color 0.3s ease;
 }
 
@@ -82,17 +88,23 @@
 /* ── Responsive ────────────────────────────────────────────────────────── */
 
 @media (max-width: 600px) {
-  .stepper-linea {
-    width: 32px;
+  .stepper-paso {
+    min-width: 72px;
   }
 
-  .stepper-label {
-    display: none;
+  .stepper-linea {
+    width: 28px;
+    /* En mobile el círculo es más chico (32/2 - 2/2 = 15) */
+    margin-top: 15px;
   }
 
   .stepper-circulo {
     width: 32px;
     height: 32px;
     font-size: 13px;
+  }
+
+  .stepper-label {
+    font-size: 11px;
   }
 }

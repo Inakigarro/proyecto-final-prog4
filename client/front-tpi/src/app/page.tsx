@@ -3,24 +3,7 @@ import Slider, { Slide } from "@/component/slider/Slider";
 import VitrinaProductos from "@/component/vitrina/VitrinaProductos";
 import { obtenerProductos } from "@/lib/productos";
 import { obtenerPromociones } from "@/lib/promociones";
-
-const slides: Slide[] = [
-  {
-    src: "https://via.placeholder.com/1660x480?text=Slide+1",
-    alt: "Slide 1",
-    caption: "Las mejores ofertas en tecnología",
-  },
-  {
-    src: "https://via.placeholder.com/1660x480?text=Slide+2",
-    alt: "Slide 2",
-    caption: "Nuevos productos disponibles",
-  },
-  {
-    src: "https://via.placeholder.com/1660x480?text=Slide+3",
-    alt: "Slide 3",
-    caption: "Envío gratis en compras mayores a $50.000",
-  },
-];
+import { obtenerSlides } from "@/lib/slides";
 
 const infoCards = [
   {
@@ -41,11 +24,20 @@ const infoCards = [
 ];
 
 export default async function Home() {
-  // Fetch en paralelo: los productos y las promociones son independientes
-  const [productosDestacados, promociones] = await Promise.all([
+  // Fetch en paralelo: productos, promociones y slides son independientes.
+  const [productosDestacados, promociones, slidesPersistidos] = await Promise.all([
     obtenerProductos({ limite: 8 }),
     obtenerPromociones(),
+    obtenerSlides(),
   ]);
+
+  // Mapeamos al shape que espera el componente Slider y caemos a vacío si el
+  // backend no tiene slides cargados (se ve sin slider en lugar de roto).
+  const slides: Slide[] = slidesPersistidos.map((s) => ({
+    src: s.imagen,
+    alt: s.alt,
+    caption: s.leyenda,
+  }));
 
   return (
     <div className={styles.page}>

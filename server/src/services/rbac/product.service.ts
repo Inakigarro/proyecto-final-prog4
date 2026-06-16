@@ -22,6 +22,7 @@ function mapearAResponseDto(product: ItemPopulado): ItemResponse {
     id: product._id.toString(),
     nombre: product.nombre,
     descripcion: product.descripcion,
+    imagen: product.imagen,
     precioUnitario: product.precioUnitario,
     stock: product.stock,
     category: product.category.map((cat) => ({

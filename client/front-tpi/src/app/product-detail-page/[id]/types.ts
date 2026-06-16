@@ -19,15 +19,16 @@ export interface Categoria {
 /**
  * Producto completo, resultado de GET /api/products/:id o de la lista.
  *
- * Los campos `imageSrc` y `cucarda` no existen aún en el modelo del backend;
- * se declaran opcionales para estar listos cuando se agreguen.
+ * El campo `cucarda` se calcula en el frontend según la promoción aplicable;
+ * no viene del backend.
  */
 export interface Producto {
   id: string;
   nombre: string;
   precioUnitario: number;
-  /** URL de la imagen principal del producto. */
-  imageSrc?: string;
+  descripcion?: string;
+  /** URL pública de la imagen principal del producto. */
+  imagen?: string;
   /** Texto promocional breve (ej. "Cuotas sin interés"). */
   cucarda?: string;
   category: Categoria[];

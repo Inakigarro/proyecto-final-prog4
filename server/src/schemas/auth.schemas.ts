@@ -46,3 +46,22 @@ export const ResetPasswordSchema = z.object({
 export const RefreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'El refresh token es obligatorio'),
 });
+
+/**
+ * Solicita el cambio de contraseña: requiere la actual y la nueva.
+ * El backend valida que la actual matchee y dispara el envío del código por mail.
+ */
+export const CambiarPasswordRequestSchema = z.object({
+  passwordActual: z.string().min(1, 'La contraseña actual es obligatoria'),
+  nuevaPassword: passwordSchema,
+});
+
+/**
+ * Confirma el cambio con el código de 6 dígitos recibido por email.
+ * Aplica la nueva contraseña que se guardó hasheada en el challenge.
+ */
+export const CambiarPasswordConfirmSchema = z.object({
+  codigo: z
+    .string()
+    .regex(/^\d{6}$/, 'El código debe ser de 6 dígitos numéricos'),
+});
