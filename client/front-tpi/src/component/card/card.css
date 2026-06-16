@@ -127,7 +127,7 @@
 }
 
 .card-precio {
-  font-size: 1.15rem;
+  font-size: 1.20rem;
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.15;
@@ -141,7 +141,7 @@
 
 /* Precio original tachado cuando hay DESCUENTO_PORCENTUAL aplicado */
 .card-precio-tachado {
-  font-size: 0.75rem;
+  font-size: 0.80rem;
   color: var(--color-muted);
   text-decoration: line-through;
   line-height: 1.1;
