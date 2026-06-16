@@ -156,7 +156,9 @@ export default function PaginaProducto() {
       <section className={styles.seccion}>
         <Accordion titulo="Descripción">
           <p className={styles.descripcionTexto}>
-            Este producto aún no tiene una descripción detallada disponible.
+            {producto.descripcion?.trim()
+              ? producto.descripcion
+              : 'Este producto aún no tiene una descripción detallada disponible.'}
           </p>
         </Accordion>
       </section>
