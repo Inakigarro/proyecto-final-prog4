@@ -16,12 +16,19 @@ import { logger } from '../config/logger';
 // coherencia idiomática del sitio. Los precios se convierten de USD a ARS
 // con una tasa fija.
 //
+// Limpieza previa: ANTES de cargar el catálogo nuevo, todos los Items y
+// Categories preexistentes se marcan como inactivos (soft delete). Las
+// referencias históricas (órdenes de compra, promociones) no se rompen
+// porque los documentos siguen existiendo en la BD. Los items y categorías
+// que estén en el catálogo nuevo de DummyJSON se reactivan en el upsert.
+//
 // Orden interno:
-//  1. Fetch en paralelo de las 5 categorías de DummyJSON.
-//  2. Upsert de las categorías (con validateBeforeSave: false porque el
+//  1. Soft delete: desactiva todos los Items y Categories existentes.
+//  2. Fetch en paralelo de las 5 categorías de DummyJSON.
+//  3. Upsert de las categorías (con validateBeforeSave: false porque el
 //     modelo Categoria exige al menos 1 item).
-//  3. Upsert de cada item, asociándolo a su categoría.
-//  4. Actualiza cada categoría con la lista final de items.
+//  4. Upsert de cada item, asociándolo a su categoría.
+//  5. Actualiza cada categoría con la lista final de items.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BASE_DUMMYJSON = 'https://dummyjson.com';
@@ -113,7 +120,11 @@ async function seed(): Promise<void> {
   await mongoose.connect(process.env.MONGODB_URI as string);
   logger.info('Conectado a MongoDB');
 
-  // 1. Fetch en paralelo de las 5 categorías.
+  // 1. Soft delete del catálogo preexistente. Los items y categorías que
+  //    estén en el catálogo nuevo de DummyJSON se reactivan en el upsert.
+  await desactivarCatalogoExistente();
+
+  // 2. Fetch en paralelo de las 5 categorías.
   const respuestas = await Promise.all(
     CATEGORIAS_DUMMYJSON.map(async ({ slug, nombre }) => ({
       nombreCategoria: nombre,
@@ -130,10 +141,10 @@ async function seed(): Promise<void> {
       continue;
     }
 
-    // 2. Upsert de la categoría vacía.
+    // 3. Upsert de la categoría vacía (la reactiva si estaba inactiva).
     const categoria = await upsertCategoriaVacia(nombreCategoria);
 
-    // 3. Upsert de cada item del grupo, ya con la categoría asignada.
+    // 4. Upsert de cada item del grupo, ya con la categoría asignada.
     const idsItems: Types.ObjectId[] = [];
     for (const producto of productos) {
       const item = await upsertItem(producto, nombreCategoria, categoria._id);
@@ -141,7 +152,7 @@ async function seed(): Promise<void> {
       itemsSincronizados++;
     }
 
-    // 4. Actualizamos la categoría con la lista final de items.
+    // 5. Actualizamos la categoría con la lista final de items.
     categoria.items = idsItems;
     await categoria.save();
 
@@ -160,22 +171,46 @@ async function seed(): Promise<void> {
 }
 
 /**
- * Crea o actualiza una categoría por nombre, sin requerir items.
- * Usa validateBeforeSave:false para esquivar la validación de "mínimo 1 item",
- * que se cumplirá recién cuando agreguemos los items en el paso siguiente.
+ * Marca como inactivos todos los Items y Categories existentes en la BD.
+ * Es un soft delete que conserva las referencias históricas (órdenes,
+ * promociones) y permite que el upsert posterior reactive los que están
+ * en el catálogo nuevo.
+ */
+async function desactivarCatalogoExistente(): Promise<void> {
+  const [itemsResult, categoriesResult] = await Promise.all([
+    Item.updateMany({ activo: { $ne: false } }, { activo: false }),
+    Category.updateMany({ activo: { $ne: false } }, { activo: false }),
+  ]);
+  logger.info('Catálogo existente desactivado (soft delete)', {
+    itemsDesactivados: itemsResult.modifiedCount,
+    categoriasDesactivadas: categoriesResult.modifiedCount,
+  });
+}
+
+/**
+ * Crea o reactiva una categoría por nombre, sin requerir items.
+ * Si la categoría existía (incluso desactivada por el soft delete previo),
+ * la reactiva. Usa validateBeforeSave:false para esquivar la validación de
+ * "mínimo 1 item", que se cumplirá recién cuando agreguemos los items en
+ * el paso siguiente.
  */
 async function upsertCategoriaVacia(nombre: string): Promise<ICategory> {
   const existente = await Category.findOne({ nombre });
-  if (existente) return existente;
-  const nueva = new Category({ nombre, items: [] });
+  if (existente) {
+    existente.activo = true;
+    await existente.save({ validateBeforeSave: false });
+    return existente;
+  }
+  const nueva = new Category({ nombre, items: [], activo: true });
   await nueva.save({ validateBeforeSave: false });
   return nueva;
 }
 
 /**
  * Crea o actualiza un item por nombre, asignándole su categoría.
- * Mapea los campos de DummyJSON al schema del proyecto. Si el item ya existe,
- * actualiza todos los campos para reflejar cambios del catálogo remoto.
+ * Mapea los campos de DummyJSON al schema del proyecto. Si el item ya existía
+ * (incluso desactivado por el soft delete previo), lo reactiva y actualiza
+ * todos los campos para reflejar cambios del catálogo remoto.
  */
 async function upsertItem(
   producto: ProductoDummyJson,
@@ -191,6 +226,7 @@ async function upsertItem(
       precioUnitario: convertirPrecio(producto.price),
       stock: producto.stock,
       category: [categoriaId],
+      activo: true,
     },
     { upsert: true, new: true, runValidators: true },
   );
