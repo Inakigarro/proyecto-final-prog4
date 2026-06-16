@@ -10,9 +10,9 @@ import multer, { FileFilterCallback } from 'multer';
  * del filesystem del server). Apto para volúmenes chicos (un slider típico
  * tiene 3-10 slides), no para galerías masivas.
  *
- * Límite: 1MB por archivo. MongoDB tiene un tope de 16MB por documento; con
- * el overhead del base64 (~33% más que el binario) un archivo de 1MB queda
- * en ~1.4MB, holgado para el límite.
+ * Límite: 5MB por archivo. MongoDB tiene un tope de 16MB por documento; con
+ * el overhead del base64 (~33% más que el binario) un archivo de 5MB queda
+ * en ~6.7MB, sigue holgado contra el límite.
  */
 
 /**
@@ -37,6 +37,6 @@ function filtroImagen(
  */
 export const uploadSlideImagen = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 1 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: filtroImagen,
 });

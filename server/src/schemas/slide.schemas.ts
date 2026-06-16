@@ -10,7 +10,7 @@ export const CrearSlideSchema = z.object({
   imagen: z
     .string({ error: 'La imagen es obligatoria' })
     .min(1, 'La imagen es obligatoria')
-    .max(2_000_000, 'La imagen excede el tamaño máximo permitido'),
+    .max(10_000_000, 'La imagen excede el tamaño máximo permitido'),
   alt: z
     .string({ error: 'El texto alternativo es obligatorio' })
     .trim()

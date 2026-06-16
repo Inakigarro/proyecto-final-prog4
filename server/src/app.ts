@@ -28,8 +28,9 @@ export function crearApp() {
   }));
   app.use(helmet());
   // express.json() con límite generoso porque el endpoint POST /api/slides
-  // recibe el data URI base64 de la imagen en el body (hasta ~1.4MB con overhead).
-  app.use(express.json({ limit: '5mb' }));
+  // recibe el data URI base64 de la imagen en el body (hasta ~6.7MB con
+  // overhead para un archivo original de 5MB).
+  app.use(express.json({ limit: '10mb' }));
 
   app.get('/api', (_req, res) => {
     res.send('¡Bienvenido a la API de gestión de usuarios, roles y permisos!');
