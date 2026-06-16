@@ -14,7 +14,8 @@ export interface Producto {
   nombre: string;
   precioUnitario: number;
   descripcion?: string;
-  imageSrc?: string;
+  /** URL pública de la imagen principal del producto. */
+  imagen?: string;
   cucarda?: string;
   category: CategoriaProducto[];
 }

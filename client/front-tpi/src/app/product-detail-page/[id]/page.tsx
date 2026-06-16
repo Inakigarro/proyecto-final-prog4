@@ -139,7 +139,7 @@ export default function PaginaProducto() {
       <section className={styles.hero}>
         <HeroProducto
           nombre={producto.nombre}
-          imageSrc={producto.imageSrc}
+          imageSrc={producto.imagen}
           cucarda={cucardaPromocional ?? producto.cucarda}
         />
         <PanelInfo

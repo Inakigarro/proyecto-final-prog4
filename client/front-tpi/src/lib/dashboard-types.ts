@@ -10,6 +10,8 @@ export interface ProductoDashboard {
   id: string;
   nombre: string;
   descripcion?: string;
+  /** URL pública de la imagen principal del producto. */
+  imagen?: string;
   precioUnitario: number;
   stock: number;
   category: CategoriaResumen[];
