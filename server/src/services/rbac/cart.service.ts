@@ -256,7 +256,7 @@ export class CartService implements ICartService {
    *  2. Por cada item, descuenta stock atómicamente con findOneAndUpdate + $inc
    *     filtrando por stock >= cantidad. Si el update no encuentra documento,
    *     el stock era insuficiente y se cancela el checkout (rollback manual).
-   *  3. Crea los PurchaseOrderDetail (su monto se autocalcula en pre-save).
+   *  3. Crea los PurchaseOrderDetail con el monto ya corregido por promociones.
    *  4. Crea la PurchaseOrder con el montoTotal calculado + datos de envío/tarjeta.
    *  5. Opcionalmente actualiza dirección y teléfono en el perfil del usuario.
    *  6. Envía email de confirmación de compra (async, no bloquea la respuesta).
@@ -280,6 +280,19 @@ export class CartService implements ICartService {
 
     const descuentos = dto.descuentos ?? [];
     validarDescuentos(descuentos);
+
+    // Cargar promociones activas para los ítems del carrito antes de abrir
+    // la transacción (query de solo lectura, no necesita ser atómica con el
+    // resto). El resultado se usa más abajo para calcular el monto real de
+    // cada PurchaseOrderDetail (replicando la lógica de validateCart).
+    const idsParaPromo = dto.items.map((i) => i.itemId);
+    const promocionesParaCheckout = await Promotion.find({
+      activo: { $ne: false },
+      productos: { $in: idsParaPromo },
+    }).lean();
+    const promocionesPorProductoEnCheckout = agruparPromocionesPorProducto(
+      promocionesParaCheckout as unknown as IPromotion[],
+    );
 
     // Resolver la dirección de envío antes de abrir la transacción:
     // si vino direccionId, validar pertenencia; si no, crear o dedupear.
@@ -335,16 +348,39 @@ export class CartService implements ICartService {
         }
       }
 
-      // Crear los detalles. El pre-save del modelo calcula `monto`.
+      // Crear los detalles. El pre-save del modelo calcula `monto` como
+      // precioUnitario × cantidad (sin promociones). A continuación se
+      // corrige el monto con el descuento de la mejor promoción aplicable,
+      // replicando exactamente la lógica de validateCart.
       const detalles: IPurchaseOrderDetail[] = [];
       for (const pedido of dto.items) {
         const item = await Item.findById(pedido.itemId).session(session);
         if (!item) throw new Error(`El item ${pedido.itemId} desapareció durante el checkout`);
 
+        const aplicables = promocionesPorProductoEnCheckout.get(pedido.itemId) ?? [];
+        const mejorPromocion = elegirMejorPromocion(aplicables);
+        const { subtotalConDescuento } = calcularDescuentoItem(
+          item.precioUnitario,
+          pedido.cantidad,
+          mejorPromocion,
+        );
+
         const [detalle] = await PurchaseOrderDetail.create(
           [{ item: item._id, cantidad: pedido.cantidad, precioUnitario: item.precioUnitario, descuentos: [] }],
           { session }
         );
+
+        // El hook pre-save calculó monto = precioUnitario × cantidad.
+        // Si hay una promoción activa, corregir el monto persisitido.
+        if (subtotalConDescuento !== detalle.monto) {
+          await PurchaseOrderDetail.updateOne(
+            { _id: detalle._id },
+            { $set: { monto: subtotalConDescuento } },
+            { session },
+          );
+          detalle.monto = subtotalConDescuento;
+        }
+
         detalles.push(detalle);
       }
 

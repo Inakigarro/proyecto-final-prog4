@@ -132,6 +132,29 @@
   color: var(--color-accent-hover);
 }
 
+/* Disponibilidad de stock */
+
+.stockDisponible {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2e7d32;
+  margin: 0;
+}
+
+.stockBajo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #b45a00;
+  margin: 0;
+}
+
+.stockAgotado {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #c0392b;
+  margin: 0;
+}
+
 /* Selector de cantidad */
 
 .cantidadBloque {

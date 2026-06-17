@@ -31,5 +31,7 @@ export interface Producto {
   imagen?: string;
   /** Texto promocional breve (ej. "Cuotas sin interés"). */
   cucarda?: string;
+  /** Unidades disponibles en stock. */
+  stock?: number;
   category: Categoria[];
 }

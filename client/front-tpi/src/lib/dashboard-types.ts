@@ -17,6 +17,23 @@ export interface ProductoDashboard {
   category: CategoriaResumen[];
 }
 
+/** Rol simplificado para mostrar en el listado de usuarios. */
+export interface RolResumen {
+  id: string;
+  nombre: string;
+}
+
+/** Usuario tal como lo expone GET /api/users (superadmin). */
+export interface UsuarioDashboard {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono?: string;
+  activo: boolean;
+  roles: RolResumen[];
+}
+
 /** Slide del slider del home tal como lo expone el backend. */
 export interface SlideDashboard {
   id: string;

@@ -17,6 +17,8 @@ export interface Producto {
   /** URL pública de la imagen principal del producto. */
   imagen?: string;
   cucarda?: string;
+  /** Unidades disponibles en stock. */
+  stock?: number;
   category: CategoriaProducto[];
 }
 

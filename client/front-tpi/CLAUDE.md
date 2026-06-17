@@ -11,7 +11,7 @@ Next.js 16 (App Router) + React 19 + TypeScript 5. Ver el CLAUDE.md raíz para c
 ```
 store/
 ├── authSlice.ts   # { usuario, isAutenticado, isCargando }
-├── cartSlice.ts   # { items, hidratado, ultimoAgregado, drawerAbierto, validacion }
+├── cartSlice.ts   # { items, hidratado, ultimoAgregado, drawerAbierto, validacion, conflictoLogin }
 └── hooks.ts       # useAppDispatch / useAppSelector tipados
 ```
 
@@ -37,12 +37,23 @@ Helpers disponibles en `useAuth()`:
 
 ## Carrito
 
-`CartContext.tsx` expone `useCart()` con: `items`, `agregar`, `quitar`, `actualizarCantidad`, `vaciar`, `abrirDrawer`, `cerrarDrawer`.
+`CartContext.tsx` expone `useCart()` con: `state` (items + validacion + flags), `subtotalEstimado`, `agregar`, `quitar`, `actualizarCantidad`, `vaciar`, `abrirDrawer`, `cerrarDrawer`.
 
-- `localStorageMiddleware` persiste automáticamente tras cada acción (solo cuando `hidratado === true`).
+- `localStorageMiddleware` persiste automáticamente tras cada acción de carrito, bajo la key `techpoint:cart:{userId}` (logueado) o `techpoint:cart:guest` (sin sesión). Solo persiste cuando `hidratado === true` y no hay conflicto activo.
+- **Conflicto de carrito**: si al loguearse el usuario tenía items como guest y también items guardados de sesión anterior, `cartSlice` activa `conflictoLogin`. El `ConflictoCarritoModal` (montado globalmente en el layout) presenta los dos carritos y deja elegir entre guest, sesión anterior o combinar ambos.
 - La validación de stock y precios se hace llamando a `POST /api/cart/validate` via el thunk `validarCarrito` en `cartSlice`; el hook `useValidacionCarrito` lo dispara con debounce desde `CartPageClient`.
-- `validacion` en el estado Redux registra: `idle | cargando | ok | error` y el resultado de la última validación.
-- **Checkout pendiente**: `CartPageClient.tsx` tiene el TODO en `handleConfirmarCompra` para llamar a `POST /api/cart/checkout`.
+- `validacion` en el estado Redux es un discriminated union: `{ tipo: 'idle' | 'cargando' | 'ok' | 'error' }`.
+
+## Checkout
+
+`CartPageClient.tsx` implementa el flujo completo de compra en 3 pasos + confirmación:
+
+1. **Carrito** — listado de items, resumen de precios, validación de stock.
+2. **Envío** — `CheckoutEnvioForm`: selector de dirección guardada o formulario de dirección nueva. Gestiona `DatosEnvioDto`.
+3. **Pago** — `CheckoutPagoForm`: datos de tarjeta (marca + últimos 4). Gestiona `DatosTarjetaDto`.
+4. **Confirmación** — pantalla inline tras el POST exitoso a `/api/cart/checkout`.
+
+`CheckoutStepper.tsx` muestra el progreso visual. Al confirmar pago se llama a `POST /api/cart/checkout` con el `CheckoutDto` armado; en éxito se vacía el carrito y se muestra la confirmación.
 
 ## Fetch de datos
 
@@ -53,26 +64,28 @@ Helpers disponibles en `useAuth()`:
 Para datos públicos en Server Components:
 - `lib/productos.ts` — `obtenerProductos()`
 - `lib/promociones.ts` — `obtenerPromociones()`
+- `lib/slides.ts` — `obtenerSlides()` (sin caché, para que el dueño vea cambios al instante)
 
 ## Rutas existentes
 
 | Ruta | Componente | Estado |
 |------|-----------|--------|
 | `/` | `app/page.tsx` | Implementado |
-| `/carrito` | `app/carrito/page.tsx` + `CartPageClient` | Implementado (checkout pendiente) |
+| `/carrito` | `app/carrito/page.tsx` + `CartPageClient` | Implementado (checkout completo) |
 | `/login` | `app/login/page.tsx` | Implementado |
 | `/registro` | `app/registro/page.tsx` | Implementado |
 | `/recuperar-contrasena` | `app/recuperar-contrasena/page.tsx` | Implementado |
-| `/perfil` | `app/perfil/page.tsx` | Implementado (requiere auth) |
+| `/perfil` | `app/perfil/page.tsx` | Implementado (4 tabs: datos, direcciones, compras, seguridad) |
 | `/product-detail-page/[id]` | PDP con slider de relacionados | Implementado |
 | `/search-result` | `ListaResultadosProductos` | Implementado |
 | `/promociones` | `app/promociones/page.tsx` | Implementado |
 | `/promociones/[id]` | `app/promociones/[id]/page.tsx` | Implementado |
 | `/quienes-somos` | `app/quienes-somos/page.tsx` | Implementado |
-| `/dashboard` | `app/dashboard/layout.tsx` + `page.tsx` | Implementado (solo rol `dueno`) |
+| `/dashboard` | `app/dashboard/layout.tsx` + `page.tsx` | Implementado (roles `dueno` y `superadmin`) |
 | `/dashboard/productos` | `app/dashboard/productos/page.tsx` | Implementado |
 | `/dashboard/categorias` | `app/dashboard/categorias/page.tsx` | Implementado |
 | `/dashboard/promociones` | `app/dashboard/promociones/page.tsx` | Implementado |
+| `/dashboard/slider` | `app/dashboard/slider/page.tsx` | Implementado |
 
 ## Rewrites de Next.js (importante)
 
@@ -82,9 +95,4 @@ Para datos públicos en Server Components:
 - `GET /api/products` → `app/api/products/route.ts` (solo GET; envuelve respuesta en `{ success, products }`)
 - `GET /api/promotions` → `app/api/promotions/route.ts` (solo GET; envuelve en `{ success, promociones }`)
 - Todo lo demás → rewrite → Express directamente (headers incluyendo `Authorization` se reenvían)
-- El dashboard usa `app/api/dashboard/products|categories|promotions/route.ts` como proxies transparentes que devuelven la respuesta cruda de Express, evitando la interferencia de las rutas existentes
-
-## Pendiente
-
-- **Checkout**: conectar `handleConfirmarCompra` en `CartPageClient.tsx` a `POST /api/cart/checkout` y crear página de confirmación de orden.
-- **Historial de órdenes**: implementado dentro del perfil en la pestaña "Mis compras" (`/perfil?tab=compras`); listado de cards + detalle por orden via query param `?orden=ID`. No hay ruta standalone `/mis-ordenes`.
+- El dashboard usa `app/api/dashboard/products|categories|promotions|slides/route.ts` como proxies transparentes que devuelven la respuesta cruda de Express, evitando la interferencia de las rutas existentes. Todos comparten el helper `app/api/dashboard/_helpers.ts` (`proxyA()`)

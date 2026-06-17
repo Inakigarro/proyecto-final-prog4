@@ -69,6 +69,23 @@ export default function PanelInfo({
         </p>
       )}
 
+      {/* Chip de stock — solo se muestra si el campo llegó del backend */}
+      {producto.stock !== undefined && (
+        <p className={
+          producto.stock === 0
+            ? styles.stockAgotado
+            : producto.stock <= 5
+              ? styles.stockBajo
+              : styles.stockDisponible
+        }>
+          {producto.stock === 0
+            ? 'Sin stock'
+            : producto.stock <= 5
+              ? `¡Últimas ${producto.stock} unidades!`
+              : `Stock disponible: ${producto.stock}`}
+        </p>
+      )}
+
       <SelectorCantidad cantidad={cantidad} onChange={onCantidadChange} />
 
       {/* Botones de acción principales */}

@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TechPoint — Frontend
 
-## Getting Started
+Frontend de la aplicación e-commerce TechPoint, construido con **Next.js 16** (App Router) + **React 19** + **TypeScript 5**.
 
-First, run the development server:
+---
+
+## Requisitos
+
+- Node.js v18 o superior
+- Backend corriendo en `http://localhost:4000` (ver `server/`)
+
+---
+
+## Instalación
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Crear el archivo `.env.local` en esta carpeta:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+BACKEND_URL=http://localhost:4000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## Comandos
 
-To learn more about Next.js, take a look at the following resources:
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Modo desarrollo en http://localhost:3000 |
+| `npm run build` | Build de producción |
+| `npm start` | Sirve el build de producción |
+| `npm run lint` | ESLint |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Estructura
 
-## Deploy on Vercel
+```
+src/
+├── app/              # Páginas y layouts (Next.js App Router)
+│   ├── layout.tsx    # RootLayout — AuthProvider > CartProvider > Navbar
+│   ├── page.tsx      # Home — slider + productos destacados (SSR)
+│   ├── api/          # API Routes como proxies al backend Express
+│   ├── carrito/      # Carrito + checkout por pasos
+│   ├── perfil/       # Perfil del usuario (datos, direcciones, compras, seguridad)
+│   ├── dashboard/    # Panel de gestión (dueno y superadmin)
+│   └── ...           # login, registro, promociones, search-result, etc.
+├── component/        # Componentes reutilizables por dominio
+│   ├── cart/         # CartPageClient, CheckoutStepper, formularios de checkout
+│   ├── layout/       # Navbar, BarraBusqueda, CategoriasMenu, etc.
+│   ├── dashboard/    # TablaEntidad, formularios CRUD
+│   └── ...
+├── context/          # AuthContext y CartContext (adaptadores de Redux)
+├── lib/              # apiFetch, DTOs del cliente, clientes SSR
+└── store/            # Redux Toolkit — authSlice, cartSlice, middleware
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Rutas
+
+| URL | Descripción |
+|-----|-------------|
+| `/` | Home |
+| `/login` | Inicio de sesión |
+| `/registro` | Registro |
+| `/recuperar-contrasena` | Reset de contraseña por email |
+| `/search-result` | Resultados de búsqueda |
+| `/product-detail-page/[id]` | Detalle de producto |
+| `/promociones` | Listado de promociones |
+| `/promociones/[id]` | Detalle de promoción |
+| `/carrito` | Carrito + flujo de checkout (envío → pago → confirmación) |
+| `/perfil` | Perfil del usuario — tabs: datos, direcciones, compras, seguridad |
+| `/quienes-somos` | Información del equipo |
+| `/dashboard` | Panel de gestión (requiere rol `dueno` o `superadmin`) |
+
+---
+
+## Arquitectura de estado
+
+El estado global usa **Redux Toolkit**. Los contextos `AuthContext` y `CartContext` son adaptadores que exponen una API estable sobre el store.
+
+- **Access token**: en memoria (variable de módulo en `lib/api.ts`).
+- **Refresh token**: en `localStorage` bajo la clave `techpoint:refresh_token`.
+- **Carrito**: persistido en `localStorage` bajo `techpoint:cart:{userId}` (logueado) o `techpoint:cart:guest`.
+
+## Rewrites
+
+`next.config.ts` redirige `/api/:path*` → `http://localhost:4000/api/:path*`. Las API Routes en `app/api/` toman precedencia para sus paths exactos (proxies del dashboard, wrapping de productos y promociones para SSR).

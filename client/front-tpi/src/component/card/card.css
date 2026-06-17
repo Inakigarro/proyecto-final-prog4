@@ -54,6 +54,29 @@
   pointer-events: none;
 }
 
+/* Chip de stock — esquina superior derecha */
+.card-stock-chip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(28, 40, 38, 0.72);
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.card-stock-bajo {
+  background: rgba(180, 100, 20, 0.88);
+}
+
+.card-stock-agotado {
+  background: rgba(192, 57, 43, 0.9);
+}
+
 /* Cucarda promocional — esquina inferior izquierda */
 .card-cucarda {
   position: absolute;

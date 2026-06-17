@@ -2,24 +2,36 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAppSelector } from '@/store/hooks';
 import styles from './DashboardSidebar.module.css';
 
-const ENTIDADES = [
-  { etiqueta: 'Productos',     ruta: '/dashboard/productos' },
-  { etiqueta: 'Categorías',    ruta: '/dashboard/categorias' },
-  { etiqueta: 'Promociones',   ruta: '/dashboard/promociones' },
+const ENTIDADES_COMUNES = [
+  { etiqueta: 'Productos',       ruta: '/dashboard/productos' },
+  { etiqueta: 'Categorías',      ruta: '/dashboard/categorias' },
+  { etiqueta: 'Promociones',     ruta: '/dashboard/promociones' },
   { etiqueta: 'Slider del home', ruta: '/dashboard/slider' },
+];
+
+const ENTIDADES_SUPERADMIN = [
+  { etiqueta: 'Usuarios',        ruta: '/dashboard/usuarios' },
 ];
 
 export default function DashboardSidebar() {
   const rutaActual = usePathname();
+  const usuario = useAppSelector((s) => s.auth.usuario);
+
+  const esSuperAdmin = usuario?.roles.some((r) => r.nombre === 'superadmin') ?? false;
+
+  const entidades = esSuperAdmin
+    ? [...ENTIDADES_COMUNES, ...ENTIDADES_SUPERADMIN]
+    : ENTIDADES_COMUNES;
 
   return (
     <aside className={styles.sidebar}>
       <p className={styles.titulo}>Gestión</p>
       <nav>
         <ul className={styles.lista}>
-          {ENTIDADES.map(({ etiqueta, ruta }) => {
+          {entidades.map(({ etiqueta, ruta }) => {
             const activo = rutaActual.startsWith(ruta);
             return (
               <li key={ruta}>

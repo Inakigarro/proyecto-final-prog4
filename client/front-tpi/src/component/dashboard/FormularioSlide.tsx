@@ -166,7 +166,6 @@ export default function FormularioSlide({ id }: FormularioSlideProps) {
                   (e.currentTarget as HTMLImageElement).style.display = 'none';
                 }}
               />
-              <span className={styles.previewUrl}>{imagen}</span>
             </div>
           )}
         </div>

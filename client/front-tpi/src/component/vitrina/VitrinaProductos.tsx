@@ -88,6 +88,7 @@ const VitrinaProductos = ({
                     precioUnitario={producto.precioUnitario}
                     imageSrc={producto.imagen}
                     categoria={producto.category[0]?.nombre}
+                    stock={producto.stock}
                     promocion={buscarPromocionAplicable(producto.id, promociones)}
                     cucarda={producto.cucarda}
                     description={producto.descripcion ?? ""}

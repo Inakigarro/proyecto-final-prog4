@@ -44,6 +44,11 @@ export type CardProductProps = {
   description?: string;
   /** Precio unitario en pesos — se formatea en pantalla. */
   precioUnitario: number;
+  /**
+   * Unidades disponibles en stock. Si se pasa, se muestra un chip en la
+   * esquina superior derecha de la imagen.
+   */
+  stock?: number;
 };
 
 const CardProduct = ({
@@ -55,6 +60,7 @@ const CardProduct = ({
   title,
   description,
   precioUnitario,
+  stock,
 }: CardProductProps) => {
   const { agregar } = useCart();
   const router = useRouter();
@@ -100,6 +106,15 @@ const CardProduct = ({
         {/* Badge de categoría — top left */}
         {categoria && (
           <span className="card-badge">{categoria.toUpperCase()}</span>
+        )}
+
+        {/* Chip de stock — top right */}
+        {stock !== undefined && (
+          <span
+            className={`card-stock-chip${stock === 0 ? ' card-stock-agotado' : stock <= 5 ? ' card-stock-bajo' : ''}`}
+          >
+            {stock === 0 ? 'Sin stock' : `Stock: ${stock}`}
+          </span>
         )}
 
         {/* Cucarda promocional — bottom left */}
