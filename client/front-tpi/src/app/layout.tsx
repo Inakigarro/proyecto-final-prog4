@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/component/layout/navbar";
+import AppFooter from "@/component/layout/AppFooter";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import CartToast from "@/component/cart/CartToast";
@@ -24,7 +25,8 @@ export default function RootLayout({
         <AuthProvider>
           <CartProvider>
             <Navbar />
-            <main>{children}</main>
+            <main style={{ flex: 1 }}>{children}</main>
+            <AppFooter />
             <CartToast />
             <CartDrawer />
             <ConflictoCarritoModal />
