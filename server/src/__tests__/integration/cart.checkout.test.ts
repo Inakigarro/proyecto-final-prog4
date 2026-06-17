@@ -17,6 +17,24 @@ import {
 
 jest.setTimeout(60000);
 
+// Datos de envío y tarjeta fijos para los tests: el servicio los requiere
+// desde que se implementó el flujo completo de checkout (envío + pago).
+const envioFijo = {
+  nombre: 'Test',
+  apellido: 'Checkout',
+  telefono: '3442123456',
+  calle: 'Av. Siempre Viva',
+  numero: '742',
+  ciudad: 'Concepción del Uruguay',
+  provincia: 'Entre Ríos',
+  codigoPostal: 'E3260',
+};
+
+const tarjetaFija = {
+  marca: 'Visa',
+  ultimos4: '4242',
+};
+
 describe('CartService.checkout', () => {
   let replSet: MongoMemoryReplSet;
   const servicio = new CartService();
@@ -71,6 +89,8 @@ describe('CartService.checkout', () => {
         items: [{ itemId: item._id.toString(), cantidad: 5 }], // pide 5
         metodoPagoId: paymentMethodId,
         descuentos: [],
+        envio: envioFijo,
+        tarjeta: tarjetaFija,
       })
     ).rejects.toThrow('Stock insuficiente');
 
@@ -96,6 +116,8 @@ describe('CartService.checkout', () => {
       items: [{ itemId: item._id.toString(), cantidad: 2 }],
       metodoPagoId: paymentMethodId,
       descuentos: [],
+      envio: envioFijo,
+      tarjeta: tarjetaFija,
     });
 
     expect(respuesta.ordenId).toBeDefined();

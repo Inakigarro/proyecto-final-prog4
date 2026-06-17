@@ -5,10 +5,20 @@
 import { Types } from 'mongoose';
 import { CartService } from '../../services/rbac/cart.service';
 
-// Reemplaza el módulo antes de que CartService lo importe
+// Reemplaza los módulos antes de que CartService los importe
 jest.mock('../../models/Item', () => ({
   __esModule: true,
   default: { find: jest.fn() },
+}));
+
+// validateCart consulta promociones activas en paralelo con los items.
+// El mock devuelve una "query" mínima con `.lean()` resolviendo a [] para
+// que no se aplique ninguna promoción en el cálculo del subtotal.
+jest.mock('../../models/Promotion', () => ({
+  __esModule: true,
+  default: {
+    find: jest.fn(() => ({ lean: jest.fn().mockResolvedValue([]) })),
+  },
 }));
 
 import Item from '../../models/Item';
