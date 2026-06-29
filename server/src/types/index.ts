@@ -100,7 +100,6 @@ export interface UsuarioResponseDto {
   activo: boolean;
   roles: RolResponseDto[];
   direccion?: string;
-  telefono?: string;
 }
 
 // DTO para crear un usuario
@@ -124,5 +123,4 @@ export interface ActualizarUsuarioDto {
   activo?: boolean;
   roles?: Types.ObjectId[];
   direccion?: string;
-  telefono?: string;
 }
