@@ -8,9 +8,9 @@ export interface ColumnaTabla<T> {
   render: (item: T) => React.ReactNode;
 }
 
-interface AccionesTabla {
+interface AccionesTabla<T> {
   rutaEditar: (id: string) => string;
-  urlVer: (item: Record<string, unknown>) => string;
+  urlVer: (item: T) => string;
   onEliminar: (id: string) => void;
 }
 
@@ -24,7 +24,7 @@ interface Props<T extends { id: string }> {
   pagina: number;
   totalPaginas: number;
   onCambiarPagina: (pagina: number) => void;
-  acciones: AccionesTabla;
+  acciones: AccionesTabla<T>;
 }
 
 export default function TablaEntidad<T extends { id: string }>({
@@ -78,7 +78,7 @@ export default function TablaEntidad<T extends { id: string }>({
                       Editar
                     </Link>
                     <a
-                      href={acciones.urlVer(item as unknown as Record<string, unknown>)}
+                      href={acciones.urlVer(item)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={styles.botonAccion}

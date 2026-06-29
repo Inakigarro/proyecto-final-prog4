@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 import PerfilTabs from './_components/PerfilTabs';
@@ -41,7 +41,7 @@ function parsearTab(valor: string | null): PerfilTab {
  * Requiere sesión iniciada: si no hay usuario hidratado, redirige a /login
  * conservando la URL de retorno.
  */
-export default function PerfilPage() {
+function PerfilContent() {
   const { isAutenticado, isCargando, usuario } = useAppSelector((s) => s.auth);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,5 +88,13 @@ export default function PerfilPage() {
         {tabActiva === 'seguridad' && <SeguridadSeccion usuario={usuario} />}
       </div>
     </main>
+  );
+}
+
+export default function PerfilPage() {
+  return (
+    <Suspense>
+      <PerfilContent />
+    </Suspense>
   );
 }

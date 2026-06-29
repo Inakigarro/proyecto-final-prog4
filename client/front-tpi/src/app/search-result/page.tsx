@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import styles from "./page.module.css";
 import Breadcrumb from "@/component/layout/Breadcrumb";
 import ListaResultadosProductos from "@/component/busqueda/ListaResultadosProductos";
 import { useResultadosBusqueda } from "@/component/busqueda/hooks/useResultadosBusqueda";
 
-const PaginaResultadosBusqueda = () => {
+function ContenidoBusqueda() {
   const { productos, promociones, cargando, mensajeError, tipoBusqueda, termino } =
     useResultadosBusqueda();
 
@@ -57,4 +58,10 @@ const PaginaResultadosBusqueda = () => {
   );
 };
 
-export default PaginaResultadosBusqueda;
+export default function PaginaResultadosBusqueda() {
+  return (
+    <Suspense>
+      <ContenidoBusqueda />
+    </Suspense>
+  );
+}

@@ -77,7 +77,7 @@ export default function Comparador({ actual, comparados, onQuitar, onLimpiar }: 
 
                 <div className={styles.comparadorImagenWrapper}>
                   <img
-                    src={p.imageSrc ?? IMAGEN_PLACEHOLDER}
+                    src={p.imagen ?? IMAGEN_PLACEHOLDER}
                     alt={p.nombre}
                     className={styles.comparadorImagen}
                   />
